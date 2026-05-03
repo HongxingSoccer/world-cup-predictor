@@ -1,0 +1,88 @@
+name: ci-build
+
+# CI build pipeline (Phase 5, design §3.3 step 1-2). Builds and pushes
+# multi-arch Docker images for every service when `main` advances.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_OWNER: ${{ github.repository_owner }}
+
+jobs:
+  build:
+    name: build · ${{ matrix.service }}
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: ml-api
+            context: worldcup-predictor
+            dockerfile: worldcup-predictor/Dockerfile
+          - service: card-worker
+            context: worldcup-predictor
+            dockerfile: worldcup-predictor/Dockerfile.card-worker
+          - service: java-api
+            context: worldcup-predictor/java-api
+            dockerfile: worldcup-predictor/java-api/Dockerfile
+          - service: frontend
+            context: worldcup-predictor/frontend
+            dockerfile: worldcup-predictor/frontend/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/wcp-${{ matrix.service }}
+          tags: |
+            type=sha,prefix=,format=short
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,scope=${{ matrix.service }},mode=max
+
+  trigger-staging:
+    name: trigger · cd-staging
+    runs-on: ubuntu-22.04
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Dispatch staging deploy
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          event-type: cd-staging
+          client-payload: |
+            {"sha": "${{ github.sha }}"}

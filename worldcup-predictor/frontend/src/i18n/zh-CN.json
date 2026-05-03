@@ -1,0 +1,87 @@
+{
+  "brand": "WCP · 世界杯预测",
+  "common": {
+    "loading": "加载中…",
+    "empty": "暂无数据",
+    "share": "分享",
+    "copyLink": "复制链接",
+    "copied": "已复制"
+  },
+  "match": {
+    "today": "今日比赛",
+    "upcoming": "未来比赛",
+    "vs": "VS",
+    "ft": "已结束",
+    "homeWin": "主胜",
+    "draw": "平局",
+    "awayWin": "客胜",
+    "confidence": "置信度",
+    "valueSignal": "价值信号"
+  },
+  "trackRecord": {
+    "title": "战绩追踪",
+    "hitRate": "总命中率",
+    "roi": "ROI",
+    "currentStreak": "当前连续",
+    "bestStreak": "最佳连红",
+    "byMarket": "按盘口分层"
+  },
+  "subscription": {
+    "title": "解锁完整 AI 预测",
+    "unlock": "解锁查看完整分析",
+    "tier": {
+      "free": "免费版",
+      "basic": "基础版",
+      "premium": "高阶版"
+    }
+  },
+  "admin": {
+    "nav": {
+      "overview": "总览",
+      "users": "用户",
+      "subscriptions": "订阅",
+      "predictions": "预测",
+      "reports": "AI 报告",
+      "dataSources": "数据源",
+      "push": "推送",
+      "content": "内容",
+      "system": "系统设置"
+    },
+    "cards": {
+      "users_total": "总用户",
+      "predictions_total": "总预测数",
+      "reports_total": "AI 报告数",
+      "push_24h": "近 24h 推送"
+    },
+    "flags": {
+      "title": "功能开关",
+      "description": "修改后 30 秒内生效。",
+      "on": "开启",
+      "off": "关闭"
+    },
+    "locale": {
+      "label": "语言",
+      "zh": "中文",
+      "en": "English"
+    }
+  },
+  "viz": {
+    "heatmap": {
+      "title": "比分概率热力图",
+      "home": "主队进球",
+      "away": "客队进球",
+      "probability": "概率"
+    },
+    "bracket": {
+      "title": "淘汰赛 bracket",
+      "qualifyProb": "晋级概率"
+    },
+    "compare": {
+      "title": "多模型对比",
+      "poisson": "Poisson",
+      "dixonColes": "Dixon-Coles",
+      "xgboost": "XGBoost",
+      "ensemble": "Ensemble"
+    }
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "brand": "WCP · World Cup Predictor",
+  "common": {
+    "loading": "Loading…",
+    "empty": "No data",
+    "share": "Share",
+    "copyLink": "Copy link",
+    "copied": "Copied"
+  },
+  "match": {
+    "today": "Today's matches",
+    "upcoming": "Upcoming matches",
+    "vs": "VS",
+    "ft": "FT",
+    "homeWin": "Home win",
+    "draw": "Draw",
+    "awayWin": "Away win",
+    "confidence": "Confidence",
+    "valueSignal": "Value signal"
+  },
+  "trackRecord": {
+    "title": "Track record",
+    "hitRate": "Hit rate",
+    "roi": "ROI",
+    "currentStreak": "Current streak",
+    "bestStreak": "Best streak",
+    "byMarket": "By market"
+  },
+  "subscription": {
+    "title": "Unlock the full AI prediction",
+    "unlock": "Unlock full analysis",
+    "tier": {
+      "free": "Free",
+      "basic": "Basic",
+      "premium": "Premium"
+    }
+  },
+  "admin": {
+    "nav": {
+      "overview": "Overview",
+      "users": "Users",
+      "subscriptions": "Subscriptions",
+      "predictions": "Predictions",
+      "reports": "AI Reports",
+      "dataSources": "Data sources",
+      "push": "Push",
+      "content": "Content",
+      "system": "System"
+    },
+    "cards": {
+      "users_total": "Total users",
+      "predictions_total": "Total predictions",
+      "reports_total": "AI reports",
+      "push_24h": "Pushes (24h)"
+    },
+    "flags": {
+      "title": "Feature flags",
+      "description": "Changes propagate within 30 seconds.",
+      "on": "On",
+      "off": "Off"
+    },
+    "locale": {
+      "label": "Language",
+      "zh": "中文",
+      "en": "English"
+    }
+  },
+  "viz": {
+    "heatmap": {
+      "title": "Score probability heatmap",
+      "home": "Home goals",
+      "away": "Away goals",
+      "probability": "Probability"
+    },
+    "bracket": {
+      "title": "Knockout bracket",
+      "qualifyProb": "Qualify prob."
+    },
+    "compare": {
+      "title": "Multi-model comparison",
+      "poisson": "Poisson",
+      "dixonColes": "Dixon-Coles",
+      "xgboost": "XGBoost",
+      "ensemble": "Ensemble"
+    }
+  }
+}

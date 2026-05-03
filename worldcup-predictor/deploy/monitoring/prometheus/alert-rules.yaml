@@ -1,0 +1,67 @@
+# Prometheus alert rules (Phase 5, design §4.2).
+groups:
+  - name: wcp-system
+    interval: 30s
+    rules:
+      - alert: HighRequestErrorRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) by (service) / sum(rate(http_requests_total[5m])) by (service) > 0.02
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "5xx rate >2% on {{ $labels.service }}"
+
+      - alert: HighRequestLatencyP99
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)) > 1.0
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "p99 latency >1s on {{ $labels.service }}"
+
+      - alert: PodCrashLooping
+        expr: increase(kube_pod_container_status_restarts_total[15m]) > 5
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "Pod {{ $labels.pod }} crash-looping"
+
+      - alert: NodeMemoryPressure
+        expr: kube_node_status_condition{condition="MemoryPressure",status="true"} == 1
+        for: 5m
+        labels: { severity: warning }
+
+      - alert: PostgresConnectionsHigh
+        expr: pg_stat_activity_count / pg_settings_max_connections > 0.8
+        for: 5m
+        labels: { severity: warning }
+
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.85
+        for: 10m
+        labels: { severity: warning }
+
+      - alert: CeleryQueueBacklog
+        expr: celery_queue_length > 1000
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Celery queue {{ $labels.queue }} >1k pending"
+
+  - name: wcp-business
+    interval: 60s
+    rules:
+      - alert: PredictionFreshnessLag
+        expr: time() - wcp_predictions_last_generated_timestamp_seconds > 1800
+        for: 10m
+        labels: { severity: critical }
+        annotations:
+          summary: "Predictions stale (>30 min) for {{ $labels.match_id }}"
+
+      - alert: OddsIngestionStalled
+        expr: time() - wcp_odds_last_ingested_timestamp_seconds > 600
+        for: 10m
+        labels: { severity: critical }
+
+      - alert: PaymentFailureRateHigh
+        expr: rate(wcp_payment_failures_total[15m]) / rate(wcp_payment_attempts_total[15m]) > 0.05
+        for: 10m
+        labels: { severity: warning }

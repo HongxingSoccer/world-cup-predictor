@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<title>WCP · 战绩 · {{ period_label }}</title>
+{% include "_base.css.html" %}
+</head><body><div class="card-shell">
+
+  <div class="flex items-center justify-between mb-12">
+    <div class="text-sm text-slate-400 tracking-widest">{{ period_label }} · 累计战绩</div>
+    {% if streak and streak >= 2 %}
+    <div class="px-3 py-1 bg-orange-500/20 border border-orange-500 rounded-full text-orange-300 text-sm font-bold">
+      🔥 连红 {{ streak }}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="grid grid-cols-2 gap-6 mb-8">
+    <div class="bg-slate-800/60 rounded-2xl p-6">
+      <div class="text-xs text-slate-400 mb-2 tracking-widest">命中率</div>
+      <div class="text-6xl font-black {% if hit_rate_pct >= 50 %}accent-green{% else %}accent-amber{% endif %}">
+        {{ '%.1f'|format(hit_rate_pct) }}<span class="text-3xl">%</span>
+      </div>
+      <div class="text-xs text-slate-400 mt-2">{{ hits }} / {{ total_predictions }}</div>
+    </div>
+    <div class="bg-slate-800/60 rounded-2xl p-6">
+      <div class="text-xs text-slate-400 mb-2 tracking-widest">ROI</div>
+      <div class="text-6xl font-black {% if roi_pct >= 0 %}accent-green{% else %}accent-red{% endif %}">
+        {% if roi_pct >= 0 %}+{% endif %}{{ '%.1f'|format(roi_pct) }}<span class="text-3xl">%</span>
+      </div>
+      <div class="text-xs text-slate-400 mt-2">单位下注</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-3 gap-4 mt-auto mb-12">
+    <div class="bg-slate-800/40 rounded-xl p-4 text-center">
+      <div class="text-xs text-slate-400 mb-1">最佳连红</div>
+      <div class="text-2xl font-bold">{{ best_streak }}</div>
+    </div>
+    <div class="bg-slate-800/40 rounded-xl p-4 text-center">
+      <div class="text-xs text-slate-400 mb-1">总盈亏</div>
+      <div class="text-2xl font-bold {% if total_pnl_units >= 0 %}accent-green{% else %}accent-red{% endif %}">
+        {% if total_pnl_units >= 0 %}+{% endif %}{{ '%.1f'|format(total_pnl_units) }}
+      </div>
+    </div>
+    <div class="bg-slate-800/40 rounded-xl p-4 text-center">
+      <div class="text-xs text-slate-400 mb-1">当前连续</div>
+      <div class="text-2xl font-bold {% if streak >= 0 %}accent-green{% else %}accent-red{% endif %}">
+        {% if streak > 0 %}+{% endif %}{{ streak }}
+      </div>
+    </div>
+  </div>
+
+  <span class="brand">WCP · 世界杯预测</span>
+  <span class="ts">{{ generated_at }}</span>
+</div></body></html>

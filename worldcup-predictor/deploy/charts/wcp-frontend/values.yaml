@@ -1,0 +1,42 @@
+# Per-service overrides go in deploy/charts/<svc>/values-{staging,production}.yaml.
+# Resource budgets follow design §2.3.
+image:
+  repository: ghcr.io/CHANGE_ME/wcp-frontend
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 2
+
+service:
+  type: ClusterIP
+  port: 3000
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: wcp.example
+      paths: ["/"]
+  tls:
+    - secretName: wcp-frontend-tls
+      hosts: ["wcp.example"]
+
+env:
+  NEXT_PUBLIC_API_BASE_URL: "https://api.wcp.example"
+  NODE_ENV: production

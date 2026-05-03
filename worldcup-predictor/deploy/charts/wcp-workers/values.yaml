@@ -1,0 +1,48 @@
+# Worker resource budgets follow design §2.3.
+image:
+  repository: ghcr.io/CHANGE_ME/wcp-ml-api
+  tag: latest
+  pullPolicy: IfNotPresent
+
+env:
+  DATABASE_URL: "postgresql+psycopg2://wcp:CHANGE_ME@postgres:5432/wcp"
+  REDIS_URL: "redis://redis:6379/0"
+  KAFKA_BROKERS: "kafka:9092"
+
+# Each worker runs a different Celery queue + module.
+workers:
+  ingestion-worker:
+    command: ["celery", "-A", "src.celery_app", "worker", "-Q", "ingestion", "-n", "ingestion@%h"]
+    resources:
+      requests: { cpu: 100m, memory: 256Mi }
+      limits:   { cpu: 500m, memory: 512Mi }
+  ingestion-beat:
+    command: ["celery", "-A", "src.celery_app", "beat"]
+    resources:
+      requests: { cpu: 50m,  memory: 128Mi }
+      limits:   { cpu: 200m, memory: 256Mi }
+  card-worker:
+    command: ["celery", "-A", "src.celery_app", "worker", "-Q", "card", "-n", "card@%h"]
+    resources:
+      requests: { cpu: 100m, memory: 256Mi }
+      limits:   { cpu: 500m, memory: 512Mi }
+  report-worker:
+    command: ["celery", "-A", "src.celery_app", "worker", "-Q", "reports", "-n", "report@%h"]
+    resources:
+      requests: { cpu: 100m, memory: 256Mi }
+      limits:   { cpu: 500m, memory: 512Mi }
+  push-worker:
+    command: ["celery", "-A", "src.celery_app", "worker", "-Q", "push", "-n", "push@%h"]
+    resources:
+      requests: { cpu: 100m, memory: 256Mi }
+      limits:   { cpu: 500m, memory: 512Mi }
+  settlement-worker:
+    command: ["celery", "-A", "src.celery_app", "worker", "-Q", "settlement", "-n", "settle@%h"]
+    resources:
+      requests: { cpu: 100m, memory: 256Mi }
+      limits:   { cpu: 500m, memory: 512Mi }
+  simulation-worker:
+    command: ["celery", "-A", "src.celery_app", "worker", "-Q", "simulation", "-n", "sim@%h"]
+    resources:
+      requests: { cpu: 200m, memory: 512Mi }
+      limits:   { cpu: 1000m, memory: 1Gi }

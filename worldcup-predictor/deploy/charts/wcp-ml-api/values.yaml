@@ -1,0 +1,32 @@
+image:
+  repository: ghcr.io/CHANGE_ME/wcp-ml-api
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 2
+
+service:
+  type: ClusterIP
+  port: 8000
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 70
+
+ingress:
+  enabled: false  # ml-api typically lives behind java-api or ingress prefix /ml
+
+env:
+  DATABASE_URL: "postgresql+psycopg2://wcp:CHANGE_ME@postgres:5432/wcp"
+  REDIS_URL: "redis://redis:6379/0"
+  ADMIN_API_TOKEN: "CHANGE_ME"

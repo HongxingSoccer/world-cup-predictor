@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "worldcup-predictor"
+version = "0.1.0"
+description = "World Cup 2026 Predictor — data foundation, ML engine, FastAPI service"
+requires-python = ">=3.11"
+
+# Runtime deps live in requirements.txt; pyproject is currently used only by
+# tooling configs (ruff / mypy / pytest).
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+# --- Tooling ---
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "N", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-ra"

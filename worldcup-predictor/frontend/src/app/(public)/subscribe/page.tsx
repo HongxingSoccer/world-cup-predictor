@@ -1,0 +1,12 @@
+import type { Metadata } from 'next';
+
+import { SubscribePageClient } from './SubscribePageClient';
+
+export const metadata: Metadata = {
+  title: '订阅 · 解锁完整 AI 预测',
+  description: '基础版 ¥29.9/月起，世界杯通票 ¥68 起。AI 比分概率 · 赔率 EV 分析 · 价值信号。',
+};
+
+export default function SubscribePage() {
+  return <SubscribePageClient />;
+}

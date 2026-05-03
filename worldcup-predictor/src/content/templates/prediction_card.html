@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<title>WCP · {{ home_team }} vs {{ away_team }}</title>
+{% include "_base.css.html" %}
+</head><body><div class="card-shell">
+
+  <div class="flex items-center justify-between mb-8">
+    <span class="text-sm text-slate-400 tracking-widest">{{ competition }}</span>
+    <span class="text-sm text-slate-400">{{ kickoff_text }}</span>
+  </div>
+
+  <div class="flex items-center justify-between mb-12">
+    <div class="text-center flex-1">
+      <div class="text-5xl font-black mb-2">{{ home_team }}</div>
+      <div class="text-base text-slate-400">主队</div>
+    </div>
+    <div class="text-3xl font-bold text-slate-500 mx-6">VS</div>
+    <div class="text-center flex-1">
+      <div class="text-5xl font-black mb-2">{{ away_team }}</div>
+      <div class="text-base text-slate-400">客队</div>
+    </div>
+  </div>
+
+  {# Probability bar — three stacked segments scaled by the model probabilities.
+     We use inline width % rather than a dedicated chart lib so the template
+     renders identically across Playwright and any preview tool. #}
+  <div class="mb-8">
+    <div class="flex w-full rounded-2xl overflow-hidden h-12">
+      <div class="flex items-center justify-center bg-emerald-500 text-emerald-950 font-bold"
+           style="width: {{ '%.1f'|format(prob_home_win * 100) }}%">
+        胜 {{ '%.0f'|format(prob_home_win * 100) }}%
+      </div>
+      <div class="flex items-center justify-center bg-amber-400 text-amber-950 font-bold"
+           style="width: {{ '%.1f'|format(prob_draw * 100) }}%">
+        平 {{ '%.0f'|format(prob_draw * 100) }}%
+      </div>
+      <div class="flex items-center justify-center bg-rose-500 text-rose-950 font-bold"
+           style="width: {{ '%.1f'|format(prob_away_win * 100) }}%">
+        负 {{ '%.0f'|format(prob_away_win * 100) }}%
+      </div>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-between mt-auto mb-12">
+    <div>
+      <div class="text-xs text-slate-400 mb-1">置信度</div>
+      <div class="text-3xl font-black">
+        {{ confidence_score }}
+        <span class="text-base font-normal text-slate-400 ml-2">/ 100</span>
+      </div>
+    </div>
+    {% if signal_level and signal_level > 0 %}
+    <div class="px-5 py-3 bg-emerald-600/30 rounded-xl border border-emerald-500">
+      <div class="text-xs text-emerald-300 mb-1">价值信号</div>
+      <div class="text-2xl font-bold">
+        {% for _ in range(signal_level) %}⭐{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <span class="brand">WCP · 世界杯预测</span>
+  <span class="ts">{{ generated_at }}</span>
+</div></body></html>

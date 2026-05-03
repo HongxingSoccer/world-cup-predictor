@@ -1,0 +1,24 @@
+"""Celery task modules.
+
+Importing this package registers tasks with the Celery app instance defined
+in `src.config.celery_config`. The Celery worker entrypoint
+(`celery -A src.config.celery_config:app worker`) loads them via the
+`include=[...]` list configured on the app.
+"""
+from . import (
+    card_tasks,
+    maintenance_tasks,
+    match_tasks,
+    odds_tasks,
+    settlement_tasks,
+    stats_tasks,
+)
+
+__all__ = [
+    "card_tasks",
+    "maintenance_tasks",
+    "match_tasks",
+    "odds_tasks",
+    "settlement_tasks",
+    "stats_tasks",
+]

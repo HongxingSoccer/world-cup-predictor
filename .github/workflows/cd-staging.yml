@@ -1,0 +1,63 @@
+name: cd-staging
+
+# CD pipeline → staging (Phase 5, design §3.3 step 3-4). Triggered by
+# ci-build's repository_dispatch event. Runs `helm upgrade --install` against
+# the staging cluster, then runs a smoke test against the resulting URL.
+
+on:
+  repository_dispatch:
+    types: [cd-staging]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Image tag (short SHA) to deploy'
+        required: true
+
+permissions:
+  contents: read
+  id-token: write   # for cloud OIDC
+
+env:
+  CLUSTER_NAME: wcp-staging
+  NAMESPACE: wcp-staging
+  CHART_DIR: worldcup-predictor/deploy/charts
+
+jobs:
+  deploy:
+    name: helm upgrade · staging
+    runs-on: ubuntu-22.04
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine image tag
+        id: tag
+        run: |
+          TAG="${{ github.event.client_payload.sha }}"
+          if [ -z "$TAG" ]; then TAG="${{ inputs.sha }}"; fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      # Cloud auth — placeholder. Swap for aws-actions/configure-aws-credentials
+      # or aliyun/setup-cli depending on the chosen provider (see design §2.1).
+      - name: Configure cloud credentials
+        run: echo "::warning ::CHANGE_ME — wire cloud OIDC auth here"
+
+      - name: Setup kubectl + helm
+        uses: azure/setup-helm@v4
+      - uses: azure/setup-kubectl@v4
+
+      - name: helm upgrade --install
+        run: |
+          for svc in wcp-frontend wcp-java-api wcp-ml-api wcp-workers; do
+            helm upgrade --install $svc $CHART_DIR/$svc \
+              --namespace $NAMESPACE --create-namespace \
+              --set image.tag=${{ steps.tag.outputs.tag }} \
+              --set environment=staging \
+              --wait --timeout 5m
+          done
+
+      - name: Smoke test
+        run: |
+          BASE_URL="${{ vars.STAGING_BASE_URL }}"
+          if [ -z "$BASE_URL" ]; then BASE_URL="https://staging.wcp.example"; fi
+          curl --fail --silent "$BASE_URL/health" || (echo "smoke test failed" && exit 1)

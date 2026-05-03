@@ -1,0 +1,36 @@
+# Card-worker image: same Python deps as the base image, plus Playwright +
+# Chromium + the Noto Sans SC font for headless rendering of Chinese-text cards.
+#
+# Kept separate from the main Dockerfile so the bulky browser binary doesn't
+# bloat the ingestion / API images.
+
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
+# Chromium needs a chunky base layer + CJK fonts so the cards render correctly.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        libpq-dev \
+        curl \
+        fonts-noto-cjk \
+        fonts-noto-color-emoji \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements.txt ./
+RUN pip install -r requirements.txt
+RUN python -m playwright install --with-deps chromium
+
+COPY . .
+
+ENV PYTHONPATH=/app
+
+# Default command is overridden by docker-compose; keeping a non-fatal CMD
+# so `docker run` against this image still produces a useful message.
+CMD ["python", "-c", "print('wcp card-worker base — override CMD via compose')"]

@@ -1,0 +1,66 @@
+name: cd-production
+
+# CD pipeline → production (Phase 5, design §3.3 step 5-9). Manual approval
+# gated through the GitHub `production` environment, then helm rollout with
+# rolling update + automatic rollback on failure (`--atomic`).
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Image tag (short SHA) to deploy'
+        required: true
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  CLUSTER_NAME: wcp-production
+  NAMESPACE: wcp-production
+  CHART_DIR: worldcup-predictor/deploy/charts
+
+jobs:
+  deploy:
+    name: helm upgrade · production
+    runs-on: ubuntu-22.04
+    environment: production   # forces manual approval per repo settings
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve image tag
+        id: tag
+        run: |
+          TAG="${{ inputs.sha }}"
+          if [ -z "$TAG" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Configure cloud credentials
+        run: echo "::warning ::CHANGE_ME — wire cloud OIDC auth here"
+
+      - uses: azure/setup-helm@v4
+      - uses: azure/setup-kubectl@v4
+
+      - name: helm upgrade --atomic
+        run: |
+          for svc in wcp-frontend wcp-java-api wcp-ml-api wcp-workers; do
+            helm upgrade --install $svc $CHART_DIR/$svc \
+              --namespace $NAMESPACE --create-namespace \
+              --set image.tag=${{ steps.tag.outputs.tag }} \
+              --set environment=production \
+              --atomic --wait --timeout 8m
+          done
+
+      - name: Verify
+        run: |
+          BASE_URL="${{ vars.PRODUCTION_BASE_URL }}"
+          curl --fail --silent "${BASE_URL:-https://wcp.example}/health"
+
+      - name: Notify deployment
+        if: always()
+        run: |
+          echo "::notice ::production deploy ${{ job.status }} for ${{ steps.tag.outputs.tag }}"

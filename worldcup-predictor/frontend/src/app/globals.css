@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    /* Project standard: 16px body, relaxed leading for Chinese text. */
+    font-size: 16px;
+    line-height: 1.625;
+  }
+  body {
+    color: #0f172a;
+    background-color: #f8fafc;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  /* Avoid the bottom mobile-nav overlapping content. */
+  main {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

@@ -1,0 +1,12 @@
+{
+    "java.compile.nullAnalysis.mode": "automatic",
+    "files.associations": {
+        "**/deploy/charts/**/templates/**/*.yaml": "helm",
+        "**/deploy/charts/**/templates/**/*.tpl": "helm"
+    },
+    "yaml.schemas": {},
+    "yaml.customTags": [
+        "!Ref",
+        "!Sub"
+    ]
+}

@@ -1,0 +1,3 @@
+# Real keys must never be committed.
+*.pem
+!.gitignore

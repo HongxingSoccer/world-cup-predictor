@@ -1,0 +1,18 @@
+# Development overrides — relaxed CORS, verbose logging, dev-mode JWT keys.
+# Never use this profile in production.
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+
+logging:
+  level:
+    org.springframework.web: DEBUG
+    com.wcp: DEBUG
+
+wcp:
+  cors:
+    allowed-origins: "http://localhost:3000,http://localhost:8000"

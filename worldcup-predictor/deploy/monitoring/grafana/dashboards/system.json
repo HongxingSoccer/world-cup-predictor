@@ -1,0 +1,35 @@
+{
+  "title": "WCP · System Overview",
+  "uid": "wcp-system",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "HTTP RPS by service",
+      "targets": [{ "expr": "sum(rate(http_requests_total[1m])) by (service)" }]
+    },
+    {
+      "type": "timeseries",
+      "title": "5xx error rate",
+      "targets": [{ "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) by (service)" }]
+    },
+    {
+      "type": "timeseries",
+      "title": "p99 latency",
+      "targets": [{ "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service))" }]
+    },
+    {
+      "type": "stat",
+      "title": "Pods ready",
+      "targets": [{ "expr": "sum(kube_deployment_status_replicas_ready)" }]
+    },
+    {
+      "type": "timeseries",
+      "title": "Celery queue depth",
+      "targets": [{ "expr": "celery_queue_length" }]
+    }
+  ]
+}

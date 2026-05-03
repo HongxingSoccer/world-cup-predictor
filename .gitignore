@@ -1,0 +1,128 @@
+# ──────────────────────────────────────────────────────────────────────
+# World Cup 2026 Predictor — repository .gitignore
+# Per dev_standard §12.2: .env* and any secret material MUST stay local.
+# ──────────────────────────────────────────────────────────────────────
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+*.iml
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# ── Secrets & local config ───────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+**/jwt-keys/*.pem
+**/secrets/
+
+# ── Python ───────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+.eggs/
+*.egg-info/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.hypothesis/
+pip-log.txt
+pip-delete-this-directory.txt
+build/
+dist/
+*.manifest
+*.spec
+.ipynb_checkpoints/
+
+# ── Node / Next.js ───────────────────────────────────────────────────
+node_modules/
+.next/
+out/
+.swc/
+.npm/
+.yarn/
+.pnp.*
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
+
+# ── Java / Gradle ────────────────────────────────────────────────────
+.gradle/
+**/build/
+!**/src/**/build/
+**/bin/
+!**/src/**/bin/
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+*.war
+*.ear
+hs_err_pid*
+replay_pid*
+
+# ── ML artifacts (large + reproducible) ──────────────────────────────
+mlruns/
+mlartifacts/
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.onnx
+data/raw/
+data/processed/
+data/features/
+
+# ── Logs / runtime ───────────────────────────────────────────────────
+logs/
+*.log
+celerybeat-schedule
+celerybeat.pid
+
+# ── Docker / Kubernetes runtime ──────────────────────────────────────
+docker-volumes/
+*.local.yaml
+
+# ── Terraform ────────────────────────────────────────────────────────
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# ── Helm ─────────────────────────────────────────────────────────────
+**/charts/*/charts/
+**/charts/*.tgz
+
+# ── Test outputs ─────────────────────────────────────────────────────
+test-results/
+playwright-report/
+coverage/
+junit.xml

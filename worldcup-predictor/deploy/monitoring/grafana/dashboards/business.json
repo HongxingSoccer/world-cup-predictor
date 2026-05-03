@@ -1,0 +1,35 @@
+{
+  "title": "WCP · Business KPIs",
+  "uid": "wcp-business",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "1m",
+  "time": { "from": "now-24h", "to": "now" },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "DAU",
+      "targets": [{ "expr": "wcp_active_users_daily" }]
+    },
+    {
+      "type": "stat",
+      "title": "Predictions generated (24h)",
+      "targets": [{ "expr": "increase(wcp_predictions_generated_total[24h])" }]
+    },
+    {
+      "type": "stat",
+      "title": "Cards generated (24h)",
+      "targets": [{ "expr": "increase(wcp_cards_generated_total[24h])" }]
+    },
+    {
+      "type": "timeseries",
+      "title": "Push notifications sent",
+      "targets": [{ "expr": "sum(rate(wcp_push_sent_total[5m])) by (channel)" }]
+    },
+    {
+      "type": "timeseries",
+      "title": "Payment success rate",
+      "targets": [{ "expr": "rate(wcp_payment_success_total[15m]) / rate(wcp_payment_attempts_total[15m])" }]
+    }
+  ]
+}

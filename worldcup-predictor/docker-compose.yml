@@ -1,0 +1,318 @@
+version: "3.9"
+
+# Shared environment for the worker / beat / flower / ml-api services.
+# Postgres / Redis / Kafka hostnames resolve via docker-compose's network alias.
+x-app-env: &app-env
+  DATABASE_URL: postgresql+psycopg2://wcp:wcp@postgres:5432/wcp
+  REDIS_URL: redis://redis:6379/0
+  KAFKA_BROKERS: kafka:29092
+  MLFLOW_TRACKING_URI: http://mlflow-server:5000
+  S3_ENDPOINT: http://minio:9000
+  S3_ACCESS_KEY: ${S3_ACCESS_KEY:-wcp-minio}
+  S3_SECRET_KEY: ${S3_SECRET_KEY:-wcp-minio-secret}
+  S3_BUCKET_CARDS: ${S3_BUCKET_CARDS:-wcp-cards}
+  S3_PUBLIC_BASE_URL: ${S3_PUBLIC_BASE_URL:-http://localhost:9000}
+  LOG_LEVEL: INFO
+  PYTHONPATH: /app
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: wcp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wcp
+      POSTGRES_PASSWORD: wcp
+      POSTGRES_DB: wcp
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Bootstrap the mlflow DB / role on first start (only).
+      - ./deploy/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wcp -d wcp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: wcp-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: wcp-zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    volumes:
+      - zk_data:/var/lib/zookeeper/data
+      - zk_log:/var/lib/zookeeper/log
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: wcp-kafka
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+  ingestion-worker:
+    build: .
+    container_name: wcp-ingestion-worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      <<: *app-env
+    command: >
+      celery -A src.celery_app:app worker
+        --loglevel=INFO
+        --concurrency=4
+        -Q celery
+    volumes:
+      - ./:/app
+
+  ingestion-beat:
+    build: .
+    container_name: wcp-ingestion-beat
+    restart: unless-stopped
+    depends_on:
+      ingestion-worker:
+        condition: service_started
+    environment:
+      <<: *app-env
+    command: >
+      celery -A src.celery_app:app beat
+        --loglevel=INFO
+    volumes:
+      - ./:/app
+
+  flower:
+    image: mher/flower:2.0
+    container_name: wcp-flower
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - ingestion-worker
+    ports:
+      - "5555:5555"
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      FLOWER_PORT: 5555
+    command: ["celery", "flower"]
+
+  mlflow-server:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: wcp-mlflow
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      # MLflow needs psycopg2 to talk to Postgres; pip-install on entry.
+      MLFLOW_BACKEND_STORE_URI: postgresql://mlflow:mlflow@postgres:5432/mlflow
+      MLFLOW_DEFAULT_ARTIFACT_ROOT: /data/mlflow-artifacts
+    volumes:
+      - mlflow_artifacts:/data/mlflow-artifacts
+    command: >
+      sh -c "pip install --quiet psycopg2-binary &&
+             mlflow server
+               --host 0.0.0.0 --port 5000
+               --backend-store-uri $$MLFLOW_BACKEND_STORE_URI
+               --default-artifact-root $$MLFLOW_DEFAULT_ARTIFACT_ROOT"
+
+  ml-api:
+    build: .
+    container_name: wcp-ml-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mlflow-server:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    environment:
+      <<: *app-env
+      API_KEY: "${API_KEY:-}"
+      API_RATE_LIMIT_PER_MIN: "${API_RATE_LIMIT_PER_MIN:-100}"
+      API_CORS_ORIGINS: "${API_CORS_ORIGINS:-*}"
+    command: >
+      uvicorn src.api:app
+        --host 0.0.0.0
+        --port 8000
+        --workers 2
+    volumes:
+      - ./:/app
+
+  java-api:
+    build:
+      context: ./java-api
+    container_name: wcp-java-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ml-api:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/wcp
+      SPRING_DATASOURCE_USERNAME: wcp
+      SPRING_DATASOURCE_PASSWORD: wcp
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: "6379"
+      ML_API_BASE_URL: http://ml-api:8000
+      ML_API_KEY: "${API_KEY:-}"
+      JWT_PRIVATE_KEY_PATH: /run/secrets/jwt-private.pem
+      JWT_PUBLIC_KEY_PATH: /run/secrets/jwt-public.pem
+      CORS_ALLOWED_ORIGINS: "${CORS_ALLOWED_ORIGINS:-*}"
+      SHARE_BASE_URL: "${SHARE_BASE_URL:-http://localhost:8080/s/}"
+    volumes:
+      # The host script `deploy/scripts/generate-jwt-keys.sh` writes the PEMs
+      # into deploy/jwt-keys before `docker compose up`. Mount read-only into
+      # the standard Docker secrets path so application.yml can resolve them.
+      - ./deploy/jwt-keys:/run/secrets:ro
+
+  minio:
+    image: minio/minio:latest
+    container_name: wcp-minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"   # S3-compatible API
+      - "9001:9001"   # Web console
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-wcp-minio}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-wcp-minio-secret}
+    volumes:
+      - minio_data:/data
+    command: ["server", "/data", "--console-address", ":9001"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  settlement-worker:
+    build: .
+    container_name: wcp-settlement-worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      <<: *app-env
+    # Dedicated queue isolates settlement work from other Celery traffic so a
+    # backlog of finished matches doesn't starve the ingest pipeline.
+    command: >
+      celery -A src.celery_app:app worker
+        --loglevel=INFO
+        --concurrency=2
+        -Q settlement
+        -n settlement@%h
+    volumes:
+      - ./:/app
+
+  card-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.card-worker
+    container_name: wcp-card-worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    environment:
+      <<: *app-env
+    # Playwright launches Chromium per render, so we keep concurrency low to
+    # avoid OOM. Bump if the host has the memory.
+    command: >
+      celery -A src.celery_app:app worker
+        --loglevel=INFO
+        --concurrency=2
+        -Q card
+        -n card@%h
+    volumes:
+      - ./:/app
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: wcp-frontend
+    restart: unless-stopped
+    depends_on:
+      - java-api
+    environment:
+      # The browser bundle reads this; nginx routes the actual request.
+      NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:80}
+      NEXT_PUBLIC_SHARE_BASE_URL: ${PUBLIC_SHARE_BASE_URL:-http://localhost:80/s/}
+      NODE_ENV: production
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: wcp-nginx
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - java-api
+    ports:
+      - "80:80"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+  zk_data:
+  zk_log:
+  mlflow_artifacts:
+  minio_data:
