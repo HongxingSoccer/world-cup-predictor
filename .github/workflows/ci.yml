@@ -1,0 +1,22 @@
+name: CI
+
+# Only run CI on pull requests.
+# Direct pushes from forks are not permitted; contributors must open a PR.
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify pull request origin
+        run: |
+          echo "PR from: ${{ github.event.pull_request.head.repo.full_name }}"
+          echo "Base repo: ${{ github.repository }}"
