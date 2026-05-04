@@ -59,6 +59,115 @@
       "on": "开启",
       "off": "关闭"
     },
+    "users": {
+      "title": "用户列表",
+      "description": "最近注册的用户。",
+      "columns": {
+        "id": "ID",
+        "email": "邮箱",
+        "tier": "等级",
+        "createdAt": "注册时间"
+      }
+    },
+    "subscriptions": {
+      "title": "订阅管理",
+      "description": "当前及历史付费访问窗口。",
+      "columns": {
+        "id": "ID",
+        "user": "用户",
+        "tier": "等级",
+        "plan": "套餐",
+        "status": "状态",
+        "price": "金额",
+        "started": "开始时间",
+        "expires": "到期时间"
+      },
+      "filterAll": "全部",
+      "filterActive": "生效中",
+      "filterExpired": "已过期"
+    },
+    "predictions": {
+      "title": "预测记录",
+      "description": "最近发布的预测。",
+      "columns": {
+        "id": "ID",
+        "match": "比赛",
+        "model": "模型",
+        "confidence": "置信度",
+        "publishedAt": "发布时间"
+      }
+    },
+    "reports": {
+      "title": "AI 报告",
+      "description": "AI 生成的比赛分析报告。",
+      "columns": {
+        "id": "ID",
+        "match": "比赛",
+        "title": "标题",
+        "model": "模型",
+        "status": "状态",
+        "generatedAt": "生成时间"
+      },
+      "publish": "发布",
+      "reject": "拒绝",
+      "filterAll": "全部",
+      "filterDraft": "草稿",
+      "filterPublished": "已发布"
+    },
+    "dataSources": {
+      "title": "数据源监控",
+      "description": "各上游数据源的最近抓取情况。",
+      "summary": {
+        "source": "数据源",
+        "lastRun": "最近运行",
+        "lastStatus": "最近状态",
+        "success24h": "24h 成功",
+        "failed24h": "24h 失败"
+      },
+      "columns": {
+        "id": "ID",
+        "source": "数据源",
+        "task": "任务",
+        "status": "状态",
+        "fetched": "抓取数",
+        "inserted": "入库数",
+        "startedAt": "开始时间",
+        "finishedAt": "结束时间"
+      }
+    },
+    "push": {
+      "title": "推送记录",
+      "description": "近期推送投递与 24h 聚合数据。",
+      "summary": {
+        "pending": "待发送",
+        "sent24h": "24h 已发送",
+        "failed24h": "24h 失败",
+        "ctr24h": "24h 点击"
+      },
+      "columns": {
+        "id": "ID",
+        "user": "用户",
+        "channel": "渠道",
+        "type": "类型",
+        "title": "标题",
+        "status": "状态",
+        "createdAt": "创建时间"
+      }
+    },
+    "content": {
+      "title": "内容审核",
+      "description": "等待审核后发布的草稿报告。",
+      "queueEmpty": "暂无待审核草稿。"
+    },
+    "common": {
+      "prev": "上一页",
+      "next": "下一页",
+      "page": "第 {n} 页",
+      "total": "共 {n} 条",
+      "refresh": "刷新",
+      "loading": "加载中…",
+      "error": "加载失败"
+    },
     "locale": {
       "label": "语言",
       "zh": "中文",
