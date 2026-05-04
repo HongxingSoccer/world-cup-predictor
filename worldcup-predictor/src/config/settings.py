@@ -9,7 +9,8 @@ from __future__ import annotations
 from typing import List, Optional
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+from typing_extensions import Annotated
 
 
 class Settings(BaseSettings):
@@ -31,7 +32,7 @@ class Settings(BaseSettings):
     )
 
     # --- Streaming ---
-    KAFKA_BROKERS: List[str] = Field(
+    KAFKA_BROKERS: Annotated[List[str], NoDecode] = Field(
         default_factory=lambda: ["localhost:9092"],
         description="Comma-separated Kafka bootstrap servers.",
     )
@@ -51,7 +52,7 @@ class Settings(BaseSettings):
     # List of "{league_id}:{year}" tokens consumed by ApiFootballAdapter / Celery
     # match-sync tasks. Override via env (comma-separated) when adding qualifiers
     # or club leagues in addition to the default World Cup 2026 entry.
-    ACTIVE_COMPETITIONS: List[str] = Field(
+    ACTIVE_COMPETITIONS: Annotated[List[str], NoDecode] = Field(
         default_factory=lambda: ["1:2026"],
     )
 
@@ -62,7 +63,7 @@ class Settings(BaseSettings):
     # Per-IP request budget enforced by the middleware. 100 req/min ≈ 1.67 req/s.
     API_RATE_LIMIT_PER_MIN: int = Field(default=100, ge=1)
     # Comma-separated CORS origins. '*' = allow all (development only).
-    API_CORS_ORIGINS: List[str] = Field(default_factory=lambda: ["*"])
+    API_CORS_ORIGINS: Annotated[List[str], NoDecode] = Field(default_factory=lambda: ["*"])
     # Cache TTL for /predictions/today (seconds).
     PREDICTIONS_TODAY_CACHE_TTL: int = Field(default=300, ge=0)
 

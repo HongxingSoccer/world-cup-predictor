@@ -105,6 +105,7 @@ class MatchPipeline(BasePipeline[MatchDTO]):
         }
         return stmt.on_conflict_do_update(
             index_elements=["api_football_id"],
+            index_where=Match.api_football_id.is_not(None),
             set_=update_cols,
         )
 

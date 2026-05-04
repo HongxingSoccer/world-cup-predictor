@@ -108,6 +108,8 @@ async def _step_players(start_year: int) -> None:
 async def _step_matches(start_year: int) -> None:
     from src.adapters.api_football import ApiFootballAdapter
     from src.events.producer import build_producer
+    from src.models.competition import Competition
+    from src.models.season import Season
     from src.pipelines.match_pipeline import MatchPipeline
     from src.utils.db import SessionLocal
 
@@ -120,12 +122,34 @@ async def _step_matches(start_year: int) -> None:
                 year = int(season_id.split(":")[1])
                 if year < start_year:
                     continue
+                # Probe one fixture to learn the canonical competition name
+                # used by API-Football, then upsert competition + season so
+                # MatchPipeline._resolve_season succeeds.
+                dtos = await adapter.fetch_matches(season_id)
+                if not dtos:
+                    logger.warning("backfill_no_fixtures", season=season_id)
+                    continue
+                comp_name = dtos[0].competition_name
+                with SessionLocal() as session:
+                    comp = session.query(Competition).filter(Competition.name == comp_name).first()
+                    if comp is None:
+                        comp = Competition(name=comp_name, competition_type="national", is_active=True)
+                        session.add(comp)
+                        session.flush()
+                    if not session.query(Season).filter(
+                        Season.competition_id == comp.id, Season.year == year
+                    ).first():
+                        session.add(Season(competition_id=comp.id, year=year))
+                    session.commit()
+                # Now run the pipeline (will hit the API a second time — cheap).
                 result = await pipeline.run(season_id=season_id)
                 logger.info(
                     "matches_backfilled",
                     season=season_id,
+                    competition=comp_name,
                     fetched=result.fetched,
                     inserted=result.inserted,
+                    skipped=result.skipped,
                 )
     finally:
         producer.close()
@@ -162,7 +186,7 @@ async def _step_validate(start_year: int) -> None:
     # Cheaper to call the script as a function than to spawn a subprocess.
     from scripts.validate_data import main_async as validate_main
 
-    await validate_main(argparse.Namespace())
+    await validate_main(argparse.Namespace(json=False))
 
 
 if __name__ == "__main__":

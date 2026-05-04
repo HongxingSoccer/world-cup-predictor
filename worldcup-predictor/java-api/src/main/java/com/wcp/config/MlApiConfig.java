@@ -32,6 +32,12 @@ public class MlApiConfig {
 
         RestTemplate restTemplate = new RestTemplate(factory);
 
+        // Resolve relative paths in MlApiClient ("/api/v1/...") against the
+        // configured ML service base URL. Without this, RestTemplate throws
+        // "URI is not absolute" for every call.
+        restTemplate.setUriTemplateHandler(
+                new org.springframework.web.util.DefaultUriBuilderFactory(props.baseUrl()));
+
         // Default headers via interceptor — applies to every outbound request.
         ClientHttpRequestInterceptor headerInterceptor = (request, body, execution) -> {
             if (props.apiKey() != null && !props.apiKey().isBlank()) {
