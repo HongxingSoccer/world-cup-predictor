@@ -8,22 +8,27 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
+from typing import Any
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
+from sqlalchemy.engine.url import make_url
 from sqlalchemy.orm import Session, sessionmaker
 
 from src.config.settings import settings
 
 # `pool_pre_ping` reconnects on stale connections (cloud DB drops idle conns).
 # `future=True` enables 2.0-style usage even on older SQLAlchemy installs.
-engine: Engine = create_engine(
-    settings.DATABASE_URL,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
-    future=True,
-)
+_url = make_url(settings.DATABASE_URL)
+_engine_kwargs: dict[str, Any] = {
+    "pool_pre_ping": True,
+    "future": True,
+}
+# SQLite uses SingletonThreadPool which does not accept pool_size/max_overflow.
+if _url.get_backend_name() != "sqlite":
+    _engine_kwargs.update(pool_size=10, max_overflow=20)
+
+engine: Engine = create_engine(settings.DATABASE_URL, **_engine_kwargs)
 
 SessionLocal: sessionmaker[Session] = sessionmaker(
     bind=engine,

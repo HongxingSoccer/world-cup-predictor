@@ -149,7 +149,12 @@ def _maybe_redis():  # type: ignore[no-untyped-def]
     try:
         import redis
 
-        client = redis.Redis.from_url(settings.REDIS_URL, decode_responses=True)
+        client = redis.Redis.from_url(
+            settings.REDIS_URL,
+            decode_responses=True,
+            socket_connect_timeout=2.0,
+            socket_timeout=5.0,
+        )
         client.ping()
         return client
     except Exception as exc:
