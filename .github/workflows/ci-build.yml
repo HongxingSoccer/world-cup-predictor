@@ -41,7 +41,7 @@ jobs:
 
       - name: Lowercase image owner
         id: owner
-        run: echo "value=${IMAGE_OWNER,,}" >> "$GITHUB_OUTPUT"
+        run: echo "value=$(printf '%s' "$IMAGE_OWNER" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
         env:
           IMAGE_OWNER: ${{ github.repository_owner }}
 
