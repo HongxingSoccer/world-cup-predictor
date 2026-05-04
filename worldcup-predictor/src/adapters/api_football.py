@@ -165,19 +165,29 @@ class ApiFootballAdapter(BaseDataSourceAdapter):
         params: dict[str, str | int],
         max_pages: int = 50,
     ) -> list[dict[str, Any]]:
-        """Walk API-Football's `paging.total` and concatenate `response` lists."""
+        """Walk API-Football's `paging.total` and concatenate `response` lists.
+
+        Some endpoints (e.g. `/fixtures` filtered by league+season) reject the
+        `page` query parameter outright when results fit on a single page, so
+        we issue the first request without it and only paginate when the
+        response advertises `paging.total > 1`.
+        """
         out: list[dict[str, Any]] = []
-        page = 1
-        while page <= max_pages:
+        # First page: no `page` param.
+        response = await self._request_with_retry(path, params=dict(params))
+        body = response.json()
+        if body.get("errors"):
+            raise DataFetchError(SOURCE_NAME, f"errors={body['errors']}")
+        out.extend(body.get("response") or [])
+        paging = body.get("paging") or {}
+        total = int(paging.get("total") or 1)
+        page = 2
+        while page <= total and page <= max_pages:
             response = await self._request_with_retry(path, params={**params, "page": page})
             body = response.json()
             if body.get("errors"):
                 raise DataFetchError(SOURCE_NAME, f"errors={body['errors']}")
             out.extend(body.get("response") or [])
-            paging = body.get("paging") or {}
-            total = int(paging.get("total") or 1)
-            if page >= total:
-                break
             page += 1
         return out
 
