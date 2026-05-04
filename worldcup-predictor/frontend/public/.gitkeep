@@ -1,0 +1,2 @@
+# Placeholder so Next.js standalone Dockerfile's `COPY /app/public` succeeds
+# even before any static assets are added. Safe to delete once real assets land.
