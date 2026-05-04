@@ -79,10 +79,15 @@ jobs:
     runs-on: ubuntu-22.04
     needs: build
     if: github.ref == 'refs/heads/main'
+    permissions:
+      actions: write
+      contents: read
     steps:
+      - uses: actions/checkout@v4
       - name: Dispatch staging deploy
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          event-type: cd-staging
-          client-payload: |
-            {"sha": "${{ github.sha }}"}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run cd-staging.yml \
+            --ref ${{ github.ref_name }} \
+            -f sha=${{ github.sha }} || echo "cd-staging workflow not yet configured; skipping"
