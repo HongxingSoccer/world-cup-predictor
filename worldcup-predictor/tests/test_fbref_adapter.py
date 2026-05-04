@@ -60,16 +60,14 @@ def test_redact_proxy_strips_credentials() -> None:
     assert _redact_proxy("http://1.2.3.4:8080") == "http://1.2.3.4:8080"
 
 
-def test_init_extends_retryable_status_with_403() -> None:
+@pytest.mark.asyncio
+async def test_init_extends_retryable_status_with_403() -> None:
     adapter = FBrefAdapter()
     try:
         assert 403 in adapter._retryable_status
         assert 429 in adapter._retryable_status  # default still present
     finally:
-        # Sync close — pytest doesn't have an event loop yet here.
-        import asyncio
-
-        asyncio.run(adapter.aclose())
+        await adapter.aclose()
 
 
 @pytest.mark.asyncio
