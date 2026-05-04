@@ -15,7 +15,6 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_OWNER: ${{ github.repository_owner }}
 
 jobs:
   build:
@@ -40,6 +39,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Lowercase image owner
+        id: owner
+        run: echo "value=${IMAGE_OWNER,,}" >> "$GITHUB_OUTPUT"
+        env:
+          IMAGE_OWNER: ${{ github.repository_owner }}
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -57,7 +62,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/wcp-${{ matrix.service }}
+          images: ${{ env.REGISTRY }}/${{ steps.owner.outputs.value }}/wcp-${{ matrix.service }}
           tags: |
             type=sha,prefix=,format=short
             type=ref,event=branch
@@ -83,6 +88,7 @@ jobs:
       - name: Dispatch staging deploy
         uses: peter-evans/repository-dispatch@v3
         with:
+          token: ${{ secrets.REPO_DISPATCH_TOKEN }}
           event-type: cd-staging
           client-payload: |
             {"sha": "${{ github.sha }}"}
