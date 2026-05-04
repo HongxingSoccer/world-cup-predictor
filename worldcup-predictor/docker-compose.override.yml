@@ -1,0 +1,8 @@
+# Local dev override: macOS reserves port 5000 for AirPlay Receiver.
+# Map MLflow to 5001 on the host so docker compose up doesn't fail.
+services:
+  mlflow-server:
+    # !override replaces the base ports list instead of appending to it
+    # (Compose default merges arrays, which would keep the conflicting 5000 entry).
+    ports: !override
+      - "5001:5000"
