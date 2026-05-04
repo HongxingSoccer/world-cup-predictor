@@ -59,6 +59,115 @@
       "on": "On",
       "off": "Off"
     },
+    "users": {
+      "title": "Users",
+      "description": "Most-recent registered users.",
+      "columns": {
+        "id": "ID",
+        "email": "Email",
+        "tier": "Tier",
+        "createdAt": "Created at"
+      }
+    },
+    "subscriptions": {
+      "title": "Subscriptions",
+      "description": "Active and historical paid access windows.",
+      "columns": {
+        "id": "ID",
+        "user": "User",
+        "tier": "Tier",
+        "plan": "Plan",
+        "status": "Status",
+        "price": "Price",
+        "started": "Started",
+        "expires": "Expires"
+      },
+      "filterAll": "All",
+      "filterActive": "Active",
+      "filterExpired": "Expired"
+    },
+    "predictions": {
+      "title": "Predictions",
+      "description": "Most-recent published predictions.",
+      "columns": {
+        "id": "ID",
+        "match": "Match",
+        "model": "Model",
+        "confidence": "Confidence",
+        "publishedAt": "Published at"
+      }
+    },
+    "reports": {
+      "title": "AI reports",
+      "description": "AI-generated match analysis.",
+      "columns": {
+        "id": "ID",
+        "match": "Match",
+        "title": "Title",
+        "model": "Model",
+        "status": "Status",
+        "generatedAt": "Generated at"
+      },
+      "publish": "Publish",
+      "reject": "Reject",
+      "filterAll": "All",
+      "filterDraft": "Draft",
+      "filterPublished": "Published"
+    },
+    "dataSources": {
+      "title": "Data sources",
+      "description": "Recent ingest activity per upstream source.",
+      "summary": {
+        "source": "Source",
+        "lastRun": "Last run",
+        "lastStatus": "Last status",
+        "success24h": "Success (24h)",
+        "failed24h": "Failed (24h)"
+      },
+      "columns": {
+        "id": "ID",
+        "source": "Source",
+        "task": "Task",
+        "status": "Status",
+        "fetched": "Fetched",
+        "inserted": "Inserted",
+        "startedAt": "Started at",
+        "finishedAt": "Finished at"
+      }
+    },
+    "push": {
+      "title": "Push notifications",
+      "description": "Recent delivery attempts and 24h aggregates.",
+      "summary": {
+        "pending": "Pending",
+        "sent24h": "Sent (24h)",
+        "failed24h": "Failed (24h)",
+        "ctr24h": "Clicks (24h)"
+      },
+      "columns": {
+        "id": "ID",
+        "user": "User",
+        "channel": "Channel",
+        "type": "Type",
+        "title": "Title",
+        "status": "Status",
+        "createdAt": "Created at"
+      }
+    },
+    "content": {
+      "title": "Content moderation",
+      "description": "Drafts awaiting review before publication.",
+      "queueEmpty": "No drafts pending review."
+    },
+    "common": {
+      "prev": "Prev",
+      "next": "Next",
+      "page": "Page {n}",
+      "total": "{n} total",
+      "refresh": "Refresh",
+      "loading": "Loading…",
+      "error": "Failed to load"
+    },
     "locale": {
       "label": "Language",
       "zh": "中文",
