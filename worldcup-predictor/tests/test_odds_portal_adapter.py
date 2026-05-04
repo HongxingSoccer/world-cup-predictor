@@ -14,26 +14,24 @@ from src.adapters.base import AdapterMethodNotSupported
 from src.adapters.odds_portal import OddsPortalAdapter
 
 
-def test_get_rate_limit_returns_default() -> None:
+@pytest.mark.asyncio
+async def test_get_rate_limit_returns_default() -> None:
     adapter = OddsPortalAdapter()
     try:
         config = adapter.get_rate_limit()
         assert config.requests_per_second == pytest.approx(1 / 5)
         assert config.burst_size == 1
     finally:
-        import asyncio
-
-        asyncio.run(adapter.aclose())
+        await adapter.aclose()
 
 
-def test_init_extends_retryable_status_with_403() -> None:
+@pytest.mark.asyncio
+async def test_init_extends_retryable_status_with_403() -> None:
     adapter = OddsPortalAdapter()
     try:
         assert 403 in adapter._retryable_status
     finally:
-        import asyncio
-
-        asyncio.run(adapter.aclose())
+        await adapter.aclose()
 
 
 @pytest.mark.asyncio
