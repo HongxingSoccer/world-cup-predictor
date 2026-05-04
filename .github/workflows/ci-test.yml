@@ -42,8 +42,8 @@ jobs:
 
       - name: Run pytest
         env:
-          DATABASE_URL: sqlite:///:memory:
-          REDIS_URL: redis://localhost:6379/0
+          DATABASE_URL: "sqlite:///:memory:"
+          REDIS_URL: "redis://localhost:6379/0"
         run: pytest --maxfail=1 --disable-warnings -q
 
   java:
