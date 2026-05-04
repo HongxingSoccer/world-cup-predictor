@@ -44,7 +44,8 @@ jobs:
         env:
           DATABASE_URL: "sqlite:///:memory:"
           REDIS_URL: "redis://localhost:6379/0"
-        run: pytest --maxfail=1 --disable-warnings -q
+          MLFLOW_TRACKING_URI: "file:///tmp/mlruns"
+        run: pytest --maxfail=1 --disable-warnings -q --timeout=60
 
   java:
     name: java · gradle test

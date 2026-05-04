@@ -58,3 +58,4 @@ cryptography>=42.0
 # --- Dev / Test ---
 pytest>=7.4
 pytest-asyncio>=0.23
+pytest-timeout>=2.2
