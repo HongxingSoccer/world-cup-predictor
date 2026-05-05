@@ -86,6 +86,7 @@ replay_pid*
 # ── ML artifacts (large + reproducible) ──────────────────────────────
 mlruns/
 mlartifacts/
+reports/
 *.pkl
 *.joblib
 *.h5

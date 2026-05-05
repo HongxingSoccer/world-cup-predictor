@@ -161,7 +161,9 @@ class FeaturePipeline:
                 MatchFeature.label_away_score,
                 MatchFeature.label_result,
                 MatchFeature.computed_at,
+                Match.match_date,
             )
+            .join(Match, Match.id == MatchFeature.match_id)
             .where(MatchFeature.feature_version == self._feature_version)
             .order_by(MatchFeature.match_id)
         )
@@ -179,6 +181,8 @@ class FeaturePipeline:
             record["label_away_score"] = row.label_away_score
             record["label_result"] = row.label_result
             record["computed_at"] = row.computed_at
+            # match_date is required by the backtest runner (rolling-window split).
+            record["match_date"] = row.match_date
             records.append(record)
 
         df = pd.DataFrame.from_records(records).set_index("match_id")

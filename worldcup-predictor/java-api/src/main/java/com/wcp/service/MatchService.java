@@ -78,30 +78,61 @@ public class MatchService {
 
     // --- Mappers ---
 
+    /**
+     * Flattens both shapes the Python ML API returns for a match prediction:
+     *
+     * <ul>
+     *   <li>{@code GET /predictions/today} items — flat keys, {@code home_team}
+     *       is a String, probabilities live at the top level.</li>
+     *   <li>{@code POST /predict} body — {@code home_team} is a
+     *       {@code {id,name,name_zh}} object, probs and {@code over_under_probs}
+     *       are nested under a {@code predictions} sub-object, and there is no
+     *       top-level {@code status}.</li>
+     * </ul>
+     */
     @SuppressWarnings("unchecked")
     private static MatchSummaryResponse toMatchSummary(Map<String, Object> raw) {
+        Map<String, Object> probs = raw.get("predictions") instanceof Map<?, ?> p
+                ? (Map<String, Object>) p
+                : raw;
+        Integer topSignalLevel = asInteger(raw.get("top_signal_level"));
         return new MatchSummaryResponse(
                 asLong(raw.get("match_id")),
                 asInstant(raw.get("match_date")),
-                (String) raw.getOrDefault("home_team", "?"),
-                (String) raw.getOrDefault("away_team", "?"),
+                asTeamName(raw.get("home_team")),
+                asTeamName(raw.get("away_team")),
                 (String) raw.get("competition"),
                 (String) raw.getOrDefault("status", "scheduled"),
-                asDouble(raw.get("prob_home_win")),
-                asDouble(raw.get("prob_draw")),
-                asDouble(raw.get("prob_away_win")),
+                asDouble(probs.get("prob_home_win")),
+                asDouble(probs.get("prob_draw")),
+                asDouble(probs.get("prob_away_win")),
                 asInteger(raw.get("confidence_score")),
                 (String) raw.get("confidence_level"),
-                raw.containsKey("top_signal_level")
-                        ? asInteger(raw.get("top_signal_level")) != null
-                                && (Integer) raw.get("top_signal_level") > 0
-                        : null,
-                asInteger(raw.get("top_signal_level")),
+                topSignalLevel != null ? topSignalLevel > 0 : null,
+                topSignalLevel,
                 (Map<String, Object>) raw.get("odds_analysis"),
-                (Map<String, Object>) raw.get("score_matrix"),
-                (Map<String, Object>) raw.get("over_under_probs"),
+                asMap(probs.get("score_matrix")),
+                asMap(probs.get("over_under_probs")),
                 false
         );
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> asMap(Object value) {
+        return value instanceof Map<?, ?> m ? (Map<String, Object>) m : null;
+    }
+
+    private static String asTeamName(Object value) {
+        if (value instanceof String s) {
+            return s;
+        }
+        if (value instanceof Map<?, ?> m) {
+            Object name = m.get("name");
+            if (name instanceof String s) {
+                return s;
+            }
+        }
+        return "?";
     }
 
     private static Long asLong(Object value) {
