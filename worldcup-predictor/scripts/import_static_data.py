@@ -147,17 +147,23 @@ class _PreloadedMatchPipeline(MatchPipeline):
                 continue
             seen.add(key)
             unique.append(row)
-        # Drop rows that already exist in DB.
+        # Drop rows that already exist in DB. The static dataset has tens of
+        # thousands of matches; chunk the IN clause to avoid blowing Postgres'
+        # parser stack ("stack depth limit exceeded" at ~2048kB).
         if not unique:
             return unique
         keys = list(seen)
-        existing = set(
-            session.execute(
-                select(Match.home_team_id, Match.away_team_id, Match.match_date).where(
-                    tuple_(Match.home_team_id, Match.away_team_id, Match.match_date).in_(keys)
-                )
-            ).all()
-        )
+        existing: set[tuple] = set()
+        chunk_size = 1000
+        for i in range(0, len(keys), chunk_size):
+            chunk = keys[i : i + chunk_size]
+            existing.update(
+                session.execute(
+                    select(Match.home_team_id, Match.away_team_id, Match.match_date).where(
+                        tuple_(Match.home_team_id, Match.away_team_id, Match.match_date).in_(chunk)
+                    )
+                ).all()
+            )
         return [
             row
             for row in unique
