@@ -28,6 +28,33 @@ public class MlApiClient {
     private final @Qualifier("mlApiRestTemplate") RestTemplate restTemplate;
 
     @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> predictionsUpcoming(int days) {
+        String url = UriComponentsBuilder.fromPath("/api/v1/predictions/upcoming")
+                .queryParam("days", days)
+                .toUriString();
+        try {
+            Map<String, Object> body = restTemplate.getForObject(url, Map.class);
+            if (body == null) {
+                return List.of();
+            }
+            Object items = body.get("items");
+            if (items instanceof List<?> list) {
+                return list.stream()
+                        .filter(Map.class::isInstance)
+                        .map(o -> (Map<String, Object>) o)
+                        .toList();
+            }
+            return List.of();
+        } catch (HttpClientErrorException ex) {
+            log.warn("ml_api_predictions_upcoming_4xx status={} body={}", ex.getStatusCode(), ex.getResponseBodyAsString());
+            return List.of();
+        } catch (RestClientException ex) {
+            log.warn("ml_api_predictions_upcoming_failed error={}", ex.getMessage());
+            return List.of();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     public List<Map<String, Object>> predictionsToday(LocalDate date) {
         String url = UriComponentsBuilder.fromPath("/api/v1/predictions/today")
                 .queryParam("date", date.toString())
@@ -106,6 +133,21 @@ public class MlApiClient {
         } catch (RestClientException ex) {
             log.warn("ml_api_worldcup_bracket_failed error={}", ex.getMessage());
             return Map.of("rounds", List.of());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> worldcupTeamPath(long teamId) {
+        try {
+            Map<String, Object> body = restTemplate.getForObject(
+                    "/api/v1/worldcup/team/" + teamId + "/path", Map.class);
+            return body == null ? Map.of() : body;
+        } catch (RestClientException ex) {
+            // 404 either means no simulation exists yet OR the team isn't in
+            // the most recent simulation. Either way the caller renders an
+            // empty state, so swallow + log.
+            log.info("ml_api_worldcup_team_path_unavailable team={} error={}", teamId, ex.getMessage());
+            return Map.of();
         }
     }
 

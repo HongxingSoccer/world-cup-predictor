@@ -76,12 +76,23 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-def main(args: argparse.Namespace) -> int:
+def run_and_persist(
+    *,
+    trials: int = DEFAULT_TRIALS,
+    seed: int | None = None,
+    simulation_version: str = DEFAULT_SIMULATION_VERSION,
+) -> tuple[int, dict[str, Any]] | None:
+    """Run one full Monte Carlo tournament simulation and persist the result.
+
+    Used by both the CLI driver and the daily Celery task. Returns
+    ``(simulation_id, results_payload)`` on success, or ``None`` if there's
+    no data to simulate (e.g., predictions table empty).
+    """
     with session_scope() as session:
         bundle = _load_tournament(session)
         if bundle is None:
             logger.error("tournament_no_data")
-            return 2
+            return None
 
         teams_by_id = bundle["teams_by_id"]
         groups = bundle["groups"]
@@ -98,25 +109,22 @@ def main(args: argparse.Namespace) -> int:
             model_version=model_version,
         )
 
-        rng = np.random.default_rng(args.seed)
+        rng = np.random.default_rng(seed)
         agg = _run_trials(
             groups=groups,
             fixtures_by_group=fixtures_by_group,
             team_to_group=team_to_group,
             team_lambdas=team_lambdas,
-            trials=args.trials,
+            trials=trials,
             rng=rng,
         )
-
         results_payload = _build_results_payload(
-            teams_by_id=teams_by_id,
-            agg=agg,
-            trials=args.trials,
+            teams_by_id=teams_by_id, agg=agg, trials=trials
         )
 
         row = SimulationResult(
-            simulation_version=args.simulation_version,
-            num_simulations=args.trials,
+            simulation_version=simulation_version,
+            num_simulations=trials,
             model_version=model_version,
             results=results_payload,
         )
@@ -126,11 +134,23 @@ def main(args: argparse.Namespace) -> int:
         logger.info(
             "tournament_simulation_persisted",
             simulation_id=sim_id,
-            trials=args.trials,
-            version=args.simulation_version,
+            trials=trials,
+            version=simulation_version,
             model_version=model_version,
         )
 
+    return sim_id, results_payload
+
+
+def main(args: argparse.Namespace) -> int:
+    outcome = run_and_persist(
+        trials=args.trials,
+        seed=args.seed,
+        simulation_version=args.simulation_version,
+    )
+    if outcome is None:
+        return 2
+    sim_id, results_payload = outcome
     print(f"simulation_id={sim_id} trials={args.trials} version={args.simulation_version}")
     _print_top10(results_payload)
     return 0

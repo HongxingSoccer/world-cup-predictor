@@ -35,6 +35,19 @@ class PredictionTodayResponse(BaseModel):
     )
 
 
+class PredictionUpcomingResponse(BaseModel):
+    """Predictions for matches kicking off in the next N days, grouped by date.
+
+    Used by the homepage 'upcoming matches' module — flat date-sorted list so
+    the UI can group on the client without a second round-trip.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    days_ahead: int
+    items: list[PredictionTodayItem]
+
+
 class PredictionDetailResponse(BaseModel):
     """Full body for /predictions/{prediction_id}."""
 

@@ -132,6 +132,46 @@ def _try_load_from_mlflow() -> PoissonBaselineModel | None:
     return None
 
 
+@app.task(
+    bind=True,
+    name="tournament.simulate_daily",
+    max_retries=DEFAULT_MAX_RETRIES,
+    retry_backoff=DEFAULT_RETRY_BACKOFF,
+    retry_backoff_max=DEFAULT_RETRY_BACKOFF_MAX,
+)
+def tournament_simulate_daily(self) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+    """Run the Monte Carlo tournament simulator and persist a fresh result.
+
+    The driver lives in :mod:`scripts.run_tournament_simulation` and exposes
+    :func:`run_and_persist` for in-process callers. We intentionally pin the
+    seed to ``None`` here so each daily run uses fresh randomness — the goal
+    is to reflect the latest persisted predictions, not to be reproducible.
+    """
+    try:
+        # Local import keeps script-level imports (pandas, etc.) out of the
+        # task module's hot-import path.
+        from scripts.run_tournament_simulation import (  # noqa: PLC0415
+            DEFAULT_TRIALS,
+            run_and_persist,
+        )
+
+        outcome = run_and_persist(trials=DEFAULT_TRIALS, seed=None)
+        if outcome is None:
+            logger.warning("tournament_simulate_daily_no_data")
+            return {"status": "skipped", "reason": "no_predictions_to_simulate"}
+        sim_id, payload = outcome
+        leaderboard = payload.get("leaderboard") or []
+        return {
+            "status": "ok",
+            "simulation_id": sim_id,
+            "trials": DEFAULT_TRIALS,
+            "teams": len(leaderboard),
+        }
+    except Exception as exc:
+        logger.exception("tournament_simulate_daily_failed")
+        raise self.retry(exc=exc) from exc
+
+
 def _train_inline() -> PoissonBaselineModel:
     """Fit a Poisson baseline directly from the persisted feature table.
 

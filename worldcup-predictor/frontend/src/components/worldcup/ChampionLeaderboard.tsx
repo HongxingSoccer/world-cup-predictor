@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 
 export interface ChampionLeaderboardRow {
@@ -71,9 +73,19 @@ export function ChampionLeaderboard({
           </thead>
           <tbody>
             {rows.map((row, idx) => (
-              <tr key={row.teamId} className="border-t border-slate-100">
+              <tr
+                key={row.teamId}
+                className="border-t border-slate-100 hover:bg-slate-50"
+              >
                 <td className="px-3 py-2 text-slate-500">{idx + 1}</td>
-                <td className="px-3 py-2 font-medium text-slate-900">{row.team}</td>
+                <td className="px-3 py-2 font-medium text-slate-900">
+                  <Link
+                    href={`/worldcup/team/${row.teamId}`}
+                    className="hover:text-brand-600 hover:underline"
+                  >
+                    {row.team}
+                  </Link>
+                </td>
                 <td className="px-3 py-2 text-right">
                   <Bar value={row.championProb} max={maxChamp} accent="bg-amber-500" />
                 </td>

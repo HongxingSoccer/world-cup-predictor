@@ -7,6 +7,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -38,5 +39,11 @@ public class CompetitionController {
     @Operation(summary = "FIFA World Cup tournament Monte Carlo: champion / top-4 / qualify probabilities.")
     public ResponseEntity<Map<String, Object>> worldcupSimulation() {
         return ResponseEntity.ok(mlApiClient.worldcupSimulation());
+    }
+
+    @GetMapping("/api/v1/competitions/worldcup/team/{teamId}/path")
+    @Operation(summary = "One team's per-stage tournament probabilities (group → champion).")
+    public ResponseEntity<Map<String, Object>> worldcupTeamPath(@PathVariable long teamId) {
+        return ResponseEntity.ok(mlApiClient.worldcupTeamPath(teamId));
     }
 }
