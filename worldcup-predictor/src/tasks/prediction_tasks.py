@@ -24,6 +24,7 @@ from src.config.celery_config import (
 )
 from src.ml.features.pipeline import FeaturePipeline
 from src.ml.models.confidence import ConfidenceCalculator
+from src.ml.models.base import BasePredictionModel
 from src.ml.models.poisson import PoissonBaselineModel
 from src.ml.odds.analyzer import OddsAnalyzer
 from src.ml.prediction_service import PredictionService
@@ -35,7 +36,7 @@ logger = structlog.get_logger(__name__)
 # Process-local cache. Workers run as separate processes, so each gets its
 # own copy after the first call — fine for this footprint (a few hundred
 # floats).
-_cached_model: PoissonBaselineModel | None = None
+_cached_model: BasePredictionModel | None = None
 
 
 @app.task(
@@ -96,7 +97,7 @@ def generate_pre_kickoff_prediction(self, match_id: int) -> dict[str, Any]:  # t
         raise self.retry(exc=exc) from exc
 
 
-def _get_prediction_model() -> PoissonBaselineModel:
+def _get_prediction_model() -> BasePredictionModel:
     """Lazy-load + cache the production model.
 
     Tries MLflow's registry first (same path the API uses at startup); falls
@@ -116,20 +117,22 @@ def _get_prediction_model() -> PoissonBaselineModel:
     return _cached_model
 
 
-def _try_load_from_mlflow() -> PoissonBaselineModel | None:
+def _try_load_from_mlflow() -> BasePredictionModel | None:
     try:
+        from src.config.settings import settings
         from src.ml.training.mlflow_utils import load_production_model
 
-        loaded = load_production_model("poisson_v1")
+        loaded = load_production_model(settings.ACTIVE_MODEL_NAME)
     except Exception as exc:  # mlflow unreachable, registry empty, etc.
         logger.warning("prediction_task_mlflow_unreachable", error=str(exc))
         return None
     if loaded is None:
         return None
-    if isinstance(loaded, PoissonBaselineModel):
-        return loaded
-    # The MLflow loader is typed BasePredictionModel; we only support Poisson here.
-    return None
+    # PoissonGLMModel and DixonColesModel both descend from PoissonBaselineModel
+    # via inheritance OR provide the same interface. The isinstance check here
+    # was originally to gate against an unsupported subclass — keep it permissive
+    # so any registered model class flows through.
+    return loaded
 
 
 @app.task(

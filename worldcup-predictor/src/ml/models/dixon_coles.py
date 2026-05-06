@@ -53,6 +53,17 @@ RHO_BOUNDS: tuple[float, float] = (-0.2, 0.2)
 class DixonColesModel(PoissonBaselineModel):
     """Poisson + Dixon-Coles τ correction (single ρ parameter)."""
 
+    def __init__(
+        self, *, rho: Optional[float] = None, xi: Optional[float] = None
+    ) -> None:
+        super().__init__()
+        if rho is not None and not (RHO_BOUNDS[0] <= rho <= RHO_BOUNDS[1]):
+            raise ValueError(f"rho must lie in {RHO_BOUNDS}; got {rho}")
+        if xi is not None and xi < 0:
+            raise ValueError(f"xi must be >= 0; got {xi}")
+        self._fixed_rho = rho
+        self._xi = xi
+
     def get_model_version(self) -> str:
         return MODEL_VERSION
 
@@ -61,7 +72,7 @@ class DixonColesModel(PoissonBaselineModel):
     def train(self, features_df: pd.DataFrame) -> None:
         """Fit Poisson params via ``super().train``, then a 1-D MLE for ρ."""
         super().train(features_df)
-        rho = self._fit_rho(features_df)
+        rho = self._fixed_rho if self._fixed_rho is not None else self._fit_rho(features_df)
         self.params["rho"] = rho
         logger.info(
             "dixon_coles_trained",

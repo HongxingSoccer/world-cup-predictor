@@ -56,6 +56,21 @@ class Settings(BaseSettings):
         default_factory=lambda: ["1:2026"],
     )
 
+    # The Odds API sport keys to pull live fixtures + odds for. These follow the
+    # Odds API naming (e.g. ``soccer_fifa_world_cup``, ``soccer_epl``); they are
+    # *separate* from ACTIVE_COMPETITIONS because the two providers don't share
+    # an id space. Override via env (comma-separated) when adding leagues.
+    ODDS_API_SPORT_KEYS: Annotated[List[str], NoDecode] = Field(
+        default_factory=lambda: ["soccer_fifa_world_cup"],
+    )
+    # Hard cap on Odds API calls per ingest run to protect the 500/month free
+    # quota. Each sport_key listing = 1 call; per-event detail fetches are not
+    # used by the bulk pipeline.
+    ODDS_API_MAX_CALLS_PER_RUN: int = Field(default=10, ge=1, le=500)
+    # Default competition + season used when ingesting OddsAPI fixtures whose
+    # sport_title doesn't already exist as a Competition row.
+    ODDS_API_DEFAULT_SEASON_YEAR: int = Field(default=2026)
+
     # --- ML inference API (Phase 2) ---
     # Static API key validated by the FastAPI middleware on every request.
     # Empty string disables auth (useful for local dev / tests).
@@ -80,6 +95,10 @@ class Settings(BaseSettings):
         description="MLflow tracking server endpoint.",
     )
     MLFLOW_DEFAULT_EXPERIMENT: str = Field(default="wcp-poisson-baseline")
+    # Which registered model the API + Celery workers load at Production stage.
+    # Switching this lets us promote a new model class (Dixon-Coles, GLM, etc.)
+    # without code changes — set ACTIVE_MODEL_NAME in `.env` and restart.
+    ACTIVE_MODEL_NAME: str = Field(default="poisson_v1")
 
     # --- S3 / MinIO (Phase 3 — share-card object storage) ---
     # Endpoint can be a MinIO URL (e.g. http://minio:9000) or any S3-API-
@@ -95,7 +114,7 @@ class Settings(BaseSettings):
     S3_PUBLIC_BASE_URL: str = Field(default="")
 
     @field_validator(
-        "KAFKA_BROKERS", "ACTIVE_COMPETITIONS", "API_CORS_ORIGINS", mode="before"
+        "KAFKA_BROKERS", "ACTIVE_COMPETITIONS", "ODDS_API_SPORT_KEYS", "API_CORS_ORIGINS", mode="before"
     )
     @classmethod
     def _split_csv(cls, value):

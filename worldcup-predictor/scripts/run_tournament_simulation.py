@@ -179,16 +179,19 @@ def _load_tournament(session: Session) -> dict[str, Any] | None:
     if not matches:
         return None
 
-    # Prefer the prediction with the highest confidence per match (mirrors the
-    # bracket endpoint's choice when duplicate predictions exist).
+    # Filter to the currently-active model version. After a model upgrade the
+    # predictions table holds rows for both old and new model_versions; the
+    # API routes already filter to ACTIVE_MODEL_NAME, and the MC has to do
+    # the same so the simulation reflects what users see on the dashboard.
+    from src.config.settings import settings  # local: avoid heavy import on module load
+
     pred_rows = session.execute(
-        select(Prediction).where(Prediction.match_id.in_([m.id for m in matches]))
+        select(Prediction).where(
+            Prediction.match_id.in_([m.id for m in matches]),
+            Prediction.model_version == settings.ACTIVE_MODEL_NAME,
+        )
     ).scalars().all()
-    pred_by_match: dict[int, Prediction] = {}
-    for p in pred_rows:
-        existing = pred_by_match.get(p.match_id)
-        if existing is None or (p.confidence_score or 0) > (existing.confidence_score or 0):
-            pred_by_match[p.match_id] = p
+    pred_by_match: dict[int, Prediction] = {p.match_id: p for p in pred_rows}
 
     if not pred_by_match:
         return None

@@ -207,23 +207,51 @@ def _bust_today_cache() -> None:
         logger.warning("today_cache_bust_failed", error=str(exc))
 
 
-def _load_model(model_path: str | None) -> PoissonBaselineModel:
-    if model_path is None:
-        # Train an in-process model from match_features so the script is fully
-        # self-contained. The fit is cheap (closed-form Poisson rate).
-        return _train_inline_model()
-    import joblib  # local import; avoid heavy deps when not needed
+def _load_model(model_path: str | None):  # type: ignore[no-untyped-def]
+    """Resolve which trained model to use, in order of preference:
 
-    model: PoissonBaselineModel = joblib.load(model_path)
-    logger.info("predict_model_loaded", path=model_path, version=model.get_model_version())
-    return model
+    1. Explicit ``--model-path`` (joblib pickle).
+    2. The MLflow Production-staged version of ``settings.ACTIVE_MODEL_NAME``.
+       This is the same loader the FastAPI app uses at startup, so the
+       force-refresh path stays in sync with what the API will serve.
+    3. Inline training of the Poisson baseline as a last-resort fallback.
+    """
+    if model_path is not None:
+        import joblib
+
+        model = joblib.load(model_path)
+        logger.info(
+            "predict_model_loaded_from_path",
+            path=model_path,
+            version=model.get_model_version(),
+        )
+        return model
+
+    # Try the same MLflow loader the API uses.
+    try:
+        from src.ml.training.mlflow_utils import load_production_model
+
+        loaded = load_production_model(settings.ACTIVE_MODEL_NAME)
+        if loaded is not None:
+            logger.info(
+                "predict_model_loaded_from_mlflow",
+                version=loaded.get_model_version(),
+                trained_on_n_matches=loaded.params.get("trained_on_n_matches"),
+            )
+            return loaded
+    except Exception as exc:  # mlflow unreachable, missing model, etc.
+        logger.warning("predict_model_mlflow_load_failed", error=str(exc))
+
+    return _train_inline_model()
 
 
 def _train_inline_model() -> PoissonBaselineModel:
-    """Pull match_features rows + labels from Postgres and fit a Poisson model.
+    """Fallback: train the Poisson baseline directly from ``match_features``.
 
-    Mirrors the trainer in :mod:`scripts.train_model` but skips MLflow and
-    the parquet round-trip — caller is presumed to want a hot model right now.
+    Used when MLflow is unreachable AND no explicit ``--model-path`` was
+    supplied. Hardcoded to ``PoissonBaselineModel`` because the only point
+    of this fallback is to avoid a hard failure — if the operator wants a
+    specific model class they should register it in MLflow.
     """
     import pandas as pd
     from sqlalchemy import select
