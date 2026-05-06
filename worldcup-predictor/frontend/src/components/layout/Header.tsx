@@ -32,6 +32,9 @@ export function Header() {
           <Link href="/worldcup/bracket" className="text-slate-600 hover:text-slate-900">
             淘汰赛
           </Link>
+          <Link href="/worldcup/simulation" className="text-slate-600 hover:text-slate-900">
+            夺冠概率
+          </Link>
           <Link href="/subscribe" className="text-slate-600 hover:text-slate-900">
             订阅
           </Link>

@@ -19,6 +19,7 @@ from src.events.topics import TOPIC_MATCH_FINISHED, TOPIC_MATCH_UPDATED
 from src.models.competition import Competition
 from src.models.match import Match
 from src.models.season import Season
+from src.models.team import Team
 from src.pipelines.base import BasePipeline
 from src.utils.name_mapping import TeamNameMapper
 from src.utils.validators import DataValidationError, validate_match_fields
@@ -78,6 +79,9 @@ class MatchPipeline(BasePipeline[MatchDTO]):
                 )
                 continue
 
+            self._stamp_team_external_id(session, home_id, dto.home_team_external_id)
+            self._stamp_team_external_id(session, away_id, dto.away_team_external_id)
+
             api_id = _maybe_int(dto.external_id)
             rows.append(
                 {
@@ -126,6 +130,26 @@ class MatchPipeline(BasePipeline[MatchDTO]):
         return TOPIC_MATCH_FINISHED if row.get("status") == "finished" else TOPIC_MATCH_UPDATED
 
     # --- Private helpers ---
+
+    def _stamp_team_external_id(
+        self, session: Session, team_id: int, external_id: str | None
+    ) -> None:
+        """Backfill ``teams.api_football_id`` from a fixture payload.
+
+        Only writes when (a) the DTO actually carried an id and (b) the team
+        row is missing one — preserves any value already there so we don't
+        churn the row on every re-ingest.
+        """
+        if external_id is None or self._adapter.source_name != "api_football":
+            return
+        api_id = _maybe_int(external_id)
+        if api_id is None:
+            return
+        session.execute(
+            Team.__table__.update()
+            .where(Team.id == team_id, Team.api_football_id.is_(None))
+            .values(api_football_id=api_id)
+        )
 
     def _resolve_season(self, session: Session, dto: MatchDTO) -> int | None:
         stmt = (

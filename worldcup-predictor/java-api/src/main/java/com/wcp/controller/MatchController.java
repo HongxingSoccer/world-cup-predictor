@@ -40,6 +40,18 @@ public class MatchController {
         return ResponseEntity.ok(matchService.getTodayMatches(target, tier));
     }
 
+    @GetMapping("/api/v1/matches/upcoming")
+    @Operation(summary = "Predictions for matches kicking off in the next N days.")
+    public ResponseEntity<List<MatchSummaryResponse>> upcoming(
+            @RequestParam(defaultValue = "60") int days,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        // Clamp the window so a malicious caller can't trigger a multi-year scan.
+        int clamped = Math.max(1, Math.min(days, 180));
+        SubscriptionTier tier = (principal != null) ? principal.subscriptionTier() : SubscriptionTier.FREE;
+        return ResponseEntity.ok(matchService.getUpcomingMatches(clamped, tier));
+    }
+
     @GetMapping("/api/v1/matches/{id}")
     @Operation(summary = "Match detail with tier-aware prediction body.")
     public ResponseEntity<MatchSummaryResponse> detail(

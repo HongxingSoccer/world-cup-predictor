@@ -42,6 +42,14 @@ public class MatchService {
                 .toList();
     }
 
+    public List<MatchSummaryResponse> getUpcomingMatches(int days, SubscriptionTier tier) {
+        List<Map<String, Object>> raw = mlApiClient.predictionsUpcoming(days);
+        return raw.stream()
+                .map(MatchService::toMatchSummary)
+                .map(s -> contentTierService.applyTier(s, tier))
+                .toList();
+    }
+
     public MatchSummaryResponse getMatchDetail(long matchId, SubscriptionTier tier) {
         Map<String, Object> body = mlApiClient.predict(matchId, true);
         if (body.isEmpty()) {

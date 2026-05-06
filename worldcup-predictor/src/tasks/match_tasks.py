@@ -41,6 +41,12 @@ _LIVE_LOOKAHEAD = timedelta(hours=4)  # treat anything starting in 4h as "live n
 _POST_MATCH_DELAY = timedelta(hours=2)
 _ODDS_CLOSE_WINDOW = timedelta(hours=2)
 _ODDS_PRE_WINDOW = timedelta(hours=24)
+# Pre-kickoff prediction window: enqueue a fresh prediction for any scheduled
+# match starting 3–5 days from now that doesn't already have one. Wider than
+# the odds windows because predictions are cheaper to refresh and the user
+# wants the score / 1×2 / over-under numbers visible well before kickoff.
+_PREDICTION_PRE_WINDOW_LOWER = timedelta(days=3)
+_PREDICTION_PRE_WINDOW_UPPER = timedelta(days=5)
 
 
 # --- Periodic ---
@@ -135,7 +141,13 @@ def dispatch_dynamic_jobs() -> dict[str, Any]:
     doesn't import them at module-load time.
     """
     now = datetime.now(timezone.utc)
-    counts = {"live": 0, "post_match_stats": 0, "odds_pre": 0, "odds_close": 0}
+    counts = {
+        "live": 0,
+        "post_match_stats": 0,
+        "odds_pre": 0,
+        "odds_close": 0,
+        "predictions_pre_kickoff": 0,
+    }
 
     with session_scope() as session:
         for match in _live_matches(session, now):
@@ -150,6 +162,9 @@ def dispatch_dynamic_jobs() -> dict[str, Any]:
         for match in _odds_close_to_kickoff_candidates(session, now):
             app.send_task("odds.sync_pre_kickoff_frequent", args=[match.id])
             counts["odds_close"] += 1
+        for match_id in _prediction_pre_kickoff_candidates(session, now):
+            app.send_task("predictions.generate_pre_kickoff", args=[match_id])
+            counts["predictions_pre_kickoff"] += 1
 
     logger.info("dispatch_dynamic_jobs_completed", **counts)
     return counts
@@ -210,3 +225,28 @@ def _odds_close_to_kickoff_candidates(session: Any, now: datetime) -> list[Match
         .order_by(Match.match_date)
     )
     return list(session.scalars(stmt))
+
+
+def _prediction_pre_kickoff_candidates(session: Any, now: datetime) -> list[int]:
+    """Match ids in the [+3d, +5d] window that have no prediction yet.
+
+    The existence check is on `predictions.match_id` regardless of
+    `model_version` — once a match has any prediction, the rolling task is
+    done with it. Operators who want to refresh after a re-train run
+    `scripts.generate_predictions --force` instead.
+    """
+    from src.models.prediction import Prediction  # local: avoid heavy imports at module load
+
+    stmt = (
+        select(Match.id)
+        .where(
+            Match.status == "scheduled",
+            Match.match_date >= now + _PREDICTION_PRE_WINDOW_LOWER,
+            Match.match_date <= now + _PREDICTION_PRE_WINDOW_UPPER,
+            ~select(Prediction.id)
+            .where(Prediction.match_id == Match.id)
+            .exists(),
+        )
+        .order_by(Match.match_date)
+    )
+    return [int(row[0]) for row in session.execute(stmt).all()]

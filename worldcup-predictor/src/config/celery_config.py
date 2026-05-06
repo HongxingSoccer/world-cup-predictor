@@ -92,6 +92,13 @@ app.conf.beat_schedule = {
         "task": "settlement.scan_finished_matches",
         "schedule": crontab(minute=15),
     },
+    # Tournament simulation runs every day at 03:30 UTC — late enough that
+    # any new predictions ingested in the prior day are visible, early enough
+    # that the dashboard is fresh by morning. Cheap (a few seconds per run).
+    "tournament.simulate_daily": {
+        "task": "tournament.simulate_daily",
+        "schedule": crontab(hour=3, minute=30),
+    },
 }
 
 # Default retry policy applied via task decorator; centralized constants here

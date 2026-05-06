@@ -56,9 +56,12 @@ class ApiFootballAdapter(BaseDataSourceAdapter):
     explicit ``rate_limit`` reflecting the user's actual subscription.
     """
 
+    # The free tier is 10 req/min — undershoot to 8/min (one every 7.5s) and
+    # disable bursting so a tight loop never trips the 429 ceiling. Paid tiers
+    # should override via the constructor's `rate_limit` argument.
     DEFAULT_RATE_LIMIT: RateLimitConfig = RateLimitConfig(
-        requests_per_second=0.5,  # ~30/min, matches paid mid-tier
-        burst_size=5,
+        requests_per_second=8 / 60,
+        burst_size=1,
     )
 
     def __init__(
@@ -116,8 +119,17 @@ class ApiFootballAdapter(BaseDataSourceAdapter):
 
         home_id = fixture["teams"]["home"]["id"]
         away_id = fixture["teams"]["away"]["id"]
-        home_stats = self._team_stats_block(stats_payload, team_id=home_id, is_home=True)
-        away_stats = self._team_stats_block(stats_payload, team_id=away_id, is_home=False)
+        # The /fixtures/statistics response omits fixture_id from each team
+        # block, so we thread the parent fixture id through here. Without it
+        # `match_external_id` lands as the empty string and StatsPipeline drops
+        # the row at resolve time.
+        fixture_id = int(fixture["fixture"]["id"])
+        home_stats = self._team_stats_block(
+            stats_payload, team_id=home_id, is_home=True, fixture_id=fixture_id
+        )
+        away_stats = self._team_stats_block(
+            stats_payload, team_id=away_id, is_home=False, fixture_id=fixture_id
+        )
 
         return MatchDetailDTO(
             match=match_dto,
@@ -212,6 +224,8 @@ class ApiFootballAdapter(BaseDataSourceAdapter):
             external_id=str(fixture["id"]),
             home_team_name=teams["home"]["name"],
             away_team_name=teams["away"]["name"],
+            home_team_external_id=str(teams["home"]["id"]) if teams["home"].get("id") else None,
+            away_team_external_id=str(teams["away"]["id"]) if teams["away"].get("id") else None,
             match_date=datetime.fromisoformat(fixture["date"].replace("Z", "+00:00")),
             status=map_status(fixture["status"]["short"]),
             home_score=goals.get("home"),
@@ -228,13 +242,14 @@ class ApiFootballAdapter(BaseDataSourceAdapter):
         *,
         team_id: int,
         is_home: bool,
+        fixture_id: int,
     ) -> MatchStatsDTO | None:
         block = next((b for b in payload if b["team"]["id"] == team_id), None)
         if block is None:
             return None
         stats = {item["type"]: item["value"] for item in block.get("statistics", [])}
         return MatchStatsDTO(
-            match_external_id=str(block.get("fixture_id") or ""),
+            match_external_id=str(fixture_id),
             team_external_id=str(team_id),
             is_home=is_home,
             possession=_pct(stats.get("Ball Possession")),

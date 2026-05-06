@@ -101,6 +101,48 @@ async def test_fetch_matches_unwraps_envelope_and_maps_to_match_dto() -> None:
     assert match.season_year == 2026
     assert match.venue == "MetLife Stadium"
     assert match.round == "Group A"
+    # Team external ids are threaded through so MatchPipeline can stamp
+    # `teams.api_football_id` onto the resolved teams row — without this
+    # StatsPipeline cannot resolve teams when later pulling /fixtures/statistics.
+    assert match.home_team_external_id == "11"
+    assert match.away_team_external_id == "22"
+
+
+@pytest.mark.asyncio
+async def test_fetch_match_detail_threads_fixture_id_into_stats_dtos() -> None:
+    """Regression: /fixtures/statistics blocks omit fixture_id, so
+    `_team_stats_block` must receive it from the parent fixture call.
+    Without this fix, MatchStatsDTO.match_external_id was '' and
+    StatsPipeline._resolve_match dropped every row at int-parse."""
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/fixtures":
+            return httpx.Response(200, json=_envelope([_fixture_payload()]))
+        if request.url.path == "/fixtures/statistics":
+            return httpx.Response(200, json=_envelope([
+                {"team": {"id": 11, "name": "USA"}, "statistics": [
+                    {"type": "Ball Possession", "value": "55%"},
+                    {"type": "expected_goals", "value": "1.42"},
+                ]},
+                {"team": {"id": 22, "name": "Mexico"}, "statistics": [
+                    {"type": "Ball Possession", "value": "45%"},
+                    {"type": "expected_goals", "value": "0.88"},
+                ]},
+            ]))
+        if request.url.path == "/fixtures/players":
+            return httpx.Response(200, json=_envelope([]))
+        raise AssertionError(f"unexpected path {request.url.path}")
+
+    adapter = _build_adapter(httpx.MockTransport(handler))
+    try:
+        detail = await adapter.fetch_match_detail(12345)
+    finally:
+        await adapter.aclose()
+
+    assert detail.home_stats is not None and detail.away_stats is not None
+    assert detail.home_stats.match_external_id == "12345"
+    assert detail.away_stats.match_external_id == "12345"
+    assert float(detail.home_stats.xg) == pytest.approx(1.42)
+    assert float(detail.away_stats.xg) == pytest.approx(0.88)
 
 
 @pytest.mark.asyncio

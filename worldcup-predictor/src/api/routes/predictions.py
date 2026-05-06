@@ -24,6 +24,7 @@ from src.api.schemas.predictions import (
     PredictionDetailResponse,
     PredictionTodayItem,
     PredictionTodayResponse,
+    PredictionUpcomingResponse,
 )
 from src.models.match import Match
 from src.models.odds_analysis import OddsAnalysis
@@ -68,6 +69,83 @@ def predictions_today(
     response = PredictionTodayResponse(date=target.isoformat(), items=items, cached=False)
     _try_cache_write(redis_client, cache_key, response, cache_ttl)
     return response
+
+
+@router.get("/upcoming", response_model=PredictionUpcomingResponse)
+def predictions_upcoming(
+    days: int = Query(default=60, ge=1, le=180),
+    min_confidence: int = Query(default=0, ge=0, le=100),
+    db_session: Session = Depends(get_db_session),
+) -> PredictionUpcomingResponse:
+    """Return predictions for every scheduled match kicking off in the next ``days``.
+
+    Drives the homepage 'upcoming matches' module — orders by kickoff so the
+    client can group by date with a single pass. No Redis cache: the result
+    rolls forward every day and the underlying query is small (≤ 100 rows
+    in practice).
+    """
+    now = datetime.now(timezone.utc)
+    end = now + timedelta(days=days)
+
+    HomeTeam = Team.__table__.alias("home_team")  # noqa: N806
+    AwayTeam = Team.__table__.alias("away_team")  # noqa: N806
+
+    stmt = (
+        select(
+            Prediction.id,
+            Prediction.match_id,
+            Prediction.prob_home_win,
+            Prediction.prob_draw,
+            Prediction.prob_away_win,
+            Prediction.confidence_score,
+            Prediction.confidence_level,
+            Match.match_date,
+            HomeTeam.c.name.label("home_team"),
+            AwayTeam.c.name.label("away_team"),
+            Season.year,
+        )
+        .join(Match, Match.id == Prediction.match_id)
+        .join(HomeTeam, HomeTeam.c.id == Match.home_team_id)
+        .join(AwayTeam, AwayTeam.c.id == Match.away_team_id)
+        .join(Season, Season.id == Match.season_id)
+        .where(
+            Match.match_date >= now,
+            Match.match_date < end,
+            Match.status == "scheduled",
+            Prediction.confidence_score >= min_confidence,
+        )
+        .order_by(Match.match_date)
+    )
+    rows = db_session.execute(stmt).all()
+
+    pred_ids = [row.id for row in rows]
+    sig_levels: dict[int, int] = {}
+    if pred_ids:
+        sig_levels = dict(
+            db_session.execute(
+                select(OddsAnalysis.prediction_id, OddsAnalysis.signal_level)
+                .where(OddsAnalysis.prediction_id.in_(pred_ids))
+                .order_by(OddsAnalysis.signal_level.desc())
+            ).all()
+        )
+
+    items = [
+        PredictionTodayItem(
+            match_id=row.match_id,
+            match_date=row.match_date,
+            home_team=row.home_team,
+            away_team=row.away_team,
+            competition=str(row.year) if row.year else None,
+            prob_home_win=float(row.prob_home_win),
+            prob_draw=float(row.prob_draw),
+            prob_away_win=float(row.prob_away_win),
+            confidence_score=int(row.confidence_score),
+            confidence_level=row.confidence_level,
+            top_signal_level=int(sig_levels.get(row.id, 0)),
+        )
+        for row in rows
+    ]
+    return PredictionUpcomingResponse(days_ahead=days, items=items)
 
 
 @router.get("/{prediction_id}", response_model=PredictionDetailResponse)

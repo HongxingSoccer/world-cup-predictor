@@ -27,8 +27,10 @@ from __future__ import annotations
 import argparse
 import asyncio
 import sys
+from datetime import datetime, timezone
 
 import structlog
+from sqlalchemy import func
 
 from src.config.settings import settings
 from src.utils.db import session_scope
@@ -61,6 +63,24 @@ def parse_args() -> argparse.Namespace:
         metavar=f"1..{len(ALL_STEPS)}",
         help="Resume from this 1-indexed step (default: 1).",
     )
+    parser.add_argument(
+        "--only-step",
+        type=int,
+        default=None,
+        choices=range(1, len(ALL_STEPS) + 1),
+        metavar=f"1..{len(ALL_STEPS)}",
+        help="Run exactly this single step and stop. Overrides --step's range.",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help=(
+            "Per-step processing cap. Currently respected by step 4 "
+            "(match_stats) — useful for piloting against the API-Football "
+            "free-tier 100 req/day quota before scaling up."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -80,11 +100,16 @@ async def main_async(args: argparse.Namespace) -> None:
     )
 
     for index, runner in enumerate(runners, start=1):
-        if index < args.step:
+        if args.only_step is not None and index != args.only_step:
+            continue
+        if args.only_step is None and index < args.step:
             logger.info("backfill_step_skipped", step=index, name=ALL_STEPS[index - 1])
             continue
         logger.info("backfill_step_started", step=index, name=ALL_STEPS[index - 1])
-        await runner(start_year)
+        if index == 4:  # match_stats — only step that respects --limit today
+            await runner(start_year, limit=args.limit)
+        else:
+            await runner(start_year)
         logger.info("backfill_step_completed", step=index, name=ALL_STEPS[index - 1])
 
 
@@ -155,9 +180,94 @@ async def _step_matches(start_year: int) -> None:
         producer.close()
 
 
-async def _step_match_stats(start_year: int) -> None:
-    # TODO(Phase 2): iterate finished matches per season and run StatsPipeline.
-    logger.info("match_stats_backfill_stub", note="iterate finished matches")
+async def _step_match_stats(start_year: int, *, limit: int | None = None) -> None:
+    """Iterate finished matches with an API-Football fixture id and pull
+    team-level stats (possession / shots / xG / etc.) into ``match_stats``.
+
+    Idempotent on two levels: the script skips matches that already have stats
+    for both teams, and ``StatsPipeline.build_upsert`` does ``ON CONFLICT DO
+    UPDATE`` so partial coverage gets healed on re-run. Matches without
+    ``api_football_id`` are skipped silently — populating that mapping is a
+    separate concern (see ``_step_matches`` for the API-Football re-ingest path).
+
+    Args:
+        start_year: Earliest match year to consider.
+        limit: Stop after processing this many matches. Use this aggressively
+            on the API-Football free tier (100 req/day, ~3 reqs per match).
+    """
+    from sqlalchemy import select
+
+    from src.adapters.api_football import ApiFootballAdapter
+    from src.events.producer import build_producer
+    from src.models.match import Match
+    from src.models.match_stats import MatchStats
+    from src.pipelines.stats_pipeline import StatsPipeline
+    from src.utils.db import SessionLocal, session_scope
+
+    start_dt = datetime(start_year, 1, 1, tzinfo=timezone.utc)
+
+    with session_scope() as session:
+        already = set(
+            row[0]
+            for row in session.execute(
+                select(MatchStats.match_id).group_by(MatchStats.match_id).having(
+                    func.count(MatchStats.team_id) >= 2
+                )
+            ).all()
+        )
+        candidates = session.execute(
+            select(Match.id, Match.api_football_id)
+            .where(
+                Match.status == "finished",
+                Match.match_date >= start_dt,
+                Match.api_football_id.isnot(None),
+            )
+            .order_by(Match.match_date.desc())
+        ).all()
+
+    todo: list[tuple[int, int]] = [
+        (mid, api_id) for mid, api_id in candidates if mid not in already
+    ]
+    if limit is not None and limit > 0:
+        todo = todo[:limit]
+    logger.info(
+        "match_stats_backfill_planned",
+        candidates=len(candidates),
+        already_done=len(already),
+        todo=len(todo),
+        limit=limit,
+    )
+    if not todo:
+        return
+
+    producer = build_producer(enabled=False)
+    failed = 0
+    try:
+        async with ApiFootballAdapter() as adapter:
+            pipeline = StatsPipeline(adapter, SessionLocal, producer=producer)
+            for index, (mid, api_id) in enumerate(todo, start=1):
+                try:
+                    result = await pipeline.run(match_id=api_id)
+                except Exception as exc:  # noqa: BLE001 — keep the batch going
+                    failed += 1
+                    logger.warning(
+                        "match_stats_failed",
+                        match_id=mid,
+                        api_football_id=api_id,
+                        error=repr(exc),
+                    )
+                    continue
+                if index % 25 == 0 or index == len(todo):
+                    logger.info(
+                        "match_stats_progress",
+                        done=index,
+                        total=len(todo),
+                        failed=failed,
+                        last_inserted=result.inserted,
+                    )
+    finally:
+        producer.close()
+    logger.info("match_stats_backfill_done", processed=len(todo), failed=failed)
 
 
 async def _step_fbref_xg(start_year: int) -> None:

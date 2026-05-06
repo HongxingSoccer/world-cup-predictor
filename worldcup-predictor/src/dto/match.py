@@ -27,6 +27,19 @@ class MatchDTO(BaseModel):
     venue: Optional[str] = Field(default=None, description="Stadium name, if known.")
     round: Optional[str] = Field(default=None, description="Round / matchweek label (e.g. 'Group A', 'R16').")
     competition_name: str = Field(min_length=1, description="Competition name as reported by the source.")
+    home_team_external_id: Optional[str] = Field(
+        default=None,
+        description=(
+            "Source-native team id for the home side (e.g. API-Football team id). "
+            "Optional: the static-CSV adapter has no IDs to populate. When set, the "
+            "match pipeline propagates it onto the resolved teams row so downstream "
+            "stats / player calls can lookup by external id."
+        ),
+    )
+    away_team_external_id: Optional[str] = Field(
+        default=None,
+        description="Same as home_team_external_id but for the away side.",
+    )
     season_year: int = Field(
         ge=1872,
         le=2100,
