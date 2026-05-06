@@ -198,16 +198,24 @@ def dixon_coles_score_matrix(
 
 
 def compute_time_decay_weights(
-    dates: Any, reference: datetime, *, xi: float
+    dates: Any, reference: datetime, *, xi: float, n_rows: Optional[int] = None
 ) -> np.ndarray:
     """Return ``exp(-xi · Δdays)`` weights, one per row, never below 1e-6.
 
     Used by :func:`optimize_dc_params` for weighted MLE. ``dates`` may be
     ``None`` or contain NaT — those rows fall back to weight 1.0 so a
-    feature DataFrame without ``match_date`` still trains."""
-    if dates is None or xi == 0:
-        n = 0 if dates is None else len(dates)
-        return np.ones(n, dtype=float) if n else np.array([1.0])
+    feature DataFrame without ``match_date`` still trains. When ``dates`` is
+    ``None``, pass ``n_rows`` to receive one weight per row; if neither is
+    available, this function preserves the legacy fallback of returning
+    ``np.array([1.0])``.
+    """
+    if dates is None:
+        return np.ones(n_rows, dtype=float) if n_rows else np.array([1.0])
+    if xi == 0:
+        n = len(dates)
+        return np.ones(n, dtype=float) if n else (
+            np.ones(n_rows, dtype=float) if n_rows else np.array([1.0])
+        )
     series = pd.to_datetime(dates, utc=True, errors="coerce")
     ref = (
         pd.Timestamp(reference).tz_convert("UTC")
