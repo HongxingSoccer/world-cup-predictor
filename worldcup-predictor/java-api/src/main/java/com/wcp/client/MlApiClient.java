@@ -84,4 +84,43 @@ public class MlApiClient {
             return Map.of();
         }
     }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> worldcupStandings() {
+        try {
+            Map<String, Object> body = restTemplate.getForObject(
+                    "/api/v1/competitions/worldcup/standings", Map.class);
+            return body == null ? Map.of("groups", List.of()) : body;
+        } catch (RestClientException ex) {
+            log.warn("ml_api_worldcup_standings_failed error={}", ex.getMessage());
+            return Map.of("groups", List.of());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> worldcupBracket() {
+        try {
+            Map<String, Object> body = restTemplate.getForObject(
+                    "/api/v1/competitions/worldcup/bracket", Map.class);
+            return body == null ? Map.of("rounds", List.of()) : body;
+        } catch (RestClientException ex) {
+            log.warn("ml_api_worldcup_bracket_failed error={}", ex.getMessage());
+            return Map.of("rounds", List.of());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> worldcupSimulation() {
+        try {
+            Map<String, Object> body = restTemplate.getForObject(
+                    "/api/v1/worldcup/simulation", Map.class);
+            return body == null ? Map.of("results", Map.of("leaderboard", List.of())) : body;
+        } catch (RestClientException ex) {
+            // Includes 404 SIMULATION_NOT_FOUND when no Monte Carlo run has been
+            // persisted yet — return an empty payload so the frontend can render
+            // a "no simulation yet" state instead of failing.
+            log.info("ml_api_worldcup_simulation_unavailable error={}", ex.getMessage());
+            return Map.of("results", Map.of("leaderboard", List.of()));
+        }
+    }
 }
