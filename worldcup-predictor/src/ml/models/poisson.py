@@ -135,8 +135,15 @@ class PoissonBaselineModel(BasePredictionModel):
         offset = (home_win_rate - 0.45) / 0.05 * 0.05
         return max(1.05, min(1.40, DEFAULT_HOME_FACTOR + offset))
 
+    def _make_score_matrix(
+        self, lambda_home: float, lambda_away: float
+    ) -> list[list[float]]:
+        """Hook so subclasses (e.g. Dixon-Coles) can apply a τ correction
+        without re-implementing the rest of `_build_result`."""
+        return _score_matrix(lambda_home, lambda_away, size=SCORE_MATRIX_SIZE)
+
     def _build_result(self, lambda_home: float, lambda_away: float) -> PredictionResult:
-        score_matrix = _score_matrix(lambda_home, lambda_away, size=SCORE_MATRIX_SIZE)
+        score_matrix = self._make_score_matrix(lambda_home, lambda_away)
         prob_home_win, prob_draw, prob_away_win = _outcome_probs(score_matrix)
         ou_probs = _over_under_probs(score_matrix, lines=OVER_UNDER_LINES)
         btts_prob = _btts_yes_prob(score_matrix)
