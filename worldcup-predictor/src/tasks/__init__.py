@@ -10,6 +10,7 @@ from . import (
     maintenance_tasks,
     match_tasks,
     odds_tasks,
+    prediction_tasks,
     settlement_tasks,
     stats_tasks,
 )
@@ -19,6 +20,7 @@ __all__ = [
     "maintenance_tasks",
     "match_tasks",
     "odds_tasks",
+    "prediction_tasks",
     "settlement_tasks",
     "stats_tasks",
 ]
