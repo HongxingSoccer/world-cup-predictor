@@ -1,74 +1,68 @@
-"""Dixon-Coles match-prediction model (Phase 4 v1).
+"""Dixon-Coles match-prediction model.
 
-Extends the Phase-2 :class:`PoissonBaselineModel` with two refinements taken
-straight from Dixon & Coles (1997):
+Extends :class:`PoissonBaselineModel` with the Dixon & Coles (1997) low-score
+correction. Two independent Poissons over-predict 0-0 / 0-1 / 1-0 / 1-1 in
+real football data; DC scales those four cells by
 
-1. **Low-score correlation correction** — multiplies the joint Poisson PMF by
-   ``τ(x, y, λ_h, λ_a, ρ)`` for the four cells ``(0,0)/(0,1)/(1,0)/(1,1)`` so
-   that draws and 1-0/0-1 outcomes are no longer treated as independent.
-2. **Exponential time-decay weighting** — each historical match contributes a
-   weight ``w(Δt) = exp(-ξ · Δt)`` where ``Δt`` is the age of the match in
-   days. This down-weights stale results when calibrating league averages.
+    τ(0,0) = 1 − λ_h · λ_a · ρ
+    τ(0,1) = 1 + λ_h · ρ
+    τ(1,0) = 1 + λ_a · ρ
+    τ(1,1) = 1 − ρ
 
-The two parameters are exposed on the constructor; the defaults are taken
-from common literature (``rho = -0.05``, ``xi = 0.0019`` ≈ a 365-day
-half-life). Inference reuses the Poisson independent-grid math then applies
-the τ correction before re-normalising the score matrix.
+with τ = 1 elsewhere. ρ is learned via 1-D maximum likelihood on the same
+training rows that calibrated the Poisson side. We bound ρ to ``[-0.2, 0.2]``
+so τ stays positive across plausible λ ≤ 5.
+
+The Phase-2 lambda-derivation path (attack × defense × home_factor) is
+unchanged — :class:`DixonColesModel` only overrides :meth:`_make_score_matrix`
+and adds ρ-fitting on top of the Poisson trainer. An optional weighted
+per-team MLE (:func:`optimize_dc_params`) is kept as a Phase-4 utility for
+when we want a fully independent attack/defence parameter set.
 
 Reference: Dixon & Coles (1997) — *Modelling Association Football Scores
 and Inefficiencies in the Football Betting Market*, Applied Statistics 46.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
 import structlog
+from scipy.optimize import minimize_scalar
+from scipy.stats import poisson as poisson_dist
 
-from src.ml.models.base import PredictionResult
 from src.ml.models.poisson import (
-    OVER_UNDER_LINES,
     SCORE_MATRIX_SIZE,
-    TOP_SCORES_K,
     PoissonBaselineModel,
     _apply_elo_correction,
     _attack_from_features,
-    _btts_yes_prob,
     _defense_from_features,
-    _outcome_probs,
-    _over_under_probs,
-    _top_k_scores,
 )
 
 logger = structlog.get_logger(__name__)
 
 MODEL_VERSION: str = "dixon_coles_v1"
-DEFAULT_RHO: float = -0.05
-DEFAULT_XI: float = 0.0019  # ~365-day half-life
+DEFAULT_RHO: float = -0.05  # mild negative correlation as a sane prior
+DEFAULT_XI: float = 0.0019  # ~365-day half-life (used by optimize_dc_params)
 RHO_BOUNDS: tuple[float, float] = (-0.2, 0.2)
 
 
 class DixonColesModel(PoissonBaselineModel):
-    """Poisson + Dixon-Coles τ correction + exponential time-decay weighting."""
+    """Poisson + Dixon-Coles τ correction (single ρ parameter)."""
 
     def __init__(
-        self,
-        *,
-        rho: float = DEFAULT_RHO,
-        xi: float = DEFAULT_XI,
-        reference_date: Optional[datetime] = None,
+        self, *, rho: Optional[float] = None, xi: Optional[float] = None
     ) -> None:
         super().__init__()
-        if not RHO_BOUNDS[0] <= rho <= RHO_BOUNDS[1]:
-            raise ValueError(f"rho must be in {RHO_BOUNDS}, got {rho}")
-        if xi < 0:
-            raise ValueError(f"xi must be non-negative, got {xi}")
-        self._rho = rho
+        if rho is not None and not (RHO_BOUNDS[0] <= rho <= RHO_BOUNDS[1]):
+            raise ValueError(f"rho must lie in {RHO_BOUNDS}; got {rho}")
+        if xi is not None and xi < 0:
+            raise ValueError(f"xi must be >= 0; got {xi}")
+        self._fixed_rho = rho
         self._xi = xi
-        self._reference_date = reference_date or datetime.now(timezone.utc)
 
     def get_model_version(self) -> str:
         return MODEL_VERSION
@@ -76,78 +70,99 @@ class DixonColesModel(PoissonBaselineModel):
     # --- Training ---------------------------------------------------------
 
     def train(self, features_df: pd.DataFrame) -> None:
-        """Fit baseline params using time-decay weights, then store rho/xi."""
-        labels = features_df.dropna(subset=["label_home_score", "label_away_score"])
-        if labels.empty:
-            raise ValueError("training set has no rows with both labels populated")
-
-        weights = compute_time_decay_weights(
-            labels.get("match_date"), self._reference_date, xi=self._xi
+        """Fit Poisson params via ``super().train``, then a 1-D MLE for ρ."""
+        super().train(features_df)
+        rho = self._fixed_rho if self._fixed_rho is not None else self._fit_rho(features_df)
+        self.params["rho"] = rho
+        logger.info(
+            "dixon_coles_trained",
+            rho=rho,
+            league_avg_goals=self.params["league_avg_goals"],
+            home_factor=self.params["home_factor"],
+            trained_on_n_matches=self.params["trained_on_n_matches"],
         )
-        # Weighted league-average goals: Σ(w·(g_h+g_a)/2) / Σw
-        goals = (labels["label_home_score"] + labels["label_away_score"]) / 2.0
-        league_avg_goals = float(np.average(goals, weights=weights))
-        home_factor = self._calibrate_home_factor(labels)
-
-        self.params = {
-            "league_avg_goals": league_avg_goals,
-            "league_avg_attack": league_avg_goals,
-            "league_avg_defense": league_avg_goals,
-            "home_factor": home_factor,
-            "rho": self._rho,
-            "xi": self._xi,
-            "trained_on_n_matches": int(len(labels)),
-            "effective_sample_size": float(weights.sum()),
-        }
-        logger.info("dixon_coles_trained", **self.params)
 
     # --- Inference --------------------------------------------------------
 
-    def predict(self, features: dict[str, Any]) -> PredictionResult:
-        if not self.params:
-            raise RuntimeError("model is untrained — call .train() first")
-
-        league_g = self.params["league_avg_goals"]
-        home_factor = self.params["home_factor"]
-        rho = self.params.get("rho", self._rho)
-
-        atk_home = _attack_from_features(features, "home") or league_g
-        atk_away = _attack_from_features(features, "away") or league_g
-        def_home = _defense_from_features(features, "home") or league_g
-        def_away = _defense_from_features(features, "away") or league_g
-
-        lambda_home = home_factor * (atk_home / league_g) * (def_away / league_g) * league_g
-        lambda_away = (atk_away / league_g) * (def_home / league_g) * league_g
-        lambda_home, lambda_away = _apply_elo_correction(
-            lambda_home, lambda_away, features.get("elo_diff", 0.0) or 0.0
-        )
-
-        matrix = dixon_coles_score_matrix(
+    def _make_score_matrix(
+        self, lambda_home: float, lambda_away: float
+    ) -> list[list[float]]:
+        rho = float(self.params.get("rho", DEFAULT_RHO))
+        return dixon_coles_score_matrix(
             lambda_home, lambda_away, rho=rho, size=SCORE_MATRIX_SIZE
         )
-        return _build_prediction_result(matrix, lambda_home, lambda_away)
+
+    # --- Internal helpers -------------------------------------------------
+
+    def _fit_rho(self, features_df: pd.DataFrame) -> float:
+        """One-dim MLE for ρ given the calibrated λ predictions on training rows.
+
+        We compute (λ_h, λ_a) per training row using the just-trained Poisson
+        params (same path inference uses), then pick ρ ∈ ``RHO_BOUNDS`` that
+        maximises the log-likelihood of the actual scores under the
+        DC-corrected joint distribution.
+        """
+        labels = features_df.dropna(subset=["label_home_score", "label_away_score"])
+        if labels.empty:
+            return DEFAULT_RHO
+
+        lambda_pairs: list[tuple[float, float, int, int]] = []
+        for _, row in labels.iterrows():
+            lh, la = self._row_lambdas(row)
+            lambda_pairs.append(
+                (lh, la, int(row["label_home_score"]), int(row["label_away_score"]))
+            )
+
+        # Pre-compute the Poisson PMF terms once — they don't depend on ρ.
+        pmf_terms = [
+            float(poisson_dist.pmf(hs, lh) * poisson_dist.pmf(as_, la))
+            for lh, la, hs, as_ in lambda_pairs
+        ]
+
+        def neg_log_lik(rho: float) -> float:
+            total = 0.0
+            for (lh, la, hs, as_), pmf in zip(lambda_pairs, pmf_terms):
+                tau = dixon_coles_tau(hs, as_, lh, la, rho)
+                if tau <= 0 or pmf <= 0:
+                    return 1e9  # outside the feasible region
+                total -= np.log(tau * pmf)
+            return total
+
+        result = minimize_scalar(
+            neg_log_lik, bounds=RHO_BOUNDS, method="bounded", options={"xatol": 1e-4}
+        )
+        return float(result.x) if result.success else DEFAULT_RHO
+
+    def _row_lambdas(self, row: pd.Series) -> tuple[float, float]:
+        """Replay :meth:`PoissonBaselineModel.predict`'s lambda derivation on
+        a single training row. We don't need the full PredictionResult during
+        ρ fitting — just (λ_h, λ_a)."""
+        params = self.params
+        league_g = float(params["league_avg_goals"])
+        league_a = float(params["league_avg_attack"])
+        league_d = float(params["league_avg_defense"])
+        home_factor = float(params["home_factor"])
+
+        feats = row.to_dict()
+        atk_h = _attack_from_features(feats, "home")
+        atk_a = _attack_from_features(feats, "away")
+        def_h = _defense_from_features(feats, "home")
+        def_a = _defense_from_features(feats, "away")
+
+        if atk_h <= 0 or def_a <= 0:
+            lh = league_g * home_factor
+        else:
+            lh = league_g * (atk_h / league_a) * (def_a / league_d) * home_factor
+        if atk_a <= 0 or def_h <= 0:
+            la = league_g
+        else:
+            la = league_g * (atk_a / league_a) * (def_h / league_d)
+
+        elo_diff = float(feats.get("elo_diff", 0.0) or 0.0)
+        return _apply_elo_correction(lh, la, elo_diff)
 
 
-# --- Public helpers (also used by ensemble + tests) -------------------------
-
-
-def compute_time_decay_weights(
-    dates: Any, reference: datetime, *, xi: float
-) -> np.ndarray:
-    """Return ``exp(-xi · Δdays)`` weights, one per row, never below 1e-6.
-
-    ``dates`` may be ``None`` or contain NaT — those rows fall back to
-    weight 1.0 so a feature DataFrame without ``match_date`` still trains.
-    """
-    if dates is None or xi == 0:
-        n = 0 if dates is None else len(dates)
-        return np.ones(n, dtype=float) if n else np.array([1.0])
-    series = pd.to_datetime(dates, utc=True, errors="coerce")
-    ref = pd.Timestamp(reference).tz_convert("UTC") if reference.tzinfo else pd.Timestamp(reference, tz="UTC")
-    delta_days = (ref - series).dt.total_seconds() / 86400.0
-    delta_days = delta_days.fillna(0.0).clip(lower=0.0).to_numpy(dtype=float)
-    weights = np.exp(-xi * delta_days)
-    return np.clip(weights, 1e-6, 1.0)
+# --- Public helpers ---------------------------------------------------------
 
 
 def dixon_coles_tau(
@@ -155,8 +170,8 @@ def dixon_coles_tau(
 ) -> float:
     """Return the Dixon-Coles τ adjustment for one (x, y) cell.
 
-    Only the four low-score cells are corrected; everything else returns 1.
-    """
+    τ = 1 outside the four low-score cells, so callers can wrap this without
+    a special-case path."""
     if x == 0 and y == 0:
         return 1.0 - lambda_home * lambda_away * rho
     if x == 0 and y == 1:
@@ -171,20 +186,21 @@ def dixon_coles_tau(
 def dixon_coles_score_matrix(
     lambda_home: float, lambda_away: float, *, rho: float, size: int
 ) -> list[list[float]]:
-    """Return a renormalised ``size × size`` matrix with τ correction applied."""
-    from scipy.stats import poisson
+    """Return a renormalised ``size × size`` matrix with τ correction applied.
 
+    Negative τ values (which can happen for ρ outside the safe bound at
+    extreme λ) are clamped to a tiny positive number — they're a sign of
+    an over-aggressive ρ rather than a real probability and would otherwise
+    produce negative cell probabilities downstream."""
     indices = np.arange(size)
-    p_home = poisson.pmf(indices, lambda_home)
-    p_away = poisson.pmf(indices, lambda_away)
+    p_home = poisson_dist.pmf(indices, lambda_home)
+    p_away = poisson_dist.pmf(indices, lambda_away)
     matrix = np.outer(p_home, p_away)
 
-    tau = np.ones((size, size), dtype=float)
-    tau[0, 0] = max(1e-9, 1.0 - lambda_home * lambda_away * rho)
-    tau[0, 1] = max(1e-9, 1.0 + lambda_home * rho)
-    tau[1, 0] = max(1e-9, 1.0 + lambda_away * rho)
-    tau[1, 1] = max(1e-9, 1.0 - rho)
-    matrix = matrix * tau
+    matrix[0, 0] *= max(1e-9, 1.0 - lambda_home * lambda_away * rho)
+    matrix[0, 1] *= max(1e-9, 1.0 + lambda_home * rho)
+    matrix[1, 0] *= max(1e-9, 1.0 + lambda_away * rho)
+    matrix[1, 1] *= max(1e-9, 1.0 - rho)
 
     total = float(matrix.sum())
     if total > 0:
@@ -192,25 +208,39 @@ def dixon_coles_score_matrix(
     return matrix.tolist()
 
 
-def _build_prediction_result(
-    matrix: list[list[float]], lambda_home: float, lambda_away: float
-) -> PredictionResult:
-    prob_home, prob_draw, prob_away = _outcome_probs(matrix)
-    return PredictionResult(
-        prob_home_win=prob_home,
-        prob_draw=prob_draw,
-        prob_away_win=prob_away,
-        lambda_home=float(lambda_home),
-        lambda_away=float(lambda_away),
-        score_matrix=matrix,
-        top_scores=_top_k_scores(matrix, k=TOP_SCORES_K),
-        over_under_probs=_over_under_probs(matrix, lines=OVER_UNDER_LINES),
-        btts_prob=_btts_yes_prob(matrix),
+def compute_time_decay_weights(
+    dates: Any, reference: datetime, *, xi: float, n_rows: Optional[int] = None
+) -> np.ndarray:
+    """Return ``exp(-xi · Δdays)`` weights, one per row, never below 1e-6.
+
+    Used by :func:`optimize_dc_params` for weighted MLE. ``dates`` may be
+    ``None`` or contain NaT — those rows fall back to weight 1.0 so a
+    feature DataFrame without ``match_date`` still trains. When ``dates`` is
+    ``None``, pass ``n_rows`` to receive one weight per row; if neither is
+    available, this function preserves the legacy fallback of returning
+    ``np.array([1.0])``.
+    """
+    if dates is None:
+        return np.ones(n_rows, dtype=float) if n_rows else np.array([1.0])
+    if xi == 0:
+        n = len(dates)
+        return np.ones(n, dtype=float) if n else (
+            np.ones(n_rows, dtype=float) if n_rows else np.array([1.0])
+        )
+    series = pd.to_datetime(dates, utc=True, errors="coerce")
+    ref = (
+        pd.Timestamp(reference).tz_convert("UTC")
+        if reference.tzinfo
+        else pd.Timestamp(reference, tz="UTC")
     )
+    delta_days = (ref - series).dt.total_seconds() / 86400.0
+    delta_days = delta_days.fillna(0.0).clip(lower=0.0).to_numpy(dtype=float)
+    weights = np.exp(-xi * delta_days)
+    return np.clip(weights, 1e-6, 1.0)
 
 
 # ---------------------------------------------------------------------------
-# Weighted MLE (design §2.1.3)
+# Per-team weighted MLE (Phase-4 advanced calibration; unused at inference)
 # ---------------------------------------------------------------------------
 
 
@@ -239,12 +269,9 @@ def optimize_dc_params(
 
     The DataFrame must contain ``home_team``, ``away_team``,
     ``label_home_score``, ``label_away_score`` and (optionally) ``match_date``.
-
-    Returns a :class:`DixonColesParams` object the caller can plug into
-    :func:`dixon_coles_score_matrix`. Designed for offline calibration only —
-    inference uses the lighter-weight :class:`DixonColesModel`.
-    """
-    from scipy.optimize import minimize  # noqa: WPS433 — heavy import isolated
+    Designed for offline calibration only — :class:`DixonColesModel` reuses
+    the lighter Poisson-derived λ during inference."""
+    from scipy.optimize import minimize  # heavy import isolated
 
     df = matches_df.dropna(
         subset=["home_team", "away_team", "label_home_score", "label_away_score"]
@@ -265,11 +292,9 @@ def optimize_dc_params(
     if len(weights) != len(df):
         weights = np.ones(len(df), dtype=float)
 
-    # Parameter packing: [attack_0..attack_{N-1}, defence_0..defence_{N-1}, γ, ρ]
     init_params = np.concatenate(
         [np.zeros(n_teams), np.zeros(n_teams), [np.log(home_init), rho_init]]
     )
-    # Constrain Σ attack = 0 by adding a soft penalty (cheap & robust).
 
     def _neg_log_likelihood(params: np.ndarray) -> float:
         attack = params[:n_teams]
@@ -317,8 +342,7 @@ def optimize_dc_params(
 
 
 def _gammaln_int(values: np.ndarray) -> np.ndarray:
-    """log(k!) for non-negative integers via ``scipy.special.gammaln(k + 1)``."""
-    from scipy.special import gammaln  # noqa: WPS433
+    from scipy.special import gammaln  # heavy import isolated
 
     return gammaln(values.astype(float) + 1.0)
 
@@ -330,7 +354,7 @@ def _vector_log_tau(
     lambda_a: np.ndarray,
     rho: float,
 ) -> np.ndarray:
-    """Vectorised log τ correction; only the 4 low-score cells deviate from 0."""
+    """Vectorised log τ correction; only the four low-score cells deviate from 0."""
     tau = np.ones_like(lambda_h)
     cell_00 = (home_goals == 0) & (away_goals == 0)
     cell_01 = (home_goals == 0) & (away_goals == 1)
@@ -341,4 +365,3 @@ def _vector_log_tau(
     tau[cell_10] = np.maximum(1e-9, 1.0 + lambda_a[cell_10] * rho)
     tau[cell_11] = max(1e-9, 1.0 - rho)
     return np.log(tau)
-

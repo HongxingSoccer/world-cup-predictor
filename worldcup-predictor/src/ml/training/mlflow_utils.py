@@ -156,10 +156,14 @@ def register_model(
 
 
 def load_production_model(model_name: str) -> BasePredictionModel | None:
-    """Pull the Production-staged model artifact and reload it into a `PoissonBaselineModel`.
+    """Pull the Production-staged model artifact and reload it into the
+    matching :class:`BasePredictionModel` subclass.
 
-    Returns `None` when the registry is unreachable or no Production version
-    exists yet — callers fall back to an untrained default.
+    Dispatches by ``model_name`` so we can promote any registered model
+    (Poisson baseline / Dixon-Coles / Poisson GLM / ...) without touching
+    the API code path. Returns ``None`` when the registry is unreachable
+    or no Production version exists yet — callers fall back to an
+    untrained default.
     """
     import mlflow
 
@@ -177,7 +181,7 @@ def load_production_model(model_name: str) -> BasePredictionModel | None:
             )
         )
         model_file = download_dir / _MODEL_FILE_NAME
-        model = PoissonBaselineModel()
+        model = _instantiate_model(model_name)
         model.load(model_file)
         logger.info(
             "mlflow_production_model_loaded",
@@ -188,6 +192,28 @@ def load_production_model(model_name: str) -> BasePredictionModel | None:
     except Exception as exc:
         logger.warning("mlflow_load_production_failed", error=str(exc))
         return None
+
+
+def _instantiate_model(model_name: str) -> BasePredictionModel:
+    """Return an empty model of the right subclass for ``model_name``.
+
+    Local imports keep heavy deps (sklearn, scipy.optimize) out of the
+    module-load path for callers that don't need them.
+    """
+    if model_name == "poisson_v1":
+        return PoissonBaselineModel()
+    if model_name == "dixon_coles_v1":
+        from src.ml.models.dixon_coles import DixonColesModel
+
+        return DixonColesModel()
+    if model_name == "poisson_glm_v1":
+        from src.ml.models.poisson_glm import PoissonGLMModel
+
+        return PoissonGLMModel()
+    raise ValueError(
+        f"Unknown model_name {model_name!r}. Add it to "
+        "src.ml.training.mlflow_utils._instantiate_model when you register a new model."
+    )
 
 
 def write_run_id_to_file(path: Path | str, run_id: str | None) -> None:

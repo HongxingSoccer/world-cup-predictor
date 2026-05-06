@@ -20,7 +20,9 @@ import pandas as pd
 import structlog
 
 from src.ml.models.base import BasePredictionModel
+from src.ml.models.dixon_coles import DixonColesModel
 from src.ml.models.poisson import PoissonBaselineModel
+from src.ml.models.poisson_glm import PoissonGLMModel
 from src.ml.training.mlflow_utils import (
     init_mlflow,
     log_training_run,
@@ -33,6 +35,8 @@ logger = structlog.get_logger(__name__)
 
 _MODEL_REGISTRY: dict[str, type[BasePredictionModel]] = {
     "poisson_v1": PoissonBaselineModel,
+    "dixon_coles_v1": DixonColesModel,
+    "poisson_glm_v1": PoissonGLMModel,
 }
 
 

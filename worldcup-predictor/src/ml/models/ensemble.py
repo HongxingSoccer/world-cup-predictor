@@ -19,7 +19,14 @@ import pandas as pd
 import structlog
 
 from src.ml.models.base import BasePredictionModel, PredictionResult
-from src.ml.models.dixon_coles import _build_prediction_result
+from src.ml.models.poisson import (
+    OVER_UNDER_LINES,
+    TOP_SCORES_K,
+    _btts_yes_prob,
+    _outcome_probs,
+    _over_under_probs,
+    _top_k_scores,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -68,7 +75,18 @@ class EnsembleModel(BasePredictionModel):
         matrix = _weighted_matrix_average(sub_results, self._weights)
         lambda_home = sum(w * r.lambda_home for w, r in zip(self._weights, sub_results))
         lambda_away = sum(w * r.lambda_away for w, r in zip(self._weights, sub_results))
-        return _build_prediction_result(matrix, lambda_home, lambda_away)
+        prob_home_win, prob_draw, prob_away_win = _outcome_probs(matrix)
+        return PredictionResult(
+            prob_home_win=prob_home_win,
+            prob_draw=prob_draw,
+            prob_away_win=prob_away_win,
+            lambda_home=float(lambda_home),
+            lambda_away=float(lambda_away),
+            score_matrix=matrix,
+            top_scores=_top_k_scores(matrix, k=TOP_SCORES_K),
+            over_under_probs=_over_under_probs(matrix, lines=OVER_UNDER_LINES),
+            btts_prob=_btts_yes_prob(matrix),
+        )
 
 
 def _weighted_matrix_average(

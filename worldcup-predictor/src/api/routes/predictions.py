@@ -20,6 +20,7 @@ from src.api.dependencies import (
     get_redis,
     predictions_today_cache_ttl,
 )
+from src.config.settings import settings
 from src.api.schemas.predictions import (
     PredictionDetailResponse,
     PredictionTodayItem,
@@ -113,6 +114,7 @@ def predictions_upcoming(
             Match.match_date < end,
             Match.status == "scheduled",
             Prediction.confidence_score >= min_confidence,
+            Prediction.model_version == settings.ACTIVE_MODEL_NAME,
         )
         .order_by(Match.match_date)
     )
@@ -227,6 +229,11 @@ def _fetch_today_items(
             Match.match_date >= start,
             Match.match_date < end,
             Prediction.confidence_score >= min_confidence,
+            # Match-version slot per (match, model_version) is unique, but
+            # historical model upgrades leave older predictions in place
+            # (the immutability trigger blocks DELETE). Filter to the
+            # currently-served model so the UI doesn't double-list rows.
+            Prediction.model_version == settings.ACTIVE_MODEL_NAME,
         )
         .order_by(Match.match_date)
     )

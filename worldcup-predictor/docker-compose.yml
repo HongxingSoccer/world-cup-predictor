@@ -103,6 +103,7 @@ services:
         -Q celery
     volumes:
       - ./:/app
+      - mlflow_artifacts:/data/mlflow-artifacts
 
   ingestion-beat:
     build: .
@@ -180,6 +181,11 @@ services:
         --workers 2
     volumes:
       - ./:/app
+      # Share the mlflow artifact volume with mlflow-server. Without this,
+      # `mlflow.log_artifact()` writes to ml-api's local non-volume disk
+      # and `_load_production_model` later fails with `No such file or
+      # directory: /data/mlflow-artifacts/...` after a rebuild.
+      - mlflow_artifacts:/data/mlflow-artifacts
 
   java-api:
     build:
@@ -293,6 +299,10 @@ services:
     environment:
       # The browser bundle reads this; nginx routes the actual request.
       NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:80}
+      # Used only by Next.js server components — `localhost` inside the
+      # frontend container points to itself, so SSR fetches must hit the
+      # java-api service over the docker network instead.
+      SERVER_API_URL: ${SERVER_API_URL:-http://java-api:8080}
       NEXT_PUBLIC_SHARE_BASE_URL: ${PUBLIC_SHARE_BASE_URL:-http://localhost:80/s/}
       NODE_ENV: production
 

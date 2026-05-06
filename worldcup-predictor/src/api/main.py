@@ -119,6 +119,7 @@ def _create_app() -> FastAPI:
     app.include_router(predictions.router)
     app.include_router(reports.router)
     app.include_router(worldcup.router)
+    app.include_router(worldcup.competitions_router)
     app.include_router(push_settings.router)
     app.include_router(admin.router)
 
@@ -129,19 +130,21 @@ def _create_app() -> FastAPI:
     return app
 
 
-def _load_production_model() -> PoissonBaselineModel:
-    """Try MLflow → local artifact path → untrained fallback."""
-    model = PoissonBaselineModel()
+def _load_production_model():  # type: ignore[no-untyped-def]
+    """Try MLflow → untrained fallback. Subclass is dispatched by name."""
     try:
         from src.ml.training.mlflow_utils import load_production_model
 
-        loaded = load_production_model("poisson_v1")
+        loaded = load_production_model(settings.ACTIVE_MODEL_NAME)
         if loaded is not None:
             return loaded
     except Exception as exc:  # mlflow unreachable, missing model, etc.
         logger.warning("mlflow_load_failed", error=str(exc))
-    logger.warning("model_falling_back_to_untrained_default")
-    return model
+    logger.warning(
+        "model_falling_back_to_untrained_default",
+        active_model=settings.ACTIVE_MODEL_NAME,
+    )
+    return PoissonBaselineModel()
 
 
 def _maybe_redis():  # type: ignore[no-untyped-def]
