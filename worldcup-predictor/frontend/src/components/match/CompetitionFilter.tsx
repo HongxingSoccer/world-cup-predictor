@@ -41,7 +41,7 @@ function Pill({
         'shrink-0 rounded-full border px-3 py-1 text-xs font-medium',
         active
           ? 'border-brand-600 bg-brand-600 text-white'
-          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
+          : 'border-slate-800/70 bg-slate-900/70 text-slate-400 hover:bg-slate-900/50',
       )}
     >
       {children}

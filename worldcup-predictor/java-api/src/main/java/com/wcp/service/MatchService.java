@@ -51,9 +51,12 @@ public class MatchService {
     }
 
     public MatchSummaryResponse getMatchDetail(long matchId, SubscriptionTier tier) {
-        Map<String, Object> body = mlApiClient.predict(matchId, true);
+        // Read endpoint never invokes the model — returns metadata + the
+        // latest persisted prediction (if any) + form / H2H. Empty payload
+        // means the match row itself is missing → propagate 404.
+        Map<String, Object> body = mlApiClient.matchDetail(matchId);
         if (body.isEmpty()) {
-            throw ApiException.notFound("match prediction");
+            throw ApiException.notFound("match");
         }
         return contentTierService.applyTier(toMatchSummary(body), tier);
     }
@@ -87,7 +90,7 @@ public class MatchService {
     // --- Mappers ---
 
     /**
-     * Flattens both shapes the Python ML API returns for a match prediction:
+     * Flattens the three shapes the Python ML API returns for a match prediction:
      *
      * <ul>
      *   <li>{@code GET /predictions/today} items — flat keys, {@code home_team}
@@ -96,6 +99,8 @@ public class MatchService {
      *       {@code {id,name,name_zh}} object, probs and {@code over_under_probs}
      *       are nested under a {@code predictions} sub-object, and there is no
      *       top-level {@code status}.</li>
+     *   <li>{@code GET /matches/{id}} body — flat keys including {@code team_stats},
+     *       {@code h2h}, {@code odds_analysis}, {@code score_matrix}.</li>
      * </ul>
      */
     @SuppressWarnings("unchecked")
@@ -104,6 +109,10 @@ public class MatchService {
                 ? (Map<String, Object>) p
                 : raw;
         Integer topSignalLevel = asInteger(raw.get("top_signal_level"));
+        Boolean hasValueSignal = raw.get("has_value_signal") instanceof Boolean b
+                ? b
+                : (topSignalLevel != null ? topSignalLevel > 0 : null);
+        Object oddsAnalysis = raw.get("odds_analysis");
         return new MatchSummaryResponse(
                 asLong(raw.get("match_id")),
                 asInstant(raw.get("match_date")),
@@ -116,13 +125,30 @@ public class MatchService {
                 asDouble(probs.get("prob_away_win")),
                 asInteger(raw.get("confidence_score")),
                 (String) raw.get("confidence_level"),
-                topSignalLevel != null ? topSignalLevel > 0 : null,
+                hasValueSignal,
                 topSignalLevel,
-                (Map<String, Object>) raw.get("odds_analysis"),
-                asMap(probs.get("score_matrix")),
+                oddsAnalysis instanceof Map<?, ?> m ? (Map<String, Object>) m : null,
+                probs.get("score_matrix"),
                 asMap(probs.get("over_under_probs")),
-                false
+                false,
+                asListOfMaps(raw.get("team_stats")),
+                asMap(raw.get("h2h")),
+                (String) raw.get("venue"),
+                (String) raw.get("round"),
+                asInteger(raw.get("home_score")),
+                asInteger(raw.get("away_score"))
         );
+    }
+
+    @SuppressWarnings("unchecked")
+    private static java.util.List<Map<String, Object>> asListOfMaps(Object value) {
+        if (!(value instanceof java.util.List<?> list)) {
+            return null;
+        }
+        return list.stream()
+                .filter(Map.class::isInstance)
+                .map(o -> (Map<String, Object>) o)
+                .toList();
     }
 
     @SuppressWarnings("unchecked")

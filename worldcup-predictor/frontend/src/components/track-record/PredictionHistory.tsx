@@ -25,7 +25,7 @@ export function PredictionHistory({ rows }: PredictionHistoryProps) {
   if (rows.length === 0) {
     return (
       <Card>
-        <CardBody className="text-sm text-slate-500">暂无历史预测记录。</CardBody>
+        <CardBody className="text-sm text-slate-400">暂无历史预测记录。</CardBody>
       </Card>
     );
   }
@@ -33,34 +33,34 @@ export function PredictionHistory({ rows }: PredictionHistoryProps) {
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-sm font-semibold text-slate-900">历史预测</h3>
+        <h3 className="text-sm font-semibold text-slate-100">历史预测</h3>
       </CardHeader>
-      <CardBody className="divide-y divide-slate-100 p-0">
+      <CardBody className="divide-y divide-slate-800/70 p-0">
         {rows.map((row) => (
           <Link
             key={row.matchId}
             href={`/match/${row.matchId}`}
-            className="block px-4 py-3 transition hover:bg-slate-50"
+            className="block px-4 py-3 transition hover:bg-slate-800/30"
           >
-            <div className="flex items-center justify-between text-xs text-slate-500">
-              <span>{formatMatchDate(row.matchDate)}</span>
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <span className="tabular-nums">{formatMatchDate(row.matchDate)}</span>
               <Badge tone={row.hit ? 'success' : 'danger'}>
                 {row.hit ? '✓ 红' : '✗ 黑'}
               </Badge>
             </div>
             <div className="mt-1 flex items-center justify-between">
-              <div className="font-semibold text-slate-900">
-                {row.homeTeam} <span className="text-slate-400">vs</span> {row.awayTeam}
+              <div className="font-semibold text-slate-100">
+                {row.homeTeam} <span className="text-slate-500">vs</span> {row.awayTeam}
               </div>
-              <div className="text-sm text-slate-600">
-                预测 <span className="font-semibold text-slate-900">{RESULT_LABEL[row.predicted]}</span>
-                {' · '}实际 <span className="font-semibold text-slate-900">{RESULT_LABEL[row.actual]}</span>
+              <div className="text-sm text-slate-400">
+                预测 <span className="font-semibold text-slate-100">{RESULT_LABEL[row.predicted]}</span>
+                {' · '}实际 <span className="font-semibold text-slate-100">{RESULT_LABEL[row.actual]}</span>
               </div>
             </div>
             {row.pnlUnit !== 0 ? (
               <div
                 className={`mt-1 text-xs tabular-nums ${
-                  row.pnlUnit > 0 ? 'text-emerald-600' : 'text-rose-600'
+                  row.pnlUnit > 0 ? 'text-emerald-300' : 'text-rose-400'
                 }`}
               >
                 {row.pnlUnit > 0 ? '+' : ''}

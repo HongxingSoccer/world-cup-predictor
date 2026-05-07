@@ -100,6 +100,30 @@ public class MlApiClient {
         }
     }
 
+    /**
+     * GET /api/v1/matches/{id} — pure read of match metadata + cached prediction
+     * + recent form + H2H. Returns an empty map (NOT null) on 4xx / transport
+     * failure so the controller can decide to 404 only when the match itself
+     * doesn't exist, not because a prediction hasn't been generated yet.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> matchDetail(long matchId) {
+        try {
+            Map<String, Object> body = restTemplate.getForObject(
+                    "/api/v1/matches/" + matchId, Map.class);
+            return body == null ? Map.of() : body;
+        } catch (HttpClientErrorException ex) {
+            // 404 means the match row doesn't exist in the DB — propagate
+            // that distinction with an empty payload so MatchService can map
+            // it to a 404 response. Other 4xx (rare) also collapse to empty.
+            log.info("ml_api_match_detail_4xx match={} status={}", matchId, ex.getStatusCode());
+            return Map.of();
+        } catch (RestClientException ex) {
+            log.warn("ml_api_match_detail_failed match={} error={}", matchId, ex.getMessage());
+            return Map.of();
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public Map<String, Object> oddsAnalysis(long matchId) {
         Map<String, Object> request = Map.of("match_id", matchId);

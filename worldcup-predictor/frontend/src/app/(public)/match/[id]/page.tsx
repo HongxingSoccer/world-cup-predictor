@@ -3,13 +3,13 @@ import { notFound } from 'next/navigation';
 
 import { H2HPanel } from '@/components/match/H2HPanel';
 import { MatchHeader } from '@/components/match/MatchHeader';
-import { OddsCompareTable } from '@/components/match/OddsCompareTable';
+import { OddsCompareTable, type OddsRow } from '@/components/match/OddsCompareTable';
 import { PredictionPanel } from '@/components/match/PredictionPanel';
 import { ScoreMatrix } from '@/components/match/ScoreMatrix';
 import { TeamStatsPanel } from '@/components/match/TeamStatsPanel';
 import { ShareButton } from '@/components/share/ShareButton';
 import { PaywallOverlay } from '@/components/subscription/PaywallOverlay';
-import type { MatchSummary } from '@/types';
+import type { MatchSummary, SignalLevel } from '@/types';
 
 interface MatchPageProps {
   params: { id: string };
@@ -51,19 +51,15 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
     notFound();
   }
 
-  // Stand-in stats / H2H — Phase 3.5 wires real values from the Java service.
-  const teamStatsRows = [
-    { label: '近5场胜率', home: '60%', away: '40%' },
-    { label: '近5场均进球', home: '1.8', away: '1.2' },
-    { label: '近5场均失球', home: '0.8', away: '1.4' },
-  ];
-  const h2hSummary = {
+  const teamStatsRows = match.teamStats ?? [];
+  const h2hSummary = match.h2h ?? {
     totalMatches: 0,
     homeWins: 0,
     draws: 0,
     awayWins: 0,
     avgGoals: 0,
   };
+  const oddsRows = toOddsRows(match.oddsAnalysis);
 
   const shareUrl = `/match/${match.matchId}`;
 
@@ -80,7 +76,7 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
       </div>
 
       <PaywallOverlay feature="odds_analysis" featureLabel="赔率价值分析">
-        <OddsCompareTable rows={[]} />
+        <OddsCompareTable rows={oddsRows} />
       </PaywallOverlay>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -105,4 +101,26 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
       </div>
     </div>
   );
+}
+
+/** Coerce ml-api's snake_case odds_analysis array into the camelCase OddsRow shape. */
+function toOddsRows(raw: MatchSummary['oddsAnalysis']): OddsRow[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((r): r is Record<string, unknown> => typeof r === 'object' && r !== null)
+    .map((r) => ({
+      marketType: String(r.marketType ?? r.market_type ?? ''),
+      marketValue:
+        typeof (r.marketValue ?? r.market_value) === 'string'
+          ? ((r.marketValue ?? r.market_value) as string)
+          : null,
+      outcome: String(r.outcome ?? ''),
+      modelProb: Number(r.modelProb ?? r.model_prob ?? 0),
+      bestOdds: Number(r.bestOdds ?? r.best_odds ?? 0),
+      bestBookmaker: String(r.bestBookmaker ?? r.best_bookmaker ?? ''),
+      impliedProb: Number(r.impliedProb ?? r.implied_prob ?? 0),
+      ev: Number(r.ev ?? 0),
+      edge: Number(r.edge ?? 0),
+      signalLevel: ((Number(r.signalLevel ?? r.signal_level ?? 0) | 0) as SignalLevel),
+    }));
 }

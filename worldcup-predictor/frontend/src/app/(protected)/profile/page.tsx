@@ -32,12 +32,12 @@ export default function ProfilePage() {
       <Card>
         <CardHeader>
           <div>
-            <h1 className="text-base font-semibold text-slate-900">个人中心</h1>
-            <p className="mt-0.5 text-xs text-slate-500">{user.nickname ?? user.email ?? user.phone}</p>
+            <h1 className="text-base font-semibold text-slate-100">个人中心</h1>
+            <p className="mt-0.5 text-xs text-slate-400">{user.nickname ?? user.email ?? user.phone}</p>
           </div>
           <Badge tone={tier === 'free' ? 'neutral' : 'success'}>{tier.toUpperCase()}</Badge>
         </CardHeader>
-        <CardBody className="space-y-2 text-sm text-slate-700">
+        <CardBody className="space-y-2 text-sm text-slate-300">
           <Row label="UUID" value={user.uuid} />
           <Row label="手机号" value={user.phone ?? '—'} />
           <Row label="邮箱" value={user.email ?? '—'} />
@@ -48,9 +48,9 @@ export default function ProfilePage() {
 
       <Card>
         <CardHeader>
-          <h2 className="text-base font-semibold text-slate-900">订阅状态</h2>
+          <h2 className="text-base font-semibold text-slate-100">订阅状态</h2>
         </CardHeader>
-        <CardBody className="space-y-2 text-sm text-slate-700">
+        <CardBody className="space-y-2 text-sm text-slate-300">
           <Row label="当前等级" value={tier.toUpperCase()} />
           <Row label="到期时间" value={expiresAt ? new Date(expiresAt).toLocaleDateString('zh-CN') : '—'} />
           <div className="flex gap-2 pt-2">
@@ -72,9 +72,9 @@ export default function ProfilePage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between border-b border-slate-100 py-1.5 last:border-0">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-medium text-slate-900">{value}</span>
+    <div className="flex items-center justify-between border-b border-slate-800/70 py-1.5 last:border-0">
+      <span className="text-slate-400">{label}</span>
+      <span className="font-medium text-slate-100">{value}</span>
     </div>
   );
 }

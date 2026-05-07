@@ -32,12 +32,12 @@ export function PlanCard({ plan, features, highlight, onSelect, loading }: PlanC
         <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-brand-600">
           {plan.tier}
         </div>
-        <div className="mb-1 text-xl font-bold text-slate-900">{plan.displayName}</div>
+        <div className="mb-1 text-xl font-bold text-slate-100">{plan.displayName}</div>
         <div className="mb-4 flex items-baseline gap-2">
-          <span className="text-3xl font-black text-slate-900">{formatPriceCny(plan.priceCny)}</span>
-          <span className="text-sm text-slate-500">/ {plan.durationDays} 天</span>
+          <span className="text-3xl font-black text-slate-100">{formatPriceCny(plan.priceCny)}</span>
+          <span className="text-sm text-slate-400">/ {plan.durationDays} 天</span>
         </div>
-        <ul className="mb-6 flex-1 space-y-2 text-sm text-slate-700">
+        <ul className="mb-6 flex-1 space-y-2 text-sm text-slate-300">
           {features.map((feature) => (
             <li key={feature} className="flex items-start gap-2">
               <Check size={16} className="mt-0.5 shrink-0 text-brand-600" />

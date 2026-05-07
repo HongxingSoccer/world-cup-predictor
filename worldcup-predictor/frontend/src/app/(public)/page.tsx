@@ -60,7 +60,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
       {matches.length === 0 ? (
         <Card>
-          <CardBody className="text-center text-sm text-slate-500">
+          <CardBody className="text-center text-sm text-slate-400">
             今日暂无可预测的比赛。
           </CardBody>
         </Card>
@@ -71,8 +71,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       {upcoming.length > 0 ? (
         <Card>
           <CardHeader>
-            <h2 className="text-sm font-semibold text-slate-900">即将开赛</h2>
-            <p className="text-xs text-slate-500">
+            <h2 className="text-sm font-semibold text-slate-100">即将开赛</h2>
+            <p className="text-xs text-slate-400">
               未来 {UPCOMING_DAYS} 天内已生成预测的 {upcoming.length} 场比赛
             </p>
           </CardHeader>

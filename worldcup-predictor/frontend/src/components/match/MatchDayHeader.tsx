@@ -28,13 +28,13 @@ export function MatchDayHeader({ date }: MatchDayHeaderProps) {
   };
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2">
+    <div className="flex items-center justify-between gap-3 rounded-2xl surface-card px-3 py-2">
       <Button variant="ghost" size="sm" onClick={() => navigate(-1)} aria-label="前一天">
         <ChevronLeft size={18} />
       </Button>
       <div className="flex flex-col items-center">
-        <div className="text-sm font-semibold text-slate-900">{current}</div>
-        <div className="text-xs text-slate-500">UTC</div>
+        <div className="text-sm font-semibold text-slate-100">{current}</div>
+        <div className="text-xs text-slate-400">UTC</div>
       </div>
       <Button variant="ghost" size="sm" onClick={() => navigate(1)} aria-label="后一天">
         <ChevronRight size={18} />

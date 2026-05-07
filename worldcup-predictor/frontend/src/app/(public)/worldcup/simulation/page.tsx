@@ -72,12 +72,12 @@ export default async function SimulationPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-slate-900">世界杯夺冠概率</h1>
+      <h1 className="text-xl font-bold text-slate-100">世界杯夺冠概率</h1>
       {rows.length === 0 ? (
         <Card>
-          <CardBody className="text-center text-sm text-slate-500">
+          <CardBody className="text-center text-sm text-slate-400">
             暂无模拟数据。运行{' '}
-            <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">
+            <code className="rounded bg-slate-800/70 px-1.5 py-0.5 text-xs">
               python -m scripts.run_tournament_simulation
             </code>{' '}
             生成一次。

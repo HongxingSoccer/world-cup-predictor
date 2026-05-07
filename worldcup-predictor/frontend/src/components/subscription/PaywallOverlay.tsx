@@ -42,14 +42,14 @@ export function PaywallOverlay({
         {children}
       </div>
       <div className="absolute inset-0 flex items-center justify-center p-6">
-        <div className="rounded-2xl border border-slate-200 bg-white/95 p-5 text-center shadow-lg">
-          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+        <div className="surface-card rounded-2xl p-5 text-center shadow-2xl">
+          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-accent-500/40 bg-accent-500/15 text-accent-400">
             <Lock size={18} />
           </div>
-          <div className="mb-1 text-sm font-semibold text-slate-900">
+          <div className="mb-1 text-sm font-semibold text-slate-100">
             {featureLabel}
           </div>
-          <div className="mb-4 text-xs text-slate-500">
+          <div className="mb-4 text-xs text-slate-400">
             订阅后可查看完整分析。基础版 ¥29.9/月起。
           </div>
           <Link href="/subscribe">

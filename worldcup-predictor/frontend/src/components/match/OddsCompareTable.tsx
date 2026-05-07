@@ -34,7 +34,7 @@ export function OddsCompareTable({ rows }: OddsCompareTableProps) {
   if (sorted.length === 0) {
     return (
       <Card>
-        <CardBody className="text-sm text-slate-500">暂无可分析的赔率数据。</CardBody>
+        <CardBody className="text-sm text-slate-400">暂无可分析的赔率数据。</CardBody>
       </Card>
     );
   }
@@ -42,12 +42,12 @@ export function OddsCompareTable({ rows }: OddsCompareTableProps) {
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-sm font-semibold text-slate-900">赔率价值分析</h3>
-        <span className="text-xs text-slate-500">最佳赔率 + 模型概率对比</span>
+        <h3 className="text-sm font-semibold text-slate-100">赔率价值分析</h3>
+        <span className="text-xs text-slate-400">最佳赔率 + 模型概率对比</span>
       </CardHeader>
       <CardBody className="overflow-x-auto p-0">
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+          <thead className="bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
             <tr>
               <th className="px-4 py-2 text-left">盘口</th>
               <th className="px-4 py-2 text-left">选项</th>
@@ -61,26 +61,29 @@ export function OddsCompareTable({ rows }: OddsCompareTableProps) {
           </thead>
           <tbody>
             {sorted.map((row, idx) => (
-              <tr key={idx} className="border-t border-slate-100">
-                <td className="whitespace-nowrap px-4 py-2 text-slate-600">
+              <tr
+                key={idx}
+                className="border-t border-slate-800/70 transition-colors hover:bg-slate-800/30"
+              >
+                <td className="whitespace-nowrap px-4 py-2 text-slate-400">
                   {row.marketValue ? `${row.marketType} · ${row.marketValue}` : row.marketType}
                 </td>
-                <td className="px-4 py-2 font-semibold text-slate-900">{row.outcome}</td>
-                <td className="px-4 py-2 text-right tabular-nums text-slate-700">
+                <td className="px-4 py-2 font-semibold text-slate-100">{row.outcome}</td>
+                <td className="px-4 py-2 text-right tabular-nums text-slate-300">
                   {formatPercent(row.modelProb)}
                 </td>
-                <td className="px-4 py-2 text-right tabular-nums font-semibold text-slate-900">
+                <td className="px-4 py-2 text-right tabular-nums font-semibold text-slate-100">
                   {row.bestOdds.toFixed(2)}
                 </td>
                 <td className="px-4 py-2">
                   <Badge tone="info">{row.bestBookmaker}</Badge>
                 </td>
                 <td
-                  className={`px-4 py-2 text-right tabular-nums font-semibold ${row.ev >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}
+                  className={`px-4 py-2 text-right tabular-nums font-semibold ${row.ev >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}
                 >
                   {formatSignedPercent(row.ev)}
                 </td>
-                <td className="px-4 py-2 text-right tabular-nums text-slate-700">
+                <td className="px-4 py-2 text-right tabular-nums text-slate-300">
                   {formatSignedPercent(row.edge)}
                 </td>
                 <td className="px-4 py-2 text-right">

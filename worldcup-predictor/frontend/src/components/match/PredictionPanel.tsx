@@ -19,12 +19,12 @@ export function PredictionPanel({ match }: PredictionPanelProps) {
     <Card>
       <CardHeader>
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">胜平负预测</h3>
-          <p className="mt-0.5 text-xs text-slate-500">基于 Poisson 模型 + Elo 修正</p>
+          <h3 className="text-sm font-semibold text-slate-100">胜平负预测</h3>
+          <p className="mt-0.5 text-xs text-slate-400">基于 Poisson 模型 + Elo 修正</p>
         </div>
-        <div className="text-right text-xs text-slate-500">
+        <div className="text-right text-xs text-slate-400">
           <div>置信度</div>
-          <div className="text-lg font-bold text-slate-900">{match.confidenceScore ?? '—'}</div>
+          <div className="hero-number text-2xl font-bold">{match.confidenceScore ?? '—'}</div>
         </div>
       </CardHeader>
       <CardBody className="space-y-3">
@@ -41,11 +41,11 @@ function Row({ label, value, barClass }: { label: string; value: number; barClas
   return (
     <div>
       <div className="mb-1 flex items-center justify-between text-sm">
-        <span className="text-slate-700">{label}</span>
-        <span className="font-semibold text-slate-900">{formatPercent(value)}</span>
+        <span className="text-slate-300">{label}</span>
+        <span className="font-semibold tabular-nums text-slate-100">{formatPercent(value)}</span>
       </div>
       <div
-        className="h-2 overflow-hidden rounded-full bg-slate-100"
+        className="h-2 overflow-hidden rounded-full bg-slate-800/80 ring-1 ring-slate-700/60"
         role="progressbar"
         aria-valuenow={Number(pct)}
         aria-valuemin={0}

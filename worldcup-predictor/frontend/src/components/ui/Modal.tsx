@@ -51,14 +51,14 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
       />
       <div
         className={cn(
-          'relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl',
+          'relative z-10 w-full max-w-md rounded-2xl bg-slate-900/70 p-6 shadow-xl',
           className,
         )}
       >
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-3 top-3 rounded-full p-1 text-slate-500 hover:bg-slate-100"
+          className="absolute right-3 top-3 rounded-full p-1 text-slate-400 hover:bg-slate-800/70"
           aria-label="关闭"
         >
           <X size={18} />

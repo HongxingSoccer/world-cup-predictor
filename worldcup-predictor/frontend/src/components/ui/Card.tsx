@@ -12,9 +12,13 @@ export function Card({ children, className, variant = 'default', ...props }: Car
   return (
     <div
       className={cn(
-        'rounded-2xl bg-white text-slate-900',
-        variant === 'default' && 'border border-slate-200 shadow-sm',
-        variant === 'subtle' && 'bg-slate-50',
+        'rounded-2xl text-slate-100',
+        // surface-card from globals.css: glassy slate-900/60 with a hairline
+        // border that lifts to cyan on hover. variant=subtle drops the hover
+        // glow for nested / secondary cards so the parent stays the focus.
+        variant === 'default' && 'surface-card',
+        variant === 'subtle' &&
+          'border border-slate-800/70 bg-slate-900/40 backdrop-blur-sm',
         className,
       )}
       {...props}
@@ -28,7 +32,7 @@ export function CardHeader({ children, className }: { children: ReactNode; class
   return (
     <div
       className={cn(
-        'flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4',
+        'flex items-start justify-between gap-3 border-b border-slate-800/70 px-5 py-4',
         className,
       )}
     >
@@ -44,7 +48,10 @@ export function CardBody({ children, className }: { children: ReactNode; classNa
 export function CardFooter({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div
-      className={cn('border-t border-slate-100 px-5 py-3 text-sm text-slate-500', className)}
+      className={cn(
+        'border-t border-slate-800/70 px-5 py-3 text-sm text-slate-400',
+        className,
+      )}
     >
       {children}
     </div>

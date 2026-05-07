@@ -1,12 +1,16 @@
 package com.wcp.dto.response;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Tier-aware match summary. Some fields collapse to {@code null} for free
  * users (see {@link com.wcp.service.ContentTierService}); they are therefore
  * always nullable on the wire.
+ *
+ * {@code teamStats} + {@code h2h} are populated by the read endpoint
+ * (/matches/{id}) only — list views (today / upcoming) leave them null.
  */
 public record MatchSummaryResponse(
         Long matchId,
@@ -23,7 +27,13 @@ public record MatchSummaryResponse(
         Boolean hasValueSignal,
         Integer topSignalLevel,
         Map<String, Object> oddsAnalysis,
-        Map<String, Object> scoreMatrix,
+        Object scoreMatrix,
         Map<String, Object> overUnderProbs,
-        Boolean locked
+        Boolean locked,
+        List<Map<String, Object>> teamStats,
+        Map<String, Object> h2h,
+        String venue,
+        String round,
+        Integer homeScore,
+        Integer awayScore
 ) {}

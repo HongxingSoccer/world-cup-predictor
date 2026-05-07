@@ -30,8 +30,8 @@ export function BracketMatch({ data, className }: BracketMatchProps) {
   const inner = (
     <div
       className={cn(
-        'flex w-44 flex-col gap-1 rounded-lg border bg-white p-2 text-xs shadow-sm',
-        tbd ? 'border-slate-200 text-slate-400' : 'border-slate-300 text-slate-700',
+        'flex w-44 flex-col gap-1 rounded-lg border bg-slate-900/70 p-2 text-xs shadow-sm',
+        tbd ? 'border-slate-800/70 text-slate-400' : 'border-slate-700 text-slate-300',
         className,
       )}
     >
@@ -71,7 +71,7 @@ function BracketRow({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <span className={cn('truncate', winner ? 'font-bold text-slate-900' : '')}>
+      <span className={cn('truncate', winner ? 'font-bold text-slate-100' : '')}>
         {team ?? '待定'}
       </span>
       <span className="ml-2 shrink-0 tabular-nums">
