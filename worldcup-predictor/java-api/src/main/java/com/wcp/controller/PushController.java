@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -56,5 +57,23 @@ public class PushController {
         Map<String, Object> payload = new HashMap<>(body == null ? Map.of() : body);
         payload.put("user_id", principal.id());
         return ResponseEntity.ok(mlApiClient.putPushSettings(payload));
+    }
+
+    @PostMapping("/test")
+    @Operation(summary = "Send a test push notification to the current user.")
+    public ResponseEntity<Map<String, Object>> test(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestBody Map<String, Object> body
+    ) {
+        if (principal == null || principal.id() == null) {
+            throw ApiException.unauthorized("login required");
+        }
+        Map<String, Object> payload = new HashMap<>(body == null ? Map.of() : body);
+        payload.put("user_id", principal.id());
+        // Belt-and-braces defaults so a minimal {"channel": "wechat"} body still works.
+        payload.putIfAbsent("channel", "wechat");
+        payload.putIfAbsent("title", "WCP 测试推送");
+        payload.putIfAbsent("body", "这是一条测试通知，用以验证你的推送偏好已正确保存。");
+        return ResponseEntity.ok(mlApiClient.testPushNotification(payload));
     }
 }

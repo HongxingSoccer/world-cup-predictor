@@ -223,7 +223,7 @@ export default function NotificationsPage() {
         </CardBody>
       </Card>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-xs">
           {savedAt ? (
             <span className="text-emerald-300">✓ 已保存</span>
@@ -233,11 +233,44 @@ export default function NotificationsPage() {
             <span className="text-slate-500">未保存</span>
           )}
         </div>
-        <Button onClick={save} disabled={pending}>
-          {pending ? '保存中…' : '保存'}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <TestPushButton />
+          <Button onClick={save} disabled={pending}>
+            {pending ? '保存中…' : '保存'}
+          </Button>
+        </div>
       </div>
     </div>
+  );
+}
+
+function TestPushButton() {
+  const [state, setState] = useState<'idle' | 'pending' | 'sent' | 'error'>('idle');
+  const click = async () => {
+    setState('pending');
+    try {
+      await api.post('/api/v1/push/settings/test', {
+        channel: 'wechat',
+        title: 'WCP 测试推送',
+        body: '这是一条测试通知，用以验证你的推送偏好已正确保存。',
+      });
+      setState('sent');
+      setTimeout(() => setState('idle'), 3000);
+    } catch {
+      setState('error');
+      setTimeout(() => setState('idle'), 3000);
+    }
+  };
+  return (
+    <Button variant="ghost" onClick={click} disabled={state === 'pending'}>
+      {state === 'pending'
+        ? '发送中…'
+        : state === 'sent'
+          ? '✓ 已发送（演练）'
+          : state === 'error'
+            ? '发送失败'
+            : '发条测试推送'}
+    </Button>
   );
 }
 

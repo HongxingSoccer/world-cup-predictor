@@ -29,7 +29,17 @@ from src.config.settings import settings
 logger = structlog.get_logger(__name__)
 
 _PUBLIC_PATHS: Final[frozenset[str]] = frozenset(
-    {"/api/v1/model/health", "/health", "/", "/docs", "/redoc", "/openapi.json"}
+    {
+        "/api/v1/model/health",
+        "/health",
+        "/",
+        "/docs",
+        "/redoc",
+        "/openapi.json",
+        # Browser error reporting — must accept anonymous fire-and-forget POSTs
+        # so the public `error.tsx` boundary can phone home with the digest.
+        "/api/v1/client-errors",
+    }
 )
 
 

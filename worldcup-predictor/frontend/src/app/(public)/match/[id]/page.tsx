@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
+import { AIReportCard } from '@/components/match/AIReportCard';
 import type { CompactMatch } from '@/components/match/CompactMatchCard';
 import { FavoriteButton } from '@/components/match/FavoriteButton';
 import { H2HPanel } from '@/components/match/H2HPanel';
@@ -56,6 +57,21 @@ async function fetchRelated(id: string): Promise<CompactMatch[]> {
   }
 }
 
+async function fetchReport(id: string): Promise<Record<string, unknown> | null> {
+  try {
+    const response = await fetch(
+      `${ssrBaseUrl()}/api/v1/matches/${id}/report`,
+      { next: { revalidate: 300 } },
+    );
+    if (!response.ok) return null;
+    const body = await response.json();
+    if (!body || typeof body !== 'object' || Object.keys(body).length === 0) return null;
+    return body as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
 export async function generateMetadata({ params }: MatchPageProps): Promise<Metadata> {
   const match = await fetchMatch(params.id);
   if (!match) {
@@ -74,9 +90,10 @@ export async function generateMetadata({ params }: MatchPageProps): Promise<Meta
 }
 
 export default async function MatchDetailPage({ params }: MatchPageProps) {
-  const [match, related] = await Promise.all([
+  const [match, related, report] = await Promise.all([
     fetchMatch(params.id),
     fetchRelated(params.id),
+    fetchReport(params.id),
   ]);
   if (!match) {
     notFound();
@@ -116,6 +133,8 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
           summary={h2hSummary}
         />
       </div>
+
+      <AIReportCard report={report} />
 
       <div className="flex items-center justify-between gap-3">
         <FavoriteButton

@@ -104,6 +104,12 @@ public class MatchController {
         return ResponseEntity.ok(matchService.getRelatedMatches(id, clamped));
     }
 
+    @GetMapping("/api/v1/matches/{id}/report")
+    @Operation(summary = "Latest published AI match-analysis report.")
+    public ResponseEntity<Map<String, Object>> report(@PathVariable long id) {
+        return ResponseEntity.ok(matchService.getMatchReport(id));
+    }
+
     @GetMapping("/api/v1/users/me/favorites")
     @Operation(summary = "Authenticated caller's favourite matches with summary metadata.")
     public ResponseEntity<List<Map<String, Object>>> myFavorites(

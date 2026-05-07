@@ -92,6 +92,11 @@ public class MatchService {
         return mlApiClient.matchesRelated(matchId, limit);
     }
 
+    /** Pass-through for the {@code /matches/{id}/report} controller. */
+    public Map<String, Object> getMatchReport(long matchId) {
+        return mlApiClient.matchReport(matchId);
+    }
+
     /**
      * One round-trip per call: read the user's UserFavorite rows, then ask
      * ml-api for compact match summaries in a single batch request. Order

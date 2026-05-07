@@ -13,14 +13,33 @@ interface ErrorProps {
  * App-level error boundary. Renders inside the root layout (with header /
  * footer), so it inherits the dark gradient + chrome — only the body slot
  * swaps out for this fallback.
+ *
+ * Side-effect: posts the digest to ml-api's `/client-errors` sentinel so
+ * we have server-side breadcrumb when a user reports a problem. The POST
+ * is fire-and-forget — failure to phone home never blocks the UI.
  */
 export default function GlobalErrorBoundary({ error, reset }: ErrorProps) {
   useEffect(() => {
-    // Surface the digest in the console so it's easy to grep for in the
-    // server logs when a user reports a problem.
-    if (typeof window !== 'undefined' && error.digest) {
+    if (typeof window === 'undefined') return;
+    if (error.digest) {
       console.error('[error.tsx]', error.digest, error.message);
     }
+    const baseUrl =
+      process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+    const payload = {
+      digest: error.digest ?? null,
+      pathname: window.location.pathname,
+      message: error.message?.slice(0, 2000) ?? null,
+    };
+    // The endpoint is whitelisted in the API-key middleware so anonymous
+    // browsers can post directly. We swallow any network error — the
+    // boundary already showed the user a helpful message.
+    fetch(`${baseUrl}/api/v1/client-errors`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).catch(() => undefined);
   }, [error]);
 
   return (

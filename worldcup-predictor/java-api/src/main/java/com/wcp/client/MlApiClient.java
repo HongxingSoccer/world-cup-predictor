@@ -234,6 +234,43 @@ public class MlApiClient {
     }
 
     /**
+     * GET /api/v1/matches/{id}/report — latest published AI analysis.
+     * Empty map → no published report yet (frontend renders the empty
+     * state instead of failing).
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> matchReport(long matchId) {
+        try {
+            Map<String, Object> body = restTemplate.getForObject(
+                    "/api/v1/matches/" + matchId + "/report", Map.class);
+            return body == null ? Map.of() : body;
+        } catch (HttpClientErrorException ex) {
+            log.info("ml_api_match_report_4xx match={} status={}", matchId, ex.getStatusCode());
+            return Map.of();
+        } catch (RestClientException ex) {
+            log.warn("ml_api_match_report_failed match={} error={}", matchId, ex.getMessage());
+            return Map.of();
+        }
+    }
+
+    /**
+     * POST /api/v1/push/test — dry-run a test push for the given user.
+     * Returns the previewed payload (currently a stub on the ml-api side
+     * until the real fan-out worker is wired up).
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> testPushNotification(Map<String, Object> payload) {
+        try {
+            Map<String, Object> body = restTemplate.postForObject(
+                    "/api/v1/push/test", payload, Map.class);
+            return body == null ? Map.of() : body;
+        } catch (RestClientException ex) {
+            log.warn("ml_api_push_test_failed error={}", ex.getMessage());
+            return Map.of();
+        }
+    }
+
+    /**
      * PUT /api/v1/push/settings — payload must include user_id. Returns the
      * persisted row.
      */
