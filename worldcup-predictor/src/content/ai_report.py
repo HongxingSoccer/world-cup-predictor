@@ -117,6 +117,99 @@ class FallbackLLMClient:
         )
 
 
+class StubLLMClient:
+    """Deterministic placeholder used when no real LLM credentials are configured.
+
+    The Celery report task (`generate_match_report`) MUST receive *some*
+    `LLMClient` instance — without one it raises. Pre-launch we don't have
+    Claude / OpenAI keys yet but want the task pipeline (settlement →
+    report fan-out → push) to still execute end-to-end so we can shake out
+    plumbing bugs. This client returns a templated 8-section report based
+    on the structured probabilities the caller already has, so generated
+    reports look real enough to validate the renderer + persistence path.
+
+    Wire-up: :func:`build_llm_client_from_settings` returns one of these
+    when the operator hasn't set ``ANTHROPIC_API_KEY`` /
+    ``OPENAI_API_KEY``. Once a real key lands the same factory swaps in
+    the production client without touching call sites.
+    """
+
+    name = "stub-llm"
+
+    def complete(self, system: str, user: str, *, max_tokens: int) -> str:
+        # The user prompt embeds the team names + key probs in a structured
+        # JSON-like dump (built by AIReportGenerator). Pulling them back out
+        # by string-search keeps this stub independent of the real prompt
+        # format — when the format evolves the report just degrades to the
+        # generic template, never crashes.
+        home = _scan(user, "home_team")
+        away = _scan(user, "away_team")
+        prob = _scan(user, "prob_home_win")
+        sections = "\n\n".join(
+            f"## {idx + 1}. {name}\n（待 LLM 接入后生成正式分析。当前为占位文本，"
+            f"用以验证报告流水线、推送分发、卡片渲染等下游链路。）"
+            for idx, name in enumerate(REPORT_SECTIONS)
+        )
+        header = (
+            f"# {home or '主队'} vs {away or '客队'} · 赛前分析（占位）\n"
+            f"模型主胜概率约 {prob or '—'}。本报告由占位生成器输出，"
+            f"接入正式 LLM 后将自动替换。\n"
+        )
+        return f"{header}\n{sections}\n\n{DISCLAIMER}"
+
+
+def _scan(text: str, key: str) -> Optional[str]:
+    """Best-effort key:value extractor for the StubLLMClient prompt scan."""
+    needle = f'"{key}"'
+    idx = text.find(needle)
+    if idx < 0:
+        return None
+    tail = text[idx + len(needle):]
+    colon = tail.find(":")
+    if colon < 0:
+        return None
+    fragment = tail[colon + 1:].lstrip()
+    end = 0
+    while end < len(fragment) and fragment[end] not in {",", "\n", "}", "]"}:
+        end += 1
+    return fragment[:end].strip().strip('"').strip("'") or None
+
+
+def build_llm_client_from_settings() -> LLMClient:
+    """Return the best LLM client available given the current env config.
+
+    Order of preference: real Anthropic → OpenAI-compatible → stub. This
+    keeps the production path identical (FallbackLLMClient with both real
+    clients) when keys are configured, and makes dev / pre-launch builds
+    work without any keys at all.
+    """
+    from src.config.settings import settings  # local — avoid import cycles
+
+    anthropic_key = getattr(settings, "ANTHROPIC_API_KEY", None) or None
+    openai_key = getattr(settings, "OPENAI_API_KEY", None) or None
+    openai_base = getattr(settings, "OPENAI_BASE_URL", None) or None
+    primary_model = (
+        getattr(settings, "LLM_PRIMARY_MODEL", None) or DEFAULT_PRIMARY_MODEL
+    )
+    fallback_model = (
+        getattr(settings, "LLM_FALLBACK_MODEL", None) or DEFAULT_FALLBACK_MODEL
+    )
+
+    real: list[LLMClient] = []
+    if anthropic_key:
+        real.append(AnthropicClient(api_key=anthropic_key, model=primary_model))
+    if openai_key:
+        real.append(
+            OpenAICompatibleClient(
+                api_key=openai_key, base_url=openai_base, model=fallback_model
+            )
+        )
+    if real:
+        return FallbackLLMClient(real) if len(real) > 1 else real[0]
+    logger.info("llm_using_stub_client_no_keys_configured")
+    return StubLLMClient()
+
+
 class OpenAICompatibleClient:
     """OpenAI-compatible client; works with OpenAI / DeepSeek / Qwen / GPT-4o-mini."""
 

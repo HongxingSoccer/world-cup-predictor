@@ -1,6 +1,6 @@
 'use client';
 
-import { Pencil } from 'lucide-react';
+import { Bell, Pencil } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 
@@ -61,6 +61,27 @@ export default function ProfilePage() {
       />
 
       <MyFavoritesCard />
+
+      <Card>
+        <CardBody>
+          <button
+            type="button"
+            onClick={() => router.push('/notifications')}
+            className="flex w-full items-center gap-3 text-left"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-300">
+              <Bell size={18} />
+            </span>
+            <div className="flex-1">
+              <div className="text-sm font-semibold text-slate-100">通知偏好</div>
+              <div className="text-xs text-slate-400">
+                价值信号 · 红单战报 · 比赛开球 · 免打扰时段
+              </div>
+            </div>
+            <span className="text-slate-400">›</span>
+          </button>
+        </CardBody>
+      </Card>
 
       <div className="flex justify-end">
         <Button

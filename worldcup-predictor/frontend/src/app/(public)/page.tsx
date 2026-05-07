@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 
+import { HomeMatchTabs } from '@/components/match/HomeMatchTabs';
 import { MatchDayHeader } from '@/components/match/MatchDayHeader';
-import { MatchListClient } from '@/components/match/MatchListClient';
 import { PromotionBanner } from '@/components/subscription/PromotionBanner';
-import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import type { MatchSummary } from '@/types';
 
 export const revalidate = 60; // ISR — refresh today's list every minute.
@@ -58,29 +57,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     <div className="space-y-4">
       <MatchDayHeader date={searchParams.date} />
 
-      {matches.length === 0 ? (
-        <Card>
-          <CardBody className="text-center text-sm text-slate-400">
-            今日暂无可预测的比赛。
-          </CardBody>
-        </Card>
-      ) : (
-        <MatchListClient matches={matches} />
-      )}
-
-      {upcoming.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <h2 className="text-sm font-semibold text-slate-100">即将开赛</h2>
-            <p className="text-xs text-slate-400">
-              未来 {UPCOMING_DAYS} 天内已生成预测的 {upcoming.length} 场比赛
-            </p>
-          </CardHeader>
-          <CardBody>
-            <MatchListClient matches={upcoming} />
-          </CardBody>
-        </Card>
-      ) : null}
+      <HomeMatchTabs
+        today={matches}
+        upcoming={upcoming}
+        upcomingDays={UPCOMING_DAYS}
+      />
 
       <PromotionBanner />
     </div>

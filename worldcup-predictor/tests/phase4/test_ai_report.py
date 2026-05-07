@@ -10,6 +10,8 @@ from src.content.ai_report import (
     MatchReportContext,
     OpenAICompatibleClient,
     REPORT_SECTIONS,
+    StubLLMClient,
+    build_llm_client_from_settings,
     build_user_prompt,
 )
 
@@ -102,3 +104,36 @@ def test_generator_raises_on_empty_response():
 def test_openai_client_validates_api_key():
     with pytest.raises(ValueError):
         OpenAICompatibleClient(api_key="")
+
+
+def test_stub_client_returns_eight_section_placeholder():
+    """Stub mode (no LLM keys) must still output a renderable 8-section body."""
+    client = StubLLMClient()
+    body = client.complete(
+        system="sys",
+        user='{"home_team": "Brazil", "away_team": "Argentina", "prob_home_win": 0.55}',
+        max_tokens=2000,
+    )
+    for section in REPORT_SECTIONS:
+        assert section in body
+    assert "Brazil" in body
+    assert "Argentina" in body
+    assert DISCLAIMER in body
+
+
+def test_settings_factory_returns_stub_when_no_keys(monkeypatch):
+    """Pre-launch builds (no env keys) get the stub via the factory."""
+    from src.config.settings import settings
+
+    monkeypatch.setattr(settings, "ANTHROPIC_API_KEY", "")
+    monkeypatch.setattr(settings, "OPENAI_API_KEY", "")
+    client = build_llm_client_from_settings()
+    assert isinstance(client, StubLLMClient)
+
+
+def test_generator_renders_with_stub_client():
+    """End-to-end: AIReportGenerator + StubLLMClient yields a valid report."""
+    body = AIReportGenerator(StubLLMClient()).generate(_ctx())
+    for section in REPORT_SECTIONS:
+        assert section in body
+    assert DISCLAIMER in body

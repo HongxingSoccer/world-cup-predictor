@@ -213,6 +213,47 @@ public class MlApiClient {
         }
     }
 
+    /**
+     * GET /api/v1/push/settings?user_id=… — defaults are returned for new
+     * users so this never 404s. Java is the authentication boundary; this
+     * client is only meant to be called from PushService after a principal
+     * has been resolved.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getPushSettings(long userId) {
+        String url = UriComponentsBuilder.fromPath("/api/v1/push/settings")
+                .queryParam("user_id", userId)
+                .toUriString();
+        try {
+            Map<String, Object> body = restTemplate.getForObject(url, Map.class);
+            return body == null ? Map.of() : body;
+        } catch (RestClientException ex) {
+            log.warn("ml_api_push_get_failed user={} error={}", userId, ex.getMessage());
+            return Map.of();
+        }
+    }
+
+    /**
+     * PUT /api/v1/push/settings — payload must include user_id. Returns the
+     * persisted row.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> putPushSettings(Map<String, Object> payload) {
+        try {
+            Map<String, Object> body = restTemplate
+                    .exchange(
+                            "/api/v1/push/settings",
+                            org.springframework.http.HttpMethod.PUT,
+                            new org.springframework.http.HttpEntity<>(payload),
+                            Map.class)
+                    .getBody();
+            return body == null ? Map.of() : body;
+        } catch (RestClientException ex) {
+            log.warn("ml_api_push_put_failed error={}", ex.getMessage());
+            return Map.of();
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public Map<String, Object> oddsAnalysis(long matchId) {
         Map<String, Object> request = Map.of("match_id", matchId);
