@@ -97,7 +97,10 @@ export interface MatchSummary {
 export interface SubscriptionPlan {
   tier: 'basic' | 'premium';
   planType: 'monthly' | 'worldcup_pass';
-  priceCny: number; // whole RMB cents
+  /** Display price (USD cents). The user-facing default everywhere. */
+  priceUsd: number;
+  /** Charge price (CNY fen). Surfaced when the user picks Alipay / WeChat. */
+  priceCny: number;
   durationDays: number;
   displayName: string;
 }
@@ -105,6 +108,9 @@ export interface SubscriptionPlan {
 export interface PaymentInitResponse {
   orderNo: string;
   paymentChannel: 'alipay' | 'wechat_pay';
+  /** USD cents — what the receipt + history shows. */
+  amountUsd: number;
+  /** CNY fen — what Alipay / WeChat actually charges. */
   amountCny: number;
   paymentParams: Record<string, unknown>;
 }

@@ -49,7 +49,7 @@ export function PromotionBanner() {
           <div className="flex-1 pr-8">
             <div className="text-base font-bold">解锁完整 AI 预测</div>
             <div className="text-sm opacity-90">
-              比分矩阵 · 赔率 EV 分析 · 价值信号 — 基础版仅 ¥29.9/月起
+              比分矩阵 · 赔率 EV 分析 · 价值信号 — 基础版 $9.99/月起
             </div>
           </div>
           <span className="hidden rounded-full bg-slate-950/20 px-3 py-1 text-xs font-semibold sm:inline-block">

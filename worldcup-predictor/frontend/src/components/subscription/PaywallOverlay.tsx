@@ -50,7 +50,7 @@ export function PaywallOverlay({
             {featureLabel}
           </div>
           <div className="mb-4 text-xs text-slate-400">
-            订阅后可查看完整分析。基础版 ¥29.9/月起。
+            订阅后可查看完整分析。基础版 $9.99/月起。
           </div>
           <Link href="/subscribe">
             <Button size="sm">{ctaText ?? '解锁查看完整分析'}</Button>

@@ -26,18 +26,50 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>Pricing is hard-coded in {@link #plans()} for now. Phase 3.5 will move
  * the catalogue to a `pricing_plans` table so promo codes / regional
  * pricing land without a redeploy.
+ *
+ * <p>Catalogue is denominated in <strong>USD</strong> (cents). The CNY
+ * column is computed from {@link #FX_CNY_PER_USD} so a single rate change
+ * propagates everywhere — display copy, payment-init responses, and the
+ * persisted Payment row. CNY is what's actually charged when the user
+ * picks Alipay or WeChat; future Stripe / Apple Pay channels will charge
+ * USD natively.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class SubscriptionService {
 
+    /**
+     * USD → CNY conversion rate. Conservative round number; sourcing this
+     * from a live FX feed (or even a daily-refreshed env var) is Phase 3.5
+     * work — for now a static 7.20 is close enough for pricing display.
+     */
+    public static final double FX_CNY_PER_USD = 7.20;
+
     private static final List<SubscriptionPlanResponse> PLAN_CATALOGUE = List.of(
-            new SubscriptionPlanResponse("basic",   "monthly",       2990,  30, "Basic · Monthly"),
-            new SubscriptionPlanResponse("basic",   "worldcup_pass", 6800,  60, "Basic · World-Cup Pass"),
-            new SubscriptionPlanResponse("premium", "monthly",       5990,  30, "Premium · Monthly"),
-            new SubscriptionPlanResponse("premium", "worldcup_pass", 12800, 60, "Premium · World-Cup Pass")
+            buildPlan("basic",   "monthly",        999, 30, "Basic · Monthly"),
+            buildPlan("basic",   "worldcup_pass", 2999, 60, "Basic · World-Cup Pass"),
+            buildPlan("premium", "monthly",       1999, 30, "Premium · Monthly"),
+            buildPlan("premium", "worldcup_pass", 4999, 60, "Premium · World-Cup Pass")
     );
+
+    /** Build one catalogue entry, computing CNY from the canonical USD price. */
+    private static SubscriptionPlanResponse buildPlan(
+            String tier, String planType, int priceUsdCents, int days, String label) {
+        return new SubscriptionPlanResponse(
+                tier,
+                planType,
+                priceUsdCents,
+                usdCentsToCnyFen(priceUsdCents),
+                days,
+                label
+        );
+    }
+
+    /** Convert USD cents → CNY fen using the configured rate, rounded to whole fen. */
+    public static int usdCentsToCnyFen(int priceUsdCents) {
+        return (int) Math.round(priceUsdCents * FX_CNY_PER_USD);
+    }
 
     private final SubscriptionRepository subscriptionRepository;
     private final PaymentRepository paymentRepository;
