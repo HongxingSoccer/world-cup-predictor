@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
 
 import { MarketBreakdown } from '@/components/track-record/MarketBreakdown';
-import { PredictionHistory } from '@/components/track-record/PredictionHistory';
+import {
+  PredictionHistory,
+  type PredictionHistoryRow,
+} from '@/components/track-record/PredictionHistory';
 import { ROIChart, type RoiPoint } from '@/components/track-record/ROIChart';
 import { StatsOverview } from '@/components/track-record/StatsOverview';
 import { ShareButton } from '@/components/share/ShareButton';
@@ -10,7 +13,13 @@ import type { TrackRecordOverview } from '@/types';
 
 export const revalidate = 600; // Track record page rebuilds every 10 minutes.
 
-const baseUrl = (): string => process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+// SSR fetches inside docker need to reach java-api over the docker network;
+// SERVER_API_URL is set in docker-compose for that path. Browser bundles fall
+// through to NEXT_PUBLIC_API_URL.
+const baseUrl = (): string =>
+  process.env.SERVER_API_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  'http://localhost:8080';
 
 async function fetchOverview(): Promise<TrackRecordOverview | undefined> {
   try {
@@ -51,28 +60,62 @@ interface TimeseriesPayload {
 }
 
 async function fetchTimeseries(): Promise<RoiPoint[]> {
-  // The Java service doesn't proxy /timeseries yet — try the ml-api directly
-  // when it's reachable so the chart can render real data once the
-  // tournament starts. Failures are silent: the empty-state card upstream
-  // covers the no-data case.
-  const candidates = [
-    `${baseUrl()}/api/v1/track-record/timeseries?period=all_time`,
-  ];
-  for (const url of candidates) {
-    try {
-      const r = await fetch(url, { next: { revalidate: 600 } });
-      if (!r.ok) continue;
-      const payload = (await r.json()) as TimeseriesPayload;
-      if (!Array.isArray(payload.points)) continue;
-      return payload.points.map((p) => ({
-        date: p.date,
-        cumulativePnl: Number(p.cumulative_pnl ?? p.cumulativePnl ?? 0),
-      }));
-    } catch {
-      continue;
-    }
+  try {
+    const r = await fetch(`${baseUrl()}/api/v1/track-record/timeseries?period=all_time`, {
+      next: { revalidate: 600 },
+    });
+    if (!r.ok) return [];
+    const payload = (await r.json()) as TimeseriesPayload;
+    if (!Array.isArray(payload.points)) return [];
+    return payload.points.map((p) => ({
+      date: p.date,
+      cumulativePnl: Number(p.cumulative_pnl ?? p.cumulativePnl ?? 0),
+    }));
+  } catch {
+    return [];
   }
-  return [];
+}
+
+interface HistoryPayload {
+  total: number;
+  items: Array<{
+    matchId?: number;
+    match_id?: number;
+    matchDate?: string;
+    match_date?: string;
+    homeTeam?: string;
+    home_team?: string;
+    awayTeam?: string;
+    away_team?: string;
+    predicted: 'H' | 'D' | 'A';
+    actual: 'H' | 'D' | 'A';
+    hit: boolean;
+    pnlUnit?: number;
+    pnl_unit?: number;
+  }>;
+}
+
+async function fetchHistory(): Promise<PredictionHistoryRow[]> {
+  try {
+    const r = await fetch(`${baseUrl()}/api/v1/track-record/history?size=20&page=0`, {
+      next: { revalidate: 600 },
+    });
+    if (!r.ok) return [];
+    const payload = (await r.json()) as HistoryPayload;
+    if (!Array.isArray(payload.items)) return [];
+    return payload.items.map((item) => ({
+      matchId: Number(item.matchId ?? item.match_id ?? 0),
+      matchDate: String(item.matchDate ?? item.match_date ?? ''),
+      homeTeam: String(item.homeTeam ?? item.home_team ?? ''),
+      awayTeam: String(item.awayTeam ?? item.away_team ?? ''),
+      predicted: item.predicted,
+      actual: item.actual,
+      hit: Boolean(item.hit),
+      pnlUnit: Number(item.pnlUnit ?? item.pnl_unit ?? 0),
+    }));
+  } catch {
+    return [];
+  }
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -90,10 +133,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function TrackRecordPage() {
-  const [overview, byPeriod, series] = await Promise.all([
+  const [overview, byPeriod, series, history] = await Promise.all([
     fetchOverview(),
     fetchByPeriod(),
     fetchTimeseries(),
+    fetchHistory(),
   ]);
 
   const isEmpty = !overview || overview.totalPredictions === 0;
@@ -110,7 +154,7 @@ export default async function TrackRecordPage() {
       {isEmpty ? <EmptyTrackRecordCard /> : <ROIChart series={series} />}
 
       <MarketBreakdown rows={byPeriod} />
-      <PredictionHistory rows={[]} />
+      <PredictionHistory rows={history} />
     </div>
   );
 }

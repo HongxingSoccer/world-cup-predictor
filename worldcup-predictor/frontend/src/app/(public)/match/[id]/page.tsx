@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
+import { FavoriteButton } from '@/components/match/FavoriteButton';
 import { H2HPanel } from '@/components/match/H2HPanel';
 import { MatchHeader } from '@/components/match/MatchHeader';
 import { OddsCompareTable, type OddsRow } from '@/components/match/OddsCompareTable';
@@ -16,7 +17,14 @@ interface MatchPageProps {
 }
 
 async function fetchMatch(id: string): Promise<MatchSummary | null> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+  // Server-side fetches inside docker can't reach the published nginx port via
+  // localhost — they must hit the java-api service over the docker network.
+  // SERVER_API_URL is set in docker-compose for that path; falls back to the
+  // browser-visible URL outside docker.
+  const baseUrl =
+    process.env.SERVER_API_URL ??
+    process.env.NEXT_PUBLIC_API_URL ??
+    'http://localhost:8080';
   try {
     const response = await fetch(`${baseUrl}/api/v1/matches/${id}`, {
       next: { revalidate: 60 },
@@ -52,13 +60,7 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
   }
 
   const teamStatsRows = match.teamStats ?? [];
-  const h2hSummary = match.h2h ?? {
-    totalMatches: 0,
-    homeWins: 0,
-    draws: 0,
-    awayWins: 0,
-    avgGoals: 0,
-  };
+  const h2hSummary = toH2hSummary(match.h2h);
   const oddsRows = toOddsRows(match.oddsAnalysis);
 
   const shareUrl = `/match/${match.matchId}`;
@@ -92,7 +94,11 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
         />
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between gap-3">
+        <FavoriteButton
+          matchId={match.matchId}
+          initialFavorited={match.favorited}
+        />
         <ShareButton
           targetType="match"
           targetId={match.matchId}
@@ -101,6 +107,33 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
       </div>
     </div>
   );
+}
+
+/** Normalize the h2h object — Java forwards ml-api's payload as a typeless
+ * Map<String,Object>, so the snake_case keys flow through unchanged. */
+function toH2hSummary(raw: MatchSummary['h2h'] | undefined): {
+  totalMatches: number;
+  homeWins: number;
+  draws: number;
+  awayWins: number;
+  avgGoals: number;
+  lastMatchDate?: string | null;
+} {
+  if (!raw || typeof raw !== 'object') {
+    return { totalMatches: 0, homeWins: 0, draws: 0, awayWins: 0, avgGoals: 0 };
+  }
+  const r = raw as unknown as Record<string, unknown>;
+  return {
+    totalMatches: Number(r.totalMatches ?? r.total_matches ?? 0),
+    homeWins: Number(r.homeWins ?? r.home_wins ?? 0),
+    draws: Number(r.draws ?? 0),
+    awayWins: Number(r.awayWins ?? r.away_wins ?? 0),
+    avgGoals: Number(r.avgGoals ?? r.avg_goals ?? 0),
+    lastMatchDate:
+      (r.lastMatchDate as string | null | undefined) ??
+      (r.last_match_date as string | null | undefined) ??
+      null,
+  };
 }
 
 /** Coerce ml-api's snake_case odds_analysis array into the camelCase OddsRow shape. */

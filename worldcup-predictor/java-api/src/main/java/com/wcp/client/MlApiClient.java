@@ -124,6 +124,45 @@ public class MlApiClient {
         }
     }
 
+    /**
+     * GET /api/v1/track-record/timeseries — daily cumulative-PnL series for the ROI
+     * chart. Returns an empty payload on transport failure / 4xx so the
+     * frontend can render the empty-state card instead of erroring.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> trackRecordTimeseries(String period) {
+        String url = UriComponentsBuilder.fromPath("/api/v1/track-record/timeseries")
+                .queryParam("period", period)
+                .toUriString();
+        try {
+            Map<String, Object> body = restTemplate.getForObject(url, Map.class);
+            return body == null ? Map.of("period", period, "points", List.of()) : body;
+        } catch (RestClientException ex) {
+            log.warn("ml_api_timeseries_failed period={} error={}", period, ex.getMessage());
+            return Map.of("period", period, "points", List.of());
+        }
+    }
+
+    /**
+     * GET /api/v1/track-record/history — paged settled-prediction history
+     * with team names and outcome flags. The Java controller passes through
+     * the full body (items + total) so the frontend can paginate.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> trackRecordHistory(int limit, int offset) {
+        String url = UriComponentsBuilder.fromPath("/api/v1/track-record/history")
+                .queryParam("limit", limit)
+                .queryParam("offset", offset)
+                .toUriString();
+        try {
+            Map<String, Object> body = restTemplate.getForObject(url, Map.class);
+            return body == null ? Map.of("total", 0, "items", List.of()) : body;
+        } catch (RestClientException ex) {
+            log.warn("ml_api_history_failed error={}", ex.getMessage());
+            return Map.of("total", 0, "items", List.of());
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public Map<String, Object> oddsAnalysis(long matchId) {
         Map<String, Object> request = Map.of("match_id", matchId);

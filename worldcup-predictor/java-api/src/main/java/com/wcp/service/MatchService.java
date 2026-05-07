@@ -50,7 +50,7 @@ public class MatchService {
                 .toList();
     }
 
-    public MatchSummaryResponse getMatchDetail(long matchId, SubscriptionTier tier) {
+    public MatchSummaryResponse getMatchDetail(long matchId, UserPrincipal principal) {
         // Read endpoint never invokes the model — returns metadata + the
         // latest persisted prediction (if any) + form / H2H. Empty payload
         // means the match row itself is missing → propagate 404.
@@ -58,7 +58,26 @@ public class MatchService {
         if (body.isEmpty()) {
             throw ApiException.notFound("match");
         }
-        return contentTierService.applyTier(toMatchSummary(body), tier);
+        SubscriptionTier tier = principal != null ? principal.subscriptionTier() : SubscriptionTier.FREE;
+        // Decorate with `favorited` only when authenticated; anonymous callers
+        // see null so the UI knows to hide the favourite control entirely.
+        Boolean favorited = (principal != null && principal.id() != null)
+                ? favoriteRepository.findByUserIdAndMatchId(principal.id(), matchId).isPresent()
+                : null;
+        MatchSummaryResponse raw = withFavorited(toMatchSummary(body), favorited);
+        return contentTierService.applyTier(raw, tier);
+    }
+
+    private static MatchSummaryResponse withFavorited(MatchSummaryResponse base, Boolean favorited) {
+        return new MatchSummaryResponse(
+                base.matchId(), base.matchDate(), base.homeTeam(), base.awayTeam(),
+                base.competition(), base.status(), base.probHomeWin(), base.probDraw(),
+                base.probAwayWin(), base.confidenceScore(), base.confidenceLevel(),
+                base.hasValueSignal(), base.topSignalLevel(), base.oddsAnalysis(),
+                base.scoreMatrix(), base.overUnderProbs(), base.locked(),
+                base.teamStats(), base.h2h(), base.venue(), base.round(),
+                base.homeScore(), base.awayScore(), favorited
+        );
     }
 
     public Map<String, Object> getOddsAnalysis(long matchId, SubscriptionTier tier) {
@@ -136,7 +155,8 @@ public class MatchService {
                 (String) raw.get("venue"),
                 (String) raw.get("round"),
                 asInteger(raw.get("home_score")),
-                asInteger(raw.get("away_score"))
+                asInteger(raw.get("away_score")),
+                null  // favorited — populated by getMatchDetail when authenticated
         );
     }
 

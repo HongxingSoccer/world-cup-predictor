@@ -15,11 +15,14 @@ from typing import Optional
 import structlog
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import asc, select
+from sqlalchemy import asc, desc, func, select
 from sqlalchemy.orm import Session
 
 from src.api.dependencies import get_db_session
+from src.models.match import Match
+from src.models.prediction import Prediction
 from src.models.prediction_result import PredictionResult
+from src.models.team import Team
 from src.models.track_record_stat import TrackRecordStat
 from src.utils.track_record import PERIODS, STAT_TYPES
 
@@ -58,6 +61,28 @@ class RoiTimeseries(BaseModel):
 
     period: str
     points: list[RoiPoint] = Field(default_factory=list)
+
+
+class HistoryRow(BaseModel):
+    """One settled-prediction row for the public history list."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    match_id: int
+    match_date: datetime
+    home_team: str
+    away_team: str
+    predicted: str  # 'H' | 'D' | 'A'
+    actual: str
+    hit: bool
+    pnl_unit: float
+
+
+class HistoryResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    total: int
+    items: list[HistoryRow] = Field(default_factory=list)
 
 
 @router.get("/overview", response_model=TrackRecordOverview)
@@ -114,6 +139,69 @@ def roi_chart(
     ]
 
 
+@router.get("/history", response_model=HistoryResponse)
+def history(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db_session: Session = Depends(get_db_session),
+) -> HistoryResponse:
+    """Paged settled-prediction history: prediction_results ⨯ predictions ⨯ matches ⨯ teams.
+
+    Predicted outcome is derived from the prediction's argmax of (home/draw/away)
+    probabilities. Actual outcome falls out of the score comparison. ``hit`` mirrors
+    the ``result_1x2_hit`` flag so the row matches what the settlement task wrote.
+    """
+    total = db_session.execute(select(func.count(PredictionResult.id))).scalar_one()
+    if not total:
+        return HistoryResponse(total=0, items=[])
+
+    HomeTeam = Team.__table__.alias("home_team")  # noqa: N806
+    AwayTeam = Team.__table__.alias("away_team")  # noqa: N806
+
+    stmt = (
+        select(
+            PredictionResult.match_id,
+            PredictionResult.actual_home_score,
+            PredictionResult.actual_away_score,
+            PredictionResult.result_1x2_hit,
+            PredictionResult.pnl_unit,
+            Match.match_date,
+            HomeTeam.c.name.label("home_team"),
+            AwayTeam.c.name.label("away_team"),
+            Prediction.prob_home_win,
+            Prediction.prob_draw,
+            Prediction.prob_away_win,
+        )
+        .join(Prediction, Prediction.id == PredictionResult.prediction_id)
+        .join(Match, Match.id == PredictionResult.match_id)
+        .join(HomeTeam, HomeTeam.c.id == Match.home_team_id)
+        .join(AwayTeam, AwayTeam.c.id == Match.away_team_id)
+        .order_by(desc(PredictionResult.settled_at))
+        .limit(limit)
+        .offset(offset)
+    )
+
+    rows = db_session.execute(stmt).all()
+    items = [
+        HistoryRow(
+            match_id=row.match_id,
+            match_date=row.match_date,
+            home_team=row.home_team,
+            away_team=row.away_team,
+            predicted=_argmax_outcome(
+                float(row.prob_home_win),
+                float(row.prob_draw),
+                float(row.prob_away_win),
+            ),
+            actual=_score_outcome(row.actual_home_score, row.actual_away_score),
+            hit=bool(row.result_1x2_hit),
+            pnl_unit=float(row.pnl_unit) if row.pnl_unit is not None else 0.0,
+        )
+        for row in rows
+    ]
+    return HistoryResponse(total=int(total), items=items)
+
+
 @router.get("/timeseries", response_model=RoiTimeseries)
 def timeseries(
     period: str = Query(default="all_time"),
@@ -161,6 +249,26 @@ def timeseries(
 
 
 # --- Helpers --------------------------------------------------------------
+
+
+def _argmax_outcome(home: float, draw: float, away: float) -> str:
+    """Return 'H'/'D'/'A' for the most-likely outcome (ties → 'D')."""
+    if home > draw and home > away:
+        return "H"
+    if away > draw and away > home:
+        return "A"
+    return "D"
+
+
+def _score_outcome(home: int | None, away: int | None) -> str:
+    """Compare actual scores to derive the realised 1x2 outcome."""
+    if home is None or away is None:
+        return "D"
+    if home > away:
+        return "H"
+    if home < away:
+        return "A"
+    return "D"
 
 
 def _row_to_overview(row: TrackRecordStat) -> TrackRecordOverview:

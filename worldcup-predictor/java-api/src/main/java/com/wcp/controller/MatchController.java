@@ -58,8 +58,7 @@ public class MatchController {
             @PathVariable long id,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        SubscriptionTier tier = (principal != null) ? principal.subscriptionTier() : SubscriptionTier.FREE;
-        return ResponseEntity.ok(matchService.getMatchDetail(id, tier));
+        return ResponseEntity.ok(matchService.getMatchDetail(id, principal));
     }
 
     @GetMapping("/api/v1/matches/{id}/prediction")
@@ -72,7 +71,7 @@ public class MatchController {
         if (!tier.isAtLeast(SubscriptionTier.BASIC)) {
             throw ApiException.subscriptionExpired();
         }
-        return ResponseEntity.ok(matchService.getMatchDetail(id, tier));
+        return ResponseEntity.ok(matchService.getMatchDetail(id, principal));
     }
 
     @GetMapping("/api/v1/matches/{id}/odds-analysis")

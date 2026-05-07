@@ -150,3 +150,72 @@ def test_overview_clamps_unknown_stat_type(api_client):
     )
     assert response.status_code == 200
     assert response.json()["stat_type"] == "overall"
+
+
+def test_history_empty_when_no_results(api_client):
+    response = api_client.get("/api/v1/track-record/history")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 0
+    assert body["items"] == []
+
+
+def test_history_returns_settled_predictions_with_team_names(
+    api_client, db_session, make_match, utc
+):
+    """History row carries team names + derived predicted/actual outcomes."""
+    from src.models.prediction import Prediction
+
+    match = make_match(utc(2026, 6, 12), home_score=2, away_score=1)
+    db_session.flush()
+
+    pred = Prediction(
+        match_id=match.id,
+        model_version="poisson_v1",
+        feature_version="v1",
+        prob_home_win=Decimal("0.5500"),
+        prob_draw=Decimal("0.2500"),
+        prob_away_win=Decimal("0.2000"),
+        lambda_home=Decimal("1.500"),
+        lambda_away=Decimal("0.900"),
+        score_matrix=[[0.1, 0.05]],
+        top_scores=[{"score": "1-0", "prob": 0.2}],
+        over_under_probs={"2.5": {"over": 0.45, "under": 0.55}},
+        btts_prob=Decimal("0.5000"),
+        confidence_score=72,
+        confidence_level="medium",
+        features_snapshot={"feature_count": 28},
+        content_hash="b" * 64,
+        published_at=match.match_date - timedelta(hours=1),
+    )
+    db_session.add(pred)
+    db_session.flush()
+
+    db_session.add(
+        PredictionResult(
+            prediction_id=pred.id,
+            match_id=match.id,
+            actual_home_score=2,
+            actual_away_score=1,
+            result_1x2_hit=True,
+            result_score_hit=False,
+            pnl_unit=Decimal("0.9000"),
+            settled_at=datetime.now(timezone.utc) - timedelta(hours=1),
+        )
+    )
+    db_session.flush()
+
+    response = api_client.get("/api/v1/track-record/history?limit=10")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 1
+    assert len(body["items"]) == 1
+    row = body["items"][0]
+    # Argmax of (0.55, 0.25, 0.20) → "H"; actual 2-1 → "H"; settled hit=True.
+    assert row["predicted"] == "H"
+    assert row["actual"] == "H"
+    assert row["hit"] is True
+    assert row["pnl_unit"] == pytest.approx(0.9, abs=1e-3)
+    # Team names from seed_world fixture.
+    assert row["home_team"] == "Alpha"
+    assert row["away_team"] == "Beta"
