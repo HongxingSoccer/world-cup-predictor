@@ -38,5 +38,11 @@ public record MatchSummaryResponse(
         Integer awayScore,
         // Detail-only: true when the authenticated user has favourited this
         // match. Always null on list views and for anonymous callers.
-        Boolean favorited
+        Boolean favorited,
+        // Team crests + Chinese names (populated only by the detail endpoint;
+        // null on the today / upcoming list views).
+        String homeTeamLogo,
+        String awayTeamLogo,
+        String homeTeamNameZh,
+        String awayTeamNameZh
 ) {}

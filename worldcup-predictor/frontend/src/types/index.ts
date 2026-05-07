@@ -59,6 +59,10 @@ export interface MatchSummary {
   matchDate: string; // ISO-8601
   homeTeam: string;
   awayTeam: string;
+  homeTeamLogo?: string | null;
+  awayTeamLogo?: string | null;
+  homeTeamNameZh?: string | null;
+  awayTeamNameZh?: string | null;
   competition: string | null;
   status: MatchStatus;
 

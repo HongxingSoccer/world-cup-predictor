@@ -76,7 +76,9 @@ public class MatchService {
                 base.hasValueSignal(), base.topSignalLevel(), base.oddsAnalysis(),
                 base.scoreMatrix(), base.overUnderProbs(), base.locked(),
                 base.teamStats(), base.h2h(), base.venue(), base.round(),
-                base.homeScore(), base.awayScore(), favorited
+                base.homeScore(), base.awayScore(), favorited,
+                base.homeTeamLogo(), base.awayTeamLogo(),
+                base.homeTeamNameZh(), base.awayTeamNameZh()
         );
     }
 
@@ -182,7 +184,11 @@ public class MatchService {
                 (String) raw.get("round"),
                 asInteger(raw.get("home_score")),
                 asInteger(raw.get("away_score")),
-                null  // favorited — populated by getMatchDetail when authenticated
+                null,  // favorited — populated by getMatchDetail when authenticated
+                (String) raw.get("home_team_logo"),
+                (String) raw.get("away_team_logo"),
+                (String) raw.get("home_team_name_zh"),
+                (String) raw.get("away_team_name_zh")
         );
     }
 

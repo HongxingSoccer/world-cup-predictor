@@ -11,6 +11,8 @@ export function toCompactMatch(raw: Record<string, unknown>): CompactMatch | nul
     matchDate: dateRaw,
     homeTeam: pickString(raw, 'homeTeam', 'home_team') ?? '?',
     awayTeam: pickString(raw, 'awayTeam', 'away_team') ?? '?',
+    homeTeamLogo: pickString(raw, 'homeTeamLogo', 'home_team_logo'),
+    awayTeamLogo: pickString(raw, 'awayTeamLogo', 'away_team_logo'),
     competition: pickString(raw, 'competition', 'competition'),
     status: pickString(raw, 'status', 'status') ?? 'scheduled',
     round: pickString(raw, 'round', 'round'),

@@ -66,6 +66,10 @@ class MatchDetailResponse(BaseModel):
     match_date: datetime
     home_team: str
     away_team: str
+    home_team_logo: Optional[str] = None
+    away_team_logo: Optional[str] = None
+    home_team_name_zh: Optional[str] = None
+    away_team_name_zh: Optional[str] = None
     competition: Optional[str]
     venue: Optional[str]
     round: Optional[str]
@@ -122,6 +126,10 @@ def match_detail(
         match_date=match.match_date,
         home_team=_team_label(home_team),
         away_team=_team_label(away_team),
+        home_team_logo=home_team.logo_url if home_team else None,
+        away_team_logo=away_team.logo_url if away_team else None,
+        home_team_name_zh=home_team.name_zh if home_team else None,
+        away_team_name_zh=away_team.name_zh if away_team else None,
         competition=str(season.year) if season and season.year else None,
         venue=match.venue,
         round=match.round,
@@ -320,6 +328,8 @@ class MatchSummary(BaseModel):
     match_date: datetime
     home_team: str
     away_team: str
+    home_team_logo: Optional[str] = None
+    away_team_logo: Optional[str] = None
     competition: Optional[str] = None
     status: str
     round: Optional[str] = None
@@ -409,7 +419,9 @@ def _summaries_for(session: Session, match_ids: list[int]) -> list[MatchSummary]
             Match.home_score,
             Match.away_score,
             HomeTeam.c.name.label("home_team"),
+            HomeTeam.c.logo_url.label("home_team_logo"),
             AwayTeam.c.name.label("away_team"),
+            AwayTeam.c.logo_url.label("away_team_logo"),
             Season.year.label("competition"),
         )
         .join(HomeTeam, HomeTeam.c.id == Match.home_team_id)
@@ -450,6 +462,8 @@ def _summaries_for(session: Session, match_ids: list[int]) -> list[MatchSummary]
                 match_date=row.match_date,
                 home_team=row.home_team,
                 away_team=row.away_team,
+                home_team_logo=row.home_team_logo,
+                away_team_logo=row.away_team_logo,
                 competition=str(row.competition) if row.competition else None,
                 status=row.status,
                 round=row.round,

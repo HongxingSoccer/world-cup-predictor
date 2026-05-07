@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Trophy, User as UserIcon } from 'lucide-react';
 
+import { CompactLocaleToggle } from '@/components/i18n/CompactLocaleToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { cn } from '@/lib/utils';
@@ -41,6 +42,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <CompactLocaleToggle />
           {isAuthenticated && tier !== 'free' ? (
             <span
               className={cn(

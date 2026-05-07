@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { TeamLogo } from '@/components/match/TeamLogo';
 import { ValueSignalBadge } from '@/components/prediction/ValueSignalBadge';
 import { clampProb, formatMatchDate, formatPercent } from '@/lib/utils';
 import type { MatchSummary } from '@/types';
@@ -30,15 +31,21 @@ export function MatchCard({ match }: MatchCardProps) {
         <span className="tabular-nums">{formatMatchDate(match.matchDate)}</span>
       </div>
 
-      <div className="mt-3 flex items-center justify-between gap-4">
-        <div className="flex-1 text-right">
-          <div className="text-base font-semibold text-slate-100">{match.homeTeam}</div>
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <div className="flex flex-1 items-center justify-end gap-2 text-right">
+          <span className="truncate text-base font-semibold text-slate-100">
+            {match.homeTeam}
+          </span>
+          <TeamLogo src={match.homeTeamLogo} name={match.homeTeam} size="md" />
         </div>
         <div className="shrink-0 text-center text-sm font-semibold text-slate-300">
           {finished ? <FinalScorePlaceholder /> : <span className="text-brand-400">VS</span>}
         </div>
-        <div className="flex-1 text-left">
-          <div className="text-base font-semibold text-slate-100">{match.awayTeam}</div>
+        <div className="flex flex-1 items-center gap-2 text-left">
+          <TeamLogo src={match.awayTeamLogo} name={match.awayTeam} size="md" />
+          <span className="truncate text-base font-semibold text-slate-100">
+            {match.awayTeam}
+          </span>
         </div>
       </div>
 

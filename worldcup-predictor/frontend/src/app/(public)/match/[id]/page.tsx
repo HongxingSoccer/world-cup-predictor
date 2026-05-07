@@ -104,9 +104,15 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
   const oddsRows = toOddsRows(match.oddsAnalysis);
 
   const shareUrl = `/match/${match.matchId}`;
+  const jsonLd = buildJsonLd(match);
 
   return (
     <div className="space-y-4">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <MatchHeader match={match} />
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -177,6 +183,41 @@ function toH2hSummary(raw: MatchSummary['h2h'] | undefined): {
       (r.lastMatchDate as string | null | undefined) ??
       (r.last_match_date as string | null | undefined) ??
       null,
+  };
+}
+
+/** Build a schema.org SportsEvent JSON-LD blob for SEO/rich-result eligibility. */
+function buildJsonLd(match: MatchSummary): Record<string, unknown> {
+  const venue = match.venue;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'SportsEvent',
+    name: `${match.homeTeam} vs ${match.awayTeam}`,
+    description: `${match.competition ?? 'WCP'} · AI 模型预测、赔率价值信号、比分概率矩阵。`,
+    startDate: match.matchDate,
+    eventStatus:
+      match.status === 'finished'
+        ? 'https://schema.org/EventCompleted'
+        : match.status === 'live'
+          ? 'https://schema.org/EventInProgress'
+          : 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    sport: 'Football',
+    location: venue
+      ? { '@type': 'Place', name: venue }
+      : { '@type': 'VirtualLocation', name: 'TBD' },
+    competitor: [
+      {
+        '@type': 'SportsTeam',
+        name: match.homeTeam,
+        ...(match.homeTeamLogo ? { logo: match.homeTeamLogo } : {}),
+      },
+      {
+        '@type': 'SportsTeam',
+        name: match.awayTeam,
+        ...(match.awayTeamLogo ? { logo: match.awayTeamLogo } : {}),
+      },
+    ],
   };
 }
 

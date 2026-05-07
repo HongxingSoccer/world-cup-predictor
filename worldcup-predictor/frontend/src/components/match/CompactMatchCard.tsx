@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { TeamLogo } from '@/components/match/TeamLogo';
 import { clampProb, formatMatchDate, formatPercent } from '@/lib/utils';
 
 export interface CompactMatch {
@@ -7,6 +8,8 @@ export interface CompactMatch {
   matchDate: string;
   homeTeam: string;
   awayTeam: string;
+  homeTeamLogo?: string | null;
+  awayTeamLogo?: string | null;
   competition?: string | null;
   status: string;
   round?: string | null;
@@ -47,9 +50,12 @@ export function CompactMatchCard({ match }: Props) {
         <span className="tabular-nums">{formatMatchDate(match.matchDate)}</span>
       </div>
 
-      <div className="mt-2 flex items-center justify-between gap-3">
-        <div className="flex-1 truncate text-sm font-semibold text-slate-100">
-          {match.homeTeam}
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <div className="flex flex-1 items-center gap-1.5 overflow-hidden">
+          <TeamLogo src={match.homeTeamLogo} name={match.homeTeam} size="sm" />
+          <span className="truncate text-sm font-semibold text-slate-100">
+            {match.homeTeam}
+          </span>
         </div>
         <div className="shrink-0 text-xs font-semibold tabular-nums">
           {score ? (
@@ -58,8 +64,11 @@ export function CompactMatchCard({ match }: Props) {
             <span className="text-brand-400">VS</span>
           )}
         </div>
-        <div className="flex-1 truncate text-right text-sm font-semibold text-slate-100">
-          {match.awayTeam}
+        <div className="flex flex-1 items-center justify-end gap-1.5 overflow-hidden">
+          <span className="truncate text-sm font-semibold text-slate-100">
+            {match.awayTeam}
+          </span>
+          <TeamLogo src={match.awayTeamLogo} name={match.awayTeam} size="sm" />
         </div>
       </div>
 
