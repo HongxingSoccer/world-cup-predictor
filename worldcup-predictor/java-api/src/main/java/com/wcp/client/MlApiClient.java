@@ -165,6 +165,27 @@ public class MlApiClient {
     }
 
     /**
+     * GET /api/v1/fx/usd-cny — live USD→CNY rate (frankfurter.app, cached
+     * by ml-api for 1h). Returns the parsed rate, or 0.0 on any error so
+     * the caller falls back to the configured constant.
+     */
+    @SuppressWarnings("unchecked")
+    public double fxUsdCny() {
+        try {
+            Map<String, Object> body = restTemplate.getForObject(
+                    "/api/v1/fx/usd-cny", Map.class);
+            if (body == null) return 0.0;
+            Object rate = body.get("rate");
+            if (rate instanceof Number n) {
+                return n.doubleValue();
+            }
+        } catch (RestClientException ex) {
+            log.warn("ml_api_fx_failed error={}", ex.getMessage());
+        }
+        return 0.0;
+    }
+
+    /**
      * GET /api/v1/matches?ids=1,2,3 — batch read powering "我的收藏" + similar
      * card lists. Returns one MatchSummary per match-id, preserving order.
      * Falls back to an empty list on any error so the UI can still render.

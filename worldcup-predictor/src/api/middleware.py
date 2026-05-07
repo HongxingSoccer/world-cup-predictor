@@ -39,6 +39,8 @@ _PUBLIC_PATHS: Final[frozenset[str]] = frozenset(
         # Browser error reporting — must accept anonymous fire-and-forget POSTs
         # so the public `error.tsx` boundary can phone home with the digest.
         "/api/v1/client-errors",
+        # Live USD↔CNY rate — public, used by the subscribe page on every load.
+        "/api/v1/fx/usd-cny",
     }
 )
 

@@ -1,5 +1,6 @@
 package com.wcp.service;
 
+import com.wcp.client.MlApiClient;
 import com.wcp.dto.request.CreateSubscriptionRequest;
 import com.wcp.dto.response.PaymentInitResponse;
 import com.wcp.dto.response.SubscriptionPlanResponse;
@@ -15,6 +16,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,61 +25,71 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Subscription lifecycle: catalogue, order creation, cancel/auto-renew toggles.
  *
- * <p>Pricing is hard-coded in {@link #plans()} for now. Phase 3.5 will move
- * the catalogue to a `pricing_plans` table so promo codes / regional
- * pricing land without a redeploy.
+ * <p>Catalogue is denominated in <strong>USD</strong> (cents). CNY is
+ * computed at request time using a live exchange rate fetched from
+ * {@link com.wcp.client.MlApiClient#fxUsdCny()} (which proxies
+ * frankfurter.app and caches for 1h). When the FX feed is unreachable
+ * we fall back to {@link #FALLBACK_FX_CNY_PER_USD} so the page never
+ * goes blank.
  *
- * <p>Catalogue is denominated in <strong>USD</strong> (cents). The CNY
- * column is computed from {@link #FX_CNY_PER_USD} so a single rate change
- * propagates everywhere — display copy, payment-init responses, and the
- * persisted Payment row. CNY is what's actually charged when the user
- * picks Alipay or WeChat; future Stripe / Apple Pay channels will charge
- * USD natively.
+ * <p>Channels:
+ * <ul>
+ *   <li>{@code alipay} / {@code wechat_pay} — charged in CNY at the
+ *       freshly-computed rate.</li>
+ *   <li>{@code stripe} (and any future {@code apple_pay} / {@code google_pay})
+ *       — charged in USD natively. The Payment row stores both currencies
+ *       (CNY mirrored at the order-time rate for ledger continuity).</li>
+ * </ul>
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class SubscriptionService {
 
-    /**
-     * USD → CNY conversion rate. Conservative round number; sourcing this
-     * from a live FX feed (or even a daily-refreshed env var) is Phase 3.5
-     * work — for now a static 7.20 is close enough for pricing display.
-     */
-    public static final double FX_CNY_PER_USD = 7.20;
+    /** Fallback when the FX feed is unreachable on cold start. */
+    public static final double FALLBACK_FX_CNY_PER_USD = 7.20;
 
-    private static final List<SubscriptionPlanResponse> PLAN_CATALOGUE = List.of(
-            buildPlan("basic",   "monthly",        999, 30, "Basic · Monthly"),
-            buildPlan("basic",   "worldcup_pass", 2999, 60, "Basic · World-Cup Pass"),
-            buildPlan("premium", "monthly",       1999, 30, "Premium · Monthly"),
-            buildPlan("premium", "worldcup_pass", 4999, 60, "Premium · World-Cup Pass")
+    /** Channels whose underlying gateway settles in CNY. */
+    private static final Set<String> CNY_CHANNELS = Set.of("alipay", "wechat_pay");
+
+    /**
+     * Catalogue without the CNY column — that's filled in per-request from
+     * the live FX rate so plans always show today's number.
+     */
+    private record CatalogueEntry(String tier, String planType, int priceUsdCents, int days, String label) {}
+
+    private static final List<CatalogueEntry> CATALOGUE = List.of(
+            new CatalogueEntry("basic",   "monthly",        999, 30, "Basic · Monthly"),
+            new CatalogueEntry("basic",   "worldcup_pass", 2999, 60, "Basic · World-Cup Pass"),
+            new CatalogueEntry("premium", "monthly",       1999, 30, "Premium · Monthly"),
+            new CatalogueEntry("premium", "worldcup_pass", 4999, 60, "Premium · World-Cup Pass")
     );
 
-    /** Build one catalogue entry, computing CNY from the canonical USD price. */
-    private static SubscriptionPlanResponse buildPlan(
-            String tier, String planType, int priceUsdCents, int days, String label) {
-        return new SubscriptionPlanResponse(
-                tier,
-                planType,
-                priceUsdCents,
-                usdCentsToCnyFen(priceUsdCents),
-                days,
-                label
-        );
-    }
-
-    /** Convert USD cents → CNY fen using the configured rate, rounded to whole fen. */
-    public static int usdCentsToCnyFen(int priceUsdCents) {
-        return (int) Math.round(priceUsdCents * FX_CNY_PER_USD);
+    /** Convert USD cents → CNY fen using the supplied rate, rounded to whole fen. */
+    public static int usdCentsToCnyFen(int priceUsdCents, double fxRate) {
+        return (int) Math.round(priceUsdCents * fxRate);
     }
 
     private final SubscriptionRepository subscriptionRepository;
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
     private final PaymentService paymentService;
+    private final MlApiClient mlApiClient;
+
+    /** Public read of the current FX rate; falls back to the constant on failure. */
+    public double currentFxRate() {
+        double live = mlApiClient.fxUsdCny();
+        return live > 0 ? live : FALLBACK_FX_CNY_PER_USD;
+    }
 
     public List<SubscriptionPlanResponse> plans() {
-        return PLAN_CATALOGUE;
+        double fx = currentFxRate();
+        return CATALOGUE.stream()
+                .map(c -> new SubscriptionPlanResponse(
+                        c.tier(), c.planType(), c.priceUsdCents(),
+                        usdCentsToCnyFen(c.priceUsdCents(), fx),
+                        c.days(), c.label()))
+                .toList();
     }
 
     @Transactional
@@ -88,6 +100,10 @@ public class SubscriptionService {
                 .orElseThrow(() -> ApiException.unauthorized("user not found"));
 
         String orderNo = "WCP" + Instant.now().toEpochMilli() + "-" + user.getId();
+        // CNY for the persisted ledger is always computed at the order-time
+        // rate, even for USD-native channels (Stripe etc.) — so reconciliation
+        // can convert back if needed. The actual charge to the gateway,
+        // however, is denominated by the channel (see PaymentService).
         Payment payment = Payment.builder()
                 .userId(user.getId())
                 .orderNo(orderNo)
@@ -98,6 +114,11 @@ public class SubscriptionService {
         payment = paymentRepository.save(payment);
 
         return paymentService.initPayment(payment, plan, user);
+    }
+
+    /** True iff the channel settles in CNY (Alipay / WeChat). */
+    public static boolean isCnyChannel(String channel) {
+        return channel != null && CNY_CHANNELS.contains(channel);
     }
 
     public Optional<Subscription> currentSubscription(UserPrincipal principal) {

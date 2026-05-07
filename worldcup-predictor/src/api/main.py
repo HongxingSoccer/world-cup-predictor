@@ -29,6 +29,7 @@ from src.api.middleware import (
 from src.api.routes import (
     admin,
     client_errors,
+    fx,
     health,
     matches,
     odds,
@@ -124,6 +125,7 @@ def _create_app() -> FastAPI:
     app.include_router(track_record.router)
     app.include_router(reports.router)
     app.include_router(client_errors.router)
+    app.include_router(fx.router)
     app.include_router(worldcup.router)
     app.include_router(worldcup.competitions_router)
     app.include_router(push_settings.router)

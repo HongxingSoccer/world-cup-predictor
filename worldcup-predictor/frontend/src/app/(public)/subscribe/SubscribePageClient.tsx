@@ -1,6 +1,6 @@
 'use client';
 
-import { CreditCard, Smartphone, Wallet } from 'lucide-react';
+import { CreditCard, Globe2, Smartphone, Wallet } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { PlanCard } from '@/components/subscription/PlanCard';
@@ -10,7 +10,9 @@ import { apiGet, apiPost } from '@/lib/api';
 import { cn, formatPriceCny, formatPriceUsd } from '@/lib/utils';
 import type { PaymentInitResponse, SubscriptionPlan } from '@/types';
 
-type PaymentChannel = 'alipay' | 'wechat_pay';
+type PaymentChannel = 'alipay' | 'wechat_pay' | 'stripe';
+
+const CNY_CHANNELS: ReadonlySet<PaymentChannel> = new Set(['alipay', 'wechat_pay']);
 
 interface FeatureGroups {
   basic: string[];
@@ -151,6 +153,12 @@ function ChannelPicker({ value, onChange }: ChannelPickerProps) {
       detail: t('subscription.paymentCnySettlement'),
       icon: Smartphone,
     },
+    {
+      id: 'stripe',
+      label: t('subscription.paymentStripe'),
+      detail: t('subscription.paymentUsdSettlement'),
+      icon: Globe2,
+    },
   ];
   return (
     <div className="space-y-2">
@@ -158,7 +166,7 @@ function ChannelPicker({ value, onChange }: ChannelPickerProps) {
         <CreditCard size={12} />
         {t('subscription.paymentMethod')}
       </div>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-3">
         {channels.map(({ id, label, detail, icon: Icon }) => {
           const active = value === id;
           return (
@@ -204,7 +212,12 @@ function OrderConfirmation({ result }: { result: PaymentInitResponse }) {
   const channelLabel =
     result.paymentChannel === 'alipay'
       ? t('subscription.paymentAlipay')
-      : t('subscription.paymentWechat');
+      : result.paymentChannel === 'wechat_pay'
+        ? t('subscription.paymentWechat')
+        : t('subscription.paymentStripe');
+  // International channels charge USD natively. CNY is mirrored on the row
+  // for ledger continuity but isn't what the user actually pays.
+  const cnyChannel = CNY_CHANNELS.has(result.paymentChannel as PaymentChannel);
   return (
     <Card>
       <CardHeader>
@@ -222,18 +235,29 @@ function OrderConfirmation({ result }: { result: PaymentInitResponse }) {
           <span className="text-slate-400">{t('subscription.paymentMethod')}</span>
           <span className="text-slate-100">{channelLabel}</span>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-slate-400">{t('subscription.displayAmount')}</span>
-          <span className="font-semibold tabular-nums text-slate-100">
-            {formatPriceUsd(result.amountUsd)}
-          </span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-slate-400">{t('subscription.actualAmount')}</span>
-          <span className="font-semibold tabular-nums text-cyan-300">
-            {formatPriceCny(result.amountCny)}
-          </span>
-        </div>
+        {cnyChannel ? (
+          <>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-400">{t('subscription.displayAmount')}</span>
+              <span className="font-semibold tabular-nums text-slate-100">
+                {formatPriceUsd(result.amountUsd)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-400">{t('subscription.actualAmount')}</span>
+              <span className="font-semibold tabular-nums text-cyan-300">
+                {formatPriceCny(result.amountCny)}
+              </span>
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400">{t('subscription.actualAmount')}</span>
+            <span className="font-semibold tabular-nums text-cyan-300">
+              {formatPriceUsd(result.amountUsd)}
+            </span>
+          </div>
+        )}
         <p className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
           {t('subscription.orderNote')}
         </p>

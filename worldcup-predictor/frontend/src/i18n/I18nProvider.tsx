@@ -1,18 +1,22 @@
 /**
- * Lightweight client-side i18n provider (Phase 5).
+ * Lightweight client-side i18n provider.
  *
- * Design §7.1 specifies ``next-intl`` with /zh and /en sub-paths. The full
- * locale-prefix routing migration is deferred to a follow-up iteration; this
- * provider satisfies §7 "i18n infrastructure" by giving every component a
- * stable ``useT()`` hook that resolves nested keys ("admin.flags.title")
- * against the bundled ``zh-CN`` / ``en`` JSON files.
- *
- * Locale resolution order: cookie ``locale`` → ``navigator.language`` prefix
- * → default ``zh-CN``.
+ * Locale resolution: explicit `initialLocale` prop (set by the server-side
+ * layout from the `locale` cookie) → cookie read on the client → navigator
+ * preference → default zh-CN. The server-side seeding eliminates the
+ * server/client hydration mismatch that broke instant locale switching.
  */
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import enMessages from '@/i18n/en.json';
 import zhMessages from '@/i18n/zh-CN.json';
@@ -20,7 +24,7 @@ import zhMessages from '@/i18n/zh-CN.json';
 export type Locale = 'zh-CN' | 'en';
 export const DEFAULT_LOCALE: Locale = 'zh-CN';
 export const SUPPORTED_LOCALES: Locale[] = ['zh-CN', 'en'];
-const COOKIE_NAME = 'locale';
+export const LOCALE_COOKIE = 'locale';
 
 const MESSAGES: Record<Locale, Record<string, unknown>> = {
   'zh-CN': zhMessages as Record<string, unknown>,
@@ -43,7 +47,7 @@ function readCookieLocale(): Locale | null {
   return SUPPORTED_LOCALES.includes(v) ? v : null;
 }
 
-function detectLocale(): Locale {
+function detectClientLocale(): Locale {
   const fromCookie = readCookieLocale();
   if (fromCookie) return fromCookie;
   if (typeof navigator !== 'undefined') {
@@ -66,18 +70,28 @@ function lookup(messages: Record<string, unknown>, key: string): string | null {
   return typeof node === 'string' ? node : null;
 }
 
-export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
+interface Props {
+  children: React.ReactNode;
+  /** Server-resolved locale, used for the initial render so SSR + CSR match. */
+  initialLocale?: Locale;
+}
 
+export function I18nProvider({ children, initialLocale }: Props) {
+  const [locale, setLocaleState] = useState<Locale>(initialLocale ?? DEFAULT_LOCALE);
+  const seeded = useRef(Boolean(initialLocale));
+
+  // If the server didn't seed (e.g. older layout), reconcile from cookie /
+  // navigator after mount. When the server DID seed, we trust it and skip
+  // this — avoids overriding a freshly-clicked locale on hot reload.
   useEffect(() => {
-    setLocaleState(detectLocale());
+    if (seeded.current) return;
+    setLocaleState(detectClientLocale());
   }, []);
 
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next);
     if (typeof document !== 'undefined') {
-      // 1-year cookie, available app-wide.
-      document.cookie = `${COOKIE_NAME}=${encodeURIComponent(next)}; path=/; max-age=${60 * 60 * 24 * 365}`;
+      document.cookie = `${LOCALE_COOKIE}=${encodeURIComponent(next)}; path=/; max-age=${60 * 60 * 24 * 365}`;
       document.documentElement.lang = next;
     }
   }, []);
@@ -99,8 +113,6 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 export function useI18n(): Ctx {
   const ctx = useContext(I18nContext);
   if (!ctx) {
-    // Render-safe fallback so individual components can still be used outside
-    // the provider tree (e.g. in Storybook stories or quick prototypes).
     return {
       locale: DEFAULT_LOCALE,
       setLocale: () => undefined,
