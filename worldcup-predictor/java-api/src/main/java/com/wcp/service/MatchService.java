@@ -87,6 +87,27 @@ public class MatchService {
         return mlApiClient.oddsAnalysis(matchId);
     }
 
+    /** Pass-through for the {@code /matches/{id}/related} controller. */
+    public List<Map<String, Object>> getRelatedMatches(long matchId, int limit) {
+        return mlApiClient.matchesRelated(matchId, limit);
+    }
+
+    /**
+     * One round-trip per call: read the user's UserFavorite rows, then ask
+     * ml-api for compact match summaries in a single batch request. Order
+     * mirrors the favorite-creation timestamp (most recent first), which the
+     * repository already enforces.
+     */
+    public List<Map<String, Object>> getFavoritesForUser(UserPrincipal principal) {
+        List<UserFavorite> favorites = favoriteRepository.findByUserIdOrderByCreatedAtDesc(
+                principal.id());
+        if (favorites.isEmpty()) {
+            return List.of();
+        }
+        List<Long> ids = favorites.stream().map(UserFavorite::getMatchId).toList();
+        return mlApiClient.matchesBatch(ids);
+    }
+
     @Transactional
     public boolean toggleFavorite(UserPrincipal principal, long matchId) {
         if (principal == null || principal.id() == null) {

@@ -51,6 +51,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/matches/{id:[0-9]+}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/matches/{id:[0-9]+}/prediction").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/matches/{id:[0-9]+}/odds-analysis").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/matches/{id:[0-9]+}/related").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/competitions/**").permitAll()
                         // Pricing catalogue is the unauthenticated subscribe-page entry point.
                         .requestMatchers(HttpMethod.GET, "/api/v1/subscriptions/plans").permitAll()

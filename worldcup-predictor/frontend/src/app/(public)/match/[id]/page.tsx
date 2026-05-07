@@ -1,38 +1,58 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
+import type { CompactMatch } from '@/components/match/CompactMatchCard';
 import { FavoriteButton } from '@/components/match/FavoriteButton';
 import { H2HPanel } from '@/components/match/H2HPanel';
 import { MatchHeader } from '@/components/match/MatchHeader';
 import { OddsCompareTable, type OddsRow } from '@/components/match/OddsCompareTable';
 import { PredictionPanel } from '@/components/match/PredictionPanel';
+import { RelatedMatches } from '@/components/match/RelatedMatches';
 import { ScoreMatrix } from '@/components/match/ScoreMatrix';
 import { TeamStatsPanel } from '@/components/match/TeamStatsPanel';
 import { ShareButton } from '@/components/share/ShareButton';
 import { PaywallOverlay } from '@/components/subscription/PaywallOverlay';
+import { toCompactMatches } from '@/lib/match-mappers';
 import type { MatchSummary, SignalLevel } from '@/types';
 
 interface MatchPageProps {
   params: { id: string };
 }
 
-async function fetchMatch(id: string): Promise<MatchSummary | null> {
+function ssrBaseUrl(): string {
   // Server-side fetches inside docker can't reach the published nginx port via
   // localhost — they must hit the java-api service over the docker network.
   // SERVER_API_URL is set in docker-compose for that path; falls back to the
   // browser-visible URL outside docker.
-  const baseUrl =
+  return (
     process.env.SERVER_API_URL ??
     process.env.NEXT_PUBLIC_API_URL ??
-    'http://localhost:8080';
+    'http://localhost:8080'
+  );
+}
+
+async function fetchMatch(id: string): Promise<MatchSummary | null> {
   try {
-    const response = await fetch(`${baseUrl}/api/v1/matches/${id}`, {
+    const response = await fetch(`${ssrBaseUrl()}/api/v1/matches/${id}`, {
       next: { revalidate: 60 },
     });
     if (!response.ok) return null;
     return (await response.json()) as MatchSummary;
   } catch {
     return null;
+  }
+}
+
+async function fetchRelated(id: string): Promise<CompactMatch[]> {
+  try {
+    const response = await fetch(
+      `${ssrBaseUrl()}/api/v1/matches/${id}/related?limit=6`,
+      { next: { revalidate: 300 } },
+    );
+    if (!response.ok) return [];
+    return toCompactMatches(await response.json());
+  } catch {
+    return [];
   }
 }
 
@@ -54,7 +74,10 @@ export async function generateMetadata({ params }: MatchPageProps): Promise<Meta
 }
 
 export default async function MatchDetailPage({ params }: MatchPageProps) {
-  const match = await fetchMatch(params.id);
+  const [match, related] = await Promise.all([
+    fetchMatch(params.id),
+    fetchRelated(params.id),
+  ]);
   if (!match) {
     notFound();
   }
@@ -105,6 +128,8 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
           targetUrl={shareUrl}
         />
       </div>
+
+      <RelatedMatches matches={related} />
     </div>
   );
 }

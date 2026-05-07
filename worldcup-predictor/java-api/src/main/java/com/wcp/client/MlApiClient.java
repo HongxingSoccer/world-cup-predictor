@@ -3,6 +3,7 @@ package com.wcp.client;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -160,6 +161,55 @@ public class MlApiClient {
         } catch (RestClientException ex) {
             log.warn("ml_api_history_failed error={}", ex.getMessage());
             return Map.of("total", 0, "items", List.of());
+        }
+    }
+
+    /**
+     * GET /api/v1/matches?ids=1,2,3 — batch read powering "我的收藏" + similar
+     * card lists. Returns one MatchSummary per match-id, preserving order.
+     * Falls back to an empty list on any error so the UI can still render.
+     */
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> matchesBatch(List<Long> matchIds) {
+        if (matchIds == null || matchIds.isEmpty()) {
+            return List.of();
+        }
+        String csv = matchIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+        String url = UriComponentsBuilder.fromPath("/api/v1/matches")
+                .queryParam("ids", csv)
+                .toUriString();
+        try {
+            List<?> body = restTemplate.getForObject(url, List.class);
+            if (body == null) return List.of();
+            return body.stream()
+                    .filter(Map.class::isInstance)
+                    .map(o -> (Map<String, Object>) o)
+                    .toList();
+        } catch (RestClientException ex) {
+            log.warn("ml_api_matches_batch_failed error={}", ex.getMessage());
+            return List.of();
+        }
+    }
+
+    /**
+     * GET /api/v1/matches/{id}/related — sibling matches (same season /
+     * round). Used by the match-detail page to suggest more reading.
+     */
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> matchesRelated(long matchId, int limit) {
+        String url = UriComponentsBuilder.fromPath("/api/v1/matches/" + matchId + "/related")
+                .queryParam("limit", limit)
+                .toUriString();
+        try {
+            List<?> body = restTemplate.getForObject(url, List.class);
+            if (body == null) return List.of();
+            return body.stream()
+                    .filter(Map.class::isInstance)
+                    .map(o -> (Map<String, Object>) o)
+                    .toList();
+        } catch (RestClientException ex) {
+            log.warn("ml_api_matches_related_failed match={} error={}", matchId, ex.getMessage());
+            return List.of();
         }
     }
 
