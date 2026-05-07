@@ -1,44 +1,165 @@
 'use client';
 
+import { Flame, Star } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { CompetitionFilter } from './CompetitionFilter';
 import { MatchCard } from './MatchCard';
+import { cn } from '@/lib/utils';
 import type { MatchSummary } from '@/types';
 
 interface MatchListClientProps {
   matches: MatchSummary[];
 }
 
+type Quality = 'all' | 'high_signal' | 'high_confidence';
+
+const HIGH_CONFIDENCE_THRESHOLD = 70;
+
 /**
- * Client island: renders the SSR'd match list + a filter bar that narrows by
- * competition. Lives inside the home page so the SEO-relevant content stays
- * server-rendered and the filter is the only piece that hydrates client-side.
+ * Client island: SSR-rendered match list + a filter row (competition pills
+ * + quality chips). Quality chips only render when the source list is large
+ * enough that filtering pays for itself — for ≤6 matches every card already
+ * fits on screen so chips are noise.
  */
 export function MatchListClient({ matches }: MatchListClientProps) {
   const [competition, setCompetition] = useState<string | null>(null);
+  const [quality, setQuality] = useState<Quality>('all');
 
   const competitions = useMemo(
-    () => Array.from(new Set(matches.map((m) => m.competition).filter(Boolean) as string[])).sort(),
+    () =>
+      Array.from(
+        new Set(matches.map((m) => m.competition).filter(Boolean) as string[]),
+      ).sort(),
     [matches],
   );
 
-  const visible = competition
-    ? matches.filter((m) => m.competition === competition)
-    : matches;
+  const showQualityChips = matches.length > 6;
+  const counts = useMemo(() => qualityCounts(matches), [matches]);
+
+  const visible = useMemo(() => {
+    let out = matches;
+    if (competition) out = out.filter((m) => m.competition === competition);
+    if (quality === 'high_signal') {
+      out = out.filter((m) => (m.topSignalLevel ?? 0) >= 2);
+    } else if (quality === 'high_confidence') {
+      out = out.filter(
+        (m) => (m.confidenceScore ?? 0) >= HIGH_CONFIDENCE_THRESHOLD,
+      );
+    }
+    return out;
+  }, [matches, competition, quality]);
 
   return (
     <div className="space-y-3">
+      {showQualityChips ? (
+        <QualityChips
+          value={quality}
+          onChange={setQuality}
+          totals={counts}
+        />
+      ) : null}
       <CompetitionFilter
         options={competitions}
         value={competition}
         onChange={setCompetition}
       />
-      <div className="grid gap-3 md:grid-cols-2">
-        {visible.map((match) => (
-          <MatchCard key={match.matchId} match={match} />
-        ))}
-      </div>
+      {visible.length === 0 ? (
+        <div className="rounded-2xl border border-slate-800/70 bg-slate-900/40 p-6 text-center text-sm text-slate-400">
+          没有符合筛选条件的比赛 — 试试切换或清掉筛选。
+        </div>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2">
+          {visible.map((match) => (
+            <MatchCard key={match.matchId} match={match} />
+          ))}
+        </div>
+      )}
     </div>
   );
+}
+
+interface ChipsProps {
+  value: Quality;
+  onChange: (v: Quality) => void;
+  totals: { highSignal: number; highConfidence: number };
+}
+
+function QualityChips({ value, onChange, totals }: ChipsProps) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Chip active={value === 'all'} onClick={() => onChange('all')}>
+        全部
+      </Chip>
+      <Chip
+        active={value === 'high_signal'}
+        onClick={() => onChange('high_signal')}
+        icon={<Flame size={12} className="text-amber-300" />}
+        count={totals.highSignal}
+      >
+        高 EV 信号
+      </Chip>
+      <Chip
+        active={value === 'high_confidence'}
+        onClick={() => onChange('high_confidence')}
+        icon={<Star size={12} className="text-cyan-300" />}
+        count={totals.highConfidence}
+      >
+        高置信
+      </Chip>
+    </div>
+  );
+}
+
+function Chip({
+  active,
+  onClick,
+  icon,
+  count,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon?: React.ReactNode;
+  count?: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+        active
+          ? 'border-cyan-500/40 bg-cyan-500/15 text-cyan-200'
+          : 'border-slate-700 bg-slate-800/60 text-slate-400 hover:border-slate-600 hover:text-slate-200',
+      )}
+    >
+      {icon}
+      <span>{children}</span>
+      {count !== undefined ? (
+        <span
+          className={cn(
+            'tabular-nums',
+            active ? 'text-cyan-200' : 'text-slate-500',
+          )}
+        >
+          ({count})
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+function qualityCounts(matches: MatchSummary[]): {
+  highSignal: number;
+  highConfidence: number;
+} {
+  let highSignal = 0;
+  let highConfidence = 0;
+  for (const m of matches) {
+    if ((m.topSignalLevel ?? 0) >= 2) highSignal += 1;
+    if ((m.confidenceScore ?? 0) >= HIGH_CONFIDENCE_THRESHOLD) highConfidence += 1;
+  }
+  return { highSignal, highConfidence };
 }

@@ -57,18 +57,18 @@ export default function AdminSystemPage() {
       </div>
     );
   }
-  if (isLoading || !data) return <div className="text-sm text-slate-500">{t('common.loading')}</div>;
+  if (isLoading || !data) return <div className="text-sm text-slate-400">{t('common.loading')}</div>;
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white">
-      <div className="border-b border-slate-100 p-4">
-        <h2 className="text-base font-semibold text-slate-800">{t('admin.flags.title')}</h2>
-        <p className="mt-1 text-xs text-slate-500">{t('admin.flags.description')}</p>
+    <div className="rounded-md surface-card">
+      <div className="border-b border-slate-800/70 p-4">
+        <h2 className="text-base font-semibold text-slate-200">{t('admin.flags.title')}</h2>
+        <p className="mt-1 text-xs text-slate-400">{t('admin.flags.description')}</p>
       </div>
-      <ul className="divide-y divide-slate-100">
+      <ul className="divide-y divide-slate-800/70">
         {Object.entries(data.flags).map(([name, value]) => (
           <li key={name} className="flex items-center justify-between gap-4 px-4 py-3">
-            <code className="text-sm text-slate-700">{name}</code>
+            <code className="text-sm text-slate-300">{name}</code>
             <button
               type="button"
               disabled={updating === name}
@@ -80,7 +80,7 @@ export default function AdminSystemPage() {
               aria-label={`flag-${name}`}
             >
               <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
+                className={`inline-block h-5 w-5 transform rounded-full bg-slate-900/70 shadow transition ${
                   value ? 'translate-x-5' : 'translate-x-1'
                 }`}
               />

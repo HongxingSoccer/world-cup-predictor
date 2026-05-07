@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { HeroIntro } from '@/components/home/HeroIntro';
 import { HomeMatchTabs } from '@/components/match/HomeMatchTabs';
 import { MatchDayHeader } from '@/components/match/MatchDayHeader';
 import { PromotionBanner } from '@/components/subscription/PromotionBanner';
@@ -55,6 +56,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <div className="space-y-4">
+      <HeroIntro />
+
       <MatchDayHeader date={searchParams.date} />
 
       <HomeMatchTabs

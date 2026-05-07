@@ -50,17 +50,17 @@ export default function AdminSubscriptionsPage() {
       </div>
     );
   }
-  if (isLoading || !data) return <div className="text-sm text-slate-500">{t('admin.common.loading')}</div>;
+  if (isLoading || !data) return <div className="text-sm text-slate-400">{t('admin.common.loading')}</div>;
 
   const total = data.total;
   const page = Math.floor(offset / PAGE_SIZE) + 1;
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white">
-      <div className="flex items-center justify-between border-b border-slate-100 p-4">
+    <div className="rounded-md surface-card">
+      <div className="flex items-center justify-between border-b border-slate-800/70 p-4">
         <div>
-          <h2 className="text-base font-semibold text-slate-800">{t('admin.subscriptions.title')}</h2>
-          <p className="mt-1 text-xs text-slate-500">{t('admin.subscriptions.description')}</p>
+          <h2 className="text-base font-semibold text-slate-200">{t('admin.subscriptions.title')}</h2>
+          <p className="mt-1 text-xs text-slate-400">{t('admin.subscriptions.description')}</p>
         </div>
         <div className="flex gap-1 text-xs">
           {[
@@ -76,7 +76,7 @@ export default function AdminSubscriptionsPage() {
                 setOffset(0);
               }}
               className={`rounded-md px-2 py-1 ${
-                statusFilter === opt.v ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50'
+                statusFilter === opt.v ? 'bg-emerald-50 text-emerald-700' : 'text-slate-400 hover:bg-slate-900/50'
               }`}
               aria-label={`filter-${opt.v || 'all'}`}
             >
@@ -87,7 +87,7 @@ export default function AdminSubscriptionsPage() {
       </div>
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <tr className="bg-slate-900/50 text-left text-xs uppercase text-slate-400">
             <th className="px-4 py-2">{t('admin.subscriptions.columns.id')}</th>
             <th className="px-4 py-2">{t('admin.subscriptions.columns.user')}</th>
             <th className="px-4 py-2">{t('admin.subscriptions.columns.tier')}</th>
@@ -98,22 +98,22 @@ export default function AdminSubscriptionsPage() {
             <th className="px-4 py-2">{t('admin.subscriptions.columns.expires')}</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-800/70">
           {data.items.map((s) => (
             <tr key={s.id}>
-              <td className="px-4 py-2 text-slate-700">{s.id}</td>
-              <td className="px-4 py-2 text-slate-700">{s.user_email ?? `#${s.user_id}`}</td>
-              <td className="px-4 py-2 text-slate-700">{s.tier}</td>
-              <td className="px-4 py-2 text-slate-700">{s.plan_type}</td>
-              <td className="px-4 py-2 text-slate-700">{s.status}</td>
-              <td className="px-4 py-2 text-slate-700">¥{(s.price_cny / 100).toFixed(2)}</td>
-              <td className="px-4 py-2 text-slate-500">{new Date(s.started_at).toLocaleString()}</td>
-              <td className="px-4 py-2 text-slate-500">{new Date(s.expires_at).toLocaleString()}</td>
+              <td className="px-4 py-2 text-slate-300">{s.id}</td>
+              <td className="px-4 py-2 text-slate-300">{s.user_email ?? `#${s.user_id}`}</td>
+              <td className="px-4 py-2 text-slate-300">{s.tier}</td>
+              <td className="px-4 py-2 text-slate-300">{s.plan_type}</td>
+              <td className="px-4 py-2 text-slate-300">{s.status}</td>
+              <td className="px-4 py-2 text-slate-300">¥{(s.price_cny / 100).toFixed(2)}</td>
+              <td className="px-4 py-2 text-slate-400">{new Date(s.started_at).toLocaleString()}</td>
+              <td className="px-4 py-2 text-slate-400">{new Date(s.expires_at).toLocaleString()}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
+      <div className="flex items-center justify-between border-t border-slate-800/70 px-4 py-3 text-xs text-slate-400">
         <span>
           {t('admin.common.total').replace('{n}', String(total))} ·{' '}
           {t('admin.common.page').replace('{n}', String(page))}
@@ -121,7 +121,7 @@ export default function AdminSubscriptionsPage() {
         <div className="flex gap-2">
           <button
             type="button"
-            className="rounded-md border border-slate-200 px-3 py-1 disabled:opacity-50"
+            className="rounded-md border border-slate-800/70 px-3 py-1 disabled:opacity-50"
             disabled={offset === 0}
             onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
             aria-label="prev-page"
@@ -130,7 +130,7 @@ export default function AdminSubscriptionsPage() {
           </button>
           <button
             type="button"
-            className="rounded-md border border-slate-200 px-3 py-1 disabled:opacity-50"
+            className="rounded-md border border-slate-800/70 px-3 py-1 disabled:opacity-50"
             disabled={offset + PAGE_SIZE >= total}
             onClick={() => setOffset(offset + PAGE_SIZE)}
             aria-label="next-page"
