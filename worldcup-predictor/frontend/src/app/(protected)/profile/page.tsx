@@ -8,6 +8,7 @@ import { MyFavoritesCard } from '@/components/match/MyFavoritesCard';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { useT } from '@/i18n/I18nProvider';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { api, apiPost } from '@/lib/api';
@@ -15,6 +16,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import type { UserResponse } from '@/types';
 
 export default function ProfilePage() {
+  const t = useT();
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const { tier, expiresAt } = useSubscription();
@@ -22,9 +24,8 @@ export default function ProfilePage() {
   const hydrateFromMe = useAuthStore((s) => s.hydrateFromMe);
 
   useEffect(() => {
-    // SSR-safe: only redirect on the client.
     if (typeof window !== 'undefined' && !isAuthenticated) {
-      router.replace('/login');
+      router.replace('/login?next=/profile');
     }
   }, [isAuthenticated, router]);
 
@@ -37,7 +38,7 @@ export default function ProfilePage() {
       <Card>
         <CardHeader>
           <div>
-            <h1 className="text-base font-semibold text-slate-100">个人中心</h1>
+            <h1 className="text-base font-semibold text-slate-100">{t('profile.title')}</h1>
             <p className="mt-0.5 text-xs text-slate-400">
               {user.nickname ?? user.email ?? user.phone}
             </p>
@@ -46,11 +47,11 @@ export default function ProfilePage() {
         </CardHeader>
         <CardBody className="space-y-2 text-sm text-slate-300">
           <NicknameRow user={user} onUpdated={hydrateFromMe} />
-          <Row label="UUID" value={user.uuid} />
-          <Row label="手机号" value={user.phone ?? '—'} />
-          <Row label="邮箱" value={user.email ?? '—'} />
-          <Row label="语言" value={user.locale} />
-          <Row label="时区" value={user.timezone} />
+          <Row label={t('profile.uuid')} value={user.uuid} />
+          <Row label={t('profile.phone')} value={user.phone ?? '—'} />
+          <Row label={t('profile.email')} value={user.email ?? '—'} />
+          <Row label={t('profile.language')} value={user.locale} />
+          <Row label={t('profile.timezone')} value={user.timezone} />
         </CardBody>
       </Card>
 
@@ -73,10 +74,10 @@ export default function ProfilePage() {
               <Bell size={18} />
             </span>
             <div className="flex-1">
-              <div className="text-sm font-semibold text-slate-100">通知偏好</div>
-              <div className="text-xs text-slate-400">
-                价值信号 · 红单战报 · 比赛开球 · 免打扰时段
+              <div className="text-sm font-semibold text-slate-100">
+                {t('profile.notificationsLabel')}
               </div>
+              <div className="text-xs text-slate-400">{t('profile.notificationsDetail')}</div>
             </div>
             <span className="text-slate-400">›</span>
           </button>
@@ -91,7 +92,7 @@ export default function ProfilePage() {
             router.push('/');
           }}
         >
-          退出登录
+          {t('profile.logout')}
         </Button>
       </div>
     </div>
@@ -113,6 +114,7 @@ interface NicknameRowProps {
 }
 
 function NicknameRow({ user, onUpdated }: NicknameRowProps) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(user.nickname ?? '');
   const [pending, startTransition] = useTransition();
@@ -121,7 +123,7 @@ function NicknameRow({ user, onUpdated }: NicknameRowProps) {
   const save = () => {
     const trimmed = draft.trim();
     if (!trimmed) {
-      setError('昵称不能为空');
+      setError(t('profile.nicknameRequired'));
       return;
     }
     if (trimmed === user.nickname) {
@@ -137,7 +139,7 @@ function NicknameRow({ user, onUpdated }: NicknameRowProps) {
         onUpdated(updated);
         setEditing(false);
       } catch {
-        setError('更新失败，请稍后重试');
+        setError(t('profile.updateError'));
       }
     });
   };
@@ -146,7 +148,7 @@ function NicknameRow({ user, onUpdated }: NicknameRowProps) {
     return (
       <div className="flex flex-col gap-2 border-b border-slate-800/70 py-2">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-slate-400">昵称</span>
+          <span className="text-slate-400">{t('profile.nicknameLabel')}</span>
           <input
             type="text"
             autoFocus
@@ -171,10 +173,10 @@ function NicknameRow({ user, onUpdated }: NicknameRowProps) {
             }}
             disabled={pending}
           >
-            取消
+            {t('common.cancel')}
           </Button>
           <Button variant="primary" size="sm" onClick={save} disabled={pending}>
-            {pending ? '保存中…' : '保存'}
+            {pending ? t('common.saving') : t('common.save')}
           </Button>
         </div>
         {error ? <div className="text-xs text-rose-400">{error}</div> : null}
@@ -184,7 +186,7 @@ function NicknameRow({ user, onUpdated }: NicknameRowProps) {
 
   return (
     <div className="flex items-center justify-between border-b border-slate-800/70 py-1.5">
-      <span className="text-slate-400">昵称</span>
+      <span className="text-slate-400">{t('profile.nicknameLabel')}</span>
       <button
         type="button"
         onClick={() => {
@@ -192,9 +194,9 @@ function NicknameRow({ user, onUpdated }: NicknameRowProps) {
           setEditing(true);
         }}
         className="group inline-flex items-center gap-1.5 font-medium text-slate-100 hover:text-cyan-300"
-        aria-label="修改昵称"
+        aria-label={t('profile.nicknameLabel')}
       >
-        <span>{user.nickname ?? '未设置'}</span>
+        <span>{user.nickname ?? t('profile.nicknameUnset')}</span>
         <Pencil
           size={12}
           className="text-slate-500 transition-colors group-hover:text-cyan-300"
@@ -211,6 +213,7 @@ interface SubscriptionCardProps {
 }
 
 function SubscriptionCard({ tier, expiresAt, onUpgrade }: SubscriptionCardProps) {
+  const t = useT();
   const [pending, startTransition] = useTransition();
   const [cancelled, setCancelled] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -218,7 +221,7 @@ function SubscriptionCard({ tier, expiresAt, onUpgrade }: SubscriptionCardProps)
   const isPaid = tier !== 'free';
 
   const cancel = () => {
-    if (!confirm('确定取消自动续费？当前订阅期内仍可使用，到期后自动降级。')) {
+    if (!confirm(t('profile.cancelConfirm'))) {
       return;
     }
     setError(null);
@@ -227,7 +230,7 @@ function SubscriptionCard({ tier, expiresAt, onUpgrade }: SubscriptionCardProps)
         await apiPost('/api/v1/subscriptions/cancel', {});
         setCancelled(true);
       } catch {
-        setError('取消失败，请稍后重试');
+        setError(t('profile.cancelFailed'));
       }
     });
   };
@@ -235,27 +238,27 @@ function SubscriptionCard({ tier, expiresAt, onUpgrade }: SubscriptionCardProps)
   return (
     <Card>
       <CardHeader>
-        <h2 className="text-base font-semibold text-slate-100">订阅状态</h2>
+        <h2 className="text-base font-semibold text-slate-100">{t('profile.subscriptionStatus')}</h2>
       </CardHeader>
       <CardBody className="space-y-2 text-sm text-slate-300">
-        <Row label="当前等级" value={tier.toUpperCase()} />
+        <Row label={t('profile.currentTier')} value={tier.toUpperCase()} />
         <Row
-          label="到期时间"
-          value={expiresAt ? new Date(expiresAt).toLocaleDateString('zh-CN') : '—'}
+          label={t('profile.expiresAt')}
+          value={expiresAt ? new Date(expiresAt).toLocaleDateString() : '—'}
         />
         {cancelled ? (
           <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
-            已取消自动续费，当前订阅期到期后自动降级到 FREE。
+            {t('profile.cancelledNotice')}
           </div>
         ) : null}
         {error ? <div className="text-xs text-rose-400">{error}</div> : null}
         <div className="flex flex-wrap gap-2 pt-2">
           <Button variant="primary" onClick={onUpgrade}>
-            升级 / 续费
+            {t('profile.upgrade')}
           </Button>
           {isPaid && !cancelled ? (
             <Button variant="ghost" onClick={cancel} disabled={pending}>
-              {pending ? '处理中…' : '取消自动续费'}
+              {pending ? t('profile.processing') : t('profile.cancelAutoRenew')}
             </Button>
           ) : null}
         </div>

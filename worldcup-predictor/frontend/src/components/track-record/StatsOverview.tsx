@@ -1,4 +1,7 @@
+'use client';
+
 import { Card, CardBody } from '@/components/ui/Card';
+import { useT } from '@/i18n/I18nProvider';
 import { formatPercent, formatSignedPercent } from '@/lib/utils';
 import type { TrackRecordOverview } from '@/types';
 
@@ -7,36 +10,37 @@ interface StatsOverviewProps {
 }
 
 export function StatsOverview({ overview }: StatsOverviewProps) {
+  const t = useT();
   const stats = [
     {
-      label: '总命中率',
+      label: t('trackRecord.hitRate'),
       value: overview ? formatPercent(overview.hitRate) : '—',
-      detail: overview ? `${overview.hits} / ${overview.totalPredictions}` : '加载中…',
+      detail: overview ? `${overview.hits} / ${overview.totalPredictions}` : t('common.loading'),
       hero: true,
     },
     {
-      label: 'ROI',
+      label: t('trackRecord.roi'),
       value: overview ? formatSignedPercent(overview.roi) : '—',
-      detail: '单位投注',
+      detail: t('trackRecord.unitBet'),
       good: (overview?.roi ?? 0) >= 0,
     },
     {
-      label: '当前连续',
+      label: t('trackRecord.currentStreak'),
       value: overview
         ? `${overview.currentStreak >= 0 ? '+' : ''}${overview.currentStreak}`
         : '—',
       detail:
         overview && overview.currentStreak > 0
-          ? '🔥 连红'
+          ? t('trackRecord.hotStreak')
           : overview && overview.currentStreak < 0
-            ? '连黑'
+            ? t('trackRecord.coldStreak')
             : '—',
       good: (overview?.currentStreak ?? 0) >= 0,
     },
     {
-      label: '历史最佳',
+      label: t('trackRecord.bestEver'),
       value: overview ? `${overview.bestStreak}` : '—',
-      detail: '场连红',
+      detail: t('trackRecord.streakUnit'),
       hero: true,
     },
   ] as const;

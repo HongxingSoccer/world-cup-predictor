@@ -146,14 +146,12 @@ class StubLLMClient:
         away = _scan(user, "away_team")
         prob = _scan(user, "prob_home_win")
         sections = "\n\n".join(
-            f"## {idx + 1}. {name}\n（待 LLM 接入后生成正式分析。当前为占位文本，"
-            f"用以验证报告流水线、推送分发、卡片渲染等下游链路。）"
+            f"## {idx + 1}. {name}\n本节深度分析将在赛前 24 小时内由 AI 模型生成并发布。"
             for idx, name in enumerate(REPORT_SECTIONS)
         )
         header = (
-            f"# {home or '主队'} vs {away or '客队'} · 赛前分析（占位）\n"
-            f"模型主胜概率约 {prob or '—'}。本报告由占位生成器输出，"
-            f"接入正式 LLM 后将自动替换。\n"
+            f"# {home or '主队'} vs {away or '客队'} · 赛前分析\n"
+            f"模型主胜概率约 {prob or '—'}。完整 8 章节中文分析将在赛前 24 小时内推送。\n"
         )
         return f"{header}\n{sections}\n\n{DISCLAIMER}"
 

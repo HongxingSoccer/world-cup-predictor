@@ -41,6 +41,8 @@ export interface AuthResponse {
 
 export interface TeamStatRow {
   label: string;
+  /** Optional i18n key the frontend should translate when present. */
+  labelKey?: string | null;
   home: string;
   away: string;
 }

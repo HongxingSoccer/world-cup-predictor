@@ -1,7 +1,10 @@
+'use client';
+
 import Link from 'next/link';
 
 import { TeamLogo } from '@/components/match/TeamLogo';
 import { ValueSignalBadge } from '@/components/prediction/ValueSignalBadge';
+import { useT } from '@/i18n/I18nProvider';
 import { clampProb, formatMatchDate, formatPercent } from '@/lib/utils';
 import type { MatchSummary } from '@/types';
 
@@ -20,6 +23,7 @@ interface MatchCardProps {
  *     when the server returned a `topSignalLevel` of null per the tier matrix)
  */
 export function MatchCard({ match }: MatchCardProps) {
+  const t = useT();
   const finished = match.status === 'finished';
   return (
     <Link
@@ -39,7 +43,11 @@ export function MatchCard({ match }: MatchCardProps) {
           <TeamLogo src={match.homeTeamLogo} name={match.homeTeam} size="md" />
         </div>
         <div className="shrink-0 text-center text-sm font-semibold text-slate-300">
-          {finished ? <FinalScorePlaceholder /> : <span className="text-brand-400">VS</span>}
+          {finished ? (
+            <FinalScorePlaceholder label={t('match.ft')} />
+          ) : (
+            <span className="text-brand-400">{t('match.vs')}</span>
+          )}
         </div>
         <div className="flex flex-1 items-center gap-2 text-left">
           <TeamLogo src={match.awayTeamLogo} name={match.awayTeam} size="md" />
@@ -53,15 +61,19 @@ export function MatchCard({ match }: MatchCardProps) {
         home={match.probHomeWin}
         draw={match.probDraw}
         away={match.probAwayWin}
+        homeLabel={t('match.homeWin')}
+        drawLabel={t('match.drawFull')}
+        awayLabel={t('match.awayWin')}
+        emptyLabel={t('match.noPrediction')}
       />
 
       <div className="mt-3 flex items-center justify-between text-xs">
         <div className="text-slate-400">
-          置信{' '}
+          {t('match.confidenceShort')}{' '}
           <span className="font-semibold tabular-nums text-slate-100">
             {match.confidenceScore ?? '—'}
           </span>
-          <span className="text-slate-500">/100</span>
+          <span className="text-slate-500">{t('common.of100')}</span>
         </div>
         <ValueSignalBadge level={match.topSignalLevel} />
       </div>
@@ -69,10 +81,10 @@ export function MatchCard({ match }: MatchCardProps) {
   );
 }
 
-function FinalScorePlaceholder() {
+function FinalScorePlaceholder({ label }: { label: string }) {
   return (
     <span className="rounded-md border border-slate-700 bg-slate-800/70 px-2 py-0.5 text-xs uppercase tracking-wider text-slate-400">
-      已结束
+      {label}
     </span>
   );
 }
@@ -81,10 +93,18 @@ function ProbabilityBar({
   home,
   draw,
   away,
+  homeLabel,
+  drawLabel,
+  awayLabel,
+  emptyLabel,
 }: {
   home: number | null;
   draw: number | null;
   away: number | null;
+  homeLabel: string;
+  drawLabel: string;
+  awayLabel: string;
+  emptyLabel: string;
 }) {
   const h = clampProb(home);
   const d = clampProb(draw);
@@ -93,7 +113,7 @@ function ProbabilityBar({
     return (
       <div
         className="mt-3 h-7 w-full rounded-full border border-slate-800 bg-slate-900/60"
-        aria-label="暂无预测"
+        aria-label={emptyLabel}
       />
     );
   }
@@ -102,21 +122,21 @@ function ProbabilityBar({
       <div
         className="flex justify-center bg-emerald-500/90 text-emerald-950"
         style={{ width: `${(h * 100).toFixed(1)}%` }}
-        title={`主胜 ${formatPercent(h)}`}
+        title={`${homeLabel} ${formatPercent(h)}`}
       >
         {formatPercent(h)}
       </div>
       <div
         className="flex justify-center bg-amber-400/90 text-amber-950"
         style={{ width: `${(d * 100).toFixed(1)}%` }}
-        title={`平局 ${formatPercent(d)}`}
+        title={`${drawLabel} ${formatPercent(d)}`}
       >
         {formatPercent(d)}
       </div>
       <div
         className="flex justify-center bg-rose-500/90 text-rose-50"
         style={{ width: `${(a * 100).toFixed(1)}%` }}
-        title={`客胜 ${formatPercent(a)}`}
+        title={`${awayLabel} ${formatPercent(a)}`}
       >
         {formatPercent(a)}
       </div>

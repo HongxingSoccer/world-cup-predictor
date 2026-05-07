@@ -4,6 +4,7 @@ import { Check } from 'lucide-react';
 
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
+import { useT } from '@/i18n/I18nProvider';
 import { cn, formatPriceCny, formatPriceUsd } from '@/lib/utils';
 import type { SubscriptionPlan } from '@/types';
 
@@ -16,6 +17,7 @@ interface PlanCardProps {
 }
 
 export function PlanCard({ plan, features, highlight, onSelect, loading }: PlanCardProps) {
+  const t = useT();
   return (
     <Card
       className={cn(
@@ -25,7 +27,7 @@ export function PlanCard({ plan, features, highlight, onSelect, loading }: PlanC
     >
       {highlight ? (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-500 to-amber-400 px-3 py-0.5 text-xs font-bold text-slate-950">
-          推荐
+          {t('subscription.recommended')}
         </div>
       ) : null}
       <CardBody className="flex flex-1 flex-col">
@@ -37,10 +39,12 @@ export function PlanCard({ plan, features, highlight, onSelect, loading }: PlanC
           <span className="hero-number text-4xl font-black tabular-nums">
             {formatPriceUsd(plan.priceUsd)}
           </span>
-          <span className="text-sm text-slate-400">/ {plan.durationDays} 天</span>
+          <span className="text-sm text-slate-400">
+            / {plan.durationDays} {t('subscription.durationDays')}
+          </span>
         </div>
         <div className="mb-5 text-xs text-slate-500">
-          支付宝 / 微信 ≈{' '}
+          {t('subscription.alipayWechatApprox')}{' '}
           <span className="tabular-nums text-slate-300">
             {formatPriceCny(plan.priceCny)}
           </span>
@@ -58,7 +62,7 @@ export function PlanCard({ plan, features, highlight, onSelect, loading }: PlanC
           onClick={() => onSelect(plan)}
           loading={loading}
         >
-          立即订阅
+          {t('subscription.subscribeNow')}
         </Button>
       </CardBody>
     </Card>

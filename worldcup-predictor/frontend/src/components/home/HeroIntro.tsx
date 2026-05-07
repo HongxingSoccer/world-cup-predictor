@@ -3,6 +3,7 @@
 import { Sparkles, TrendingUp, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import { useT } from '@/i18n/I18nProvider';
 import { useAuth } from '@/hooks/useAuth';
 
 const STORAGE_KEY = 'wcp_hero_dismissed_at';
@@ -18,6 +19,7 @@ const SNOOZE_MS = 30 * 24 * 3600 * 1000;
  * and after a 30-day snooze when explicitly dismissed.
  */
 export function HeroIntro() {
+  const t = useT();
   const { isAuthenticated } = useAuth();
   const [hidden, setHidden] = useState(true);
 
@@ -46,32 +48,35 @@ export function HeroIntro() {
       />
       <div className="relative">
         <span className="inline-flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-cyan-300">
-          World Cup 2026
+          {t('home.heroBadge')}
         </span>
         <h1 className="mt-3 text-xl font-bold text-slate-100 sm:text-2xl">
-          AI 模型为每场比赛打出 <span className="hero-number">概率</span> 与 <span className="hero-number">价值信号</span>
+          {t('home.heroTitleA')} <span className="hero-number">{t('home.heroTitleProb')}</span>{' '}
+          {t('home.heroTitleAnd')} <span className="hero-number">{t('home.heroTitleSignal')}</span>
         </h1>
         <p className="mt-2 max-w-lg text-sm leading-relaxed text-slate-300">
-          基于 28 维特征（xG / Elo / 阵容 / 状态）训练的
-          Poisson GLM；预测一经发布即不可变，<a href="/track-record" className="text-cyan-300 underline-offset-4 hover:underline">战绩追踪</a>{' '}
-          页面公开命中率与累计 ROI。
+          {t('home.heroBodyPrefix')}
+          <a href="/track-record" className="text-cyan-300 underline-offset-4 hover:underline">
+            {t('home.heroBodyLink')}
+          </a>
+          {t('home.heroBodySuffix')}
         </p>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <Feature
             icon={<TrendingUp size={16} className="text-cyan-300" />}
-            title="胜平负 + 比分矩阵"
-            detail="10×10 完整概率分布"
+            title={t('home.feature1Title')}
+            detail={t('home.feature1Detail')}
           />
           <Feature
             icon={<Zap size={16} className="text-amber-300" />}
-            title="赔率价值信号"
-            detail="模型 vs 市场，标注 EV 与 Edge"
+            title={t('home.feature2Title')}
+            detail={t('home.feature2Detail')}
           />
           <Feature
             icon={<Sparkles size={16} className="text-emerald-300" />}
-            title="赛后 AI 战报"
-            detail="8 章节中文分析，开赛 24h 内推送"
+            title={t('home.feature3Title')}
+            detail={t('home.feature3Detail')}
           />
         </div>
 
@@ -80,20 +85,17 @@ export function HeroIntro() {
             href="/login"
             className="inline-flex items-center justify-center rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-[0_8px_24px_-12px_rgba(34,211,238,0.6)] transition hover:bg-cyan-400"
           >
-            登录解锁完整功能
+            {t('home.ctaLogin')}
           </a>
-          <a
-            href="/about"
-            className="text-sm text-slate-400 hover:text-cyan-300"
-          >
-            了解模型方法论 →
+          <a href="/about" className="text-sm text-slate-400 hover:text-cyan-300">
+            {t('home.ctaAbout')}
           </a>
           <button
             type="button"
             onClick={dismiss}
             className="ml-auto text-xs text-slate-500 hover:text-slate-300"
           >
-            不再显示
+            {t('home.dismiss')}
           </button>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 
 import { CompetitionFilter } from './CompetitionFilter';
 import { MatchCard } from './MatchCard';
+import { useT } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/utils';
 import type { MatchSummary } from '@/types';
 
@@ -23,6 +24,7 @@ const HIGH_CONFIDENCE_THRESHOLD = 70;
  * fits on screen so chips are noise.
  */
 export function MatchListClient({ matches }: MatchListClientProps) {
+  const t = useT();
   const [competition, setCompetition] = useState<string | null>(null);
   const [quality, setQuality] = useState<Quality>('all');
 
@@ -57,6 +59,9 @@ export function MatchListClient({ matches }: MatchListClientProps) {
           value={quality}
           onChange={setQuality}
           totals={counts}
+          allLabel={t('match.filterAll')}
+          highEvLabel={t('match.highEVSignal')}
+          highConfidenceLabel={t('match.highConfidence')}
         />
       ) : null}
       <CompetitionFilter
@@ -66,7 +71,7 @@ export function MatchListClient({ matches }: MatchListClientProps) {
       />
       {visible.length === 0 ? (
         <div className="rounded-2xl border border-slate-800/70 bg-slate-900/40 p-6 text-center text-sm text-slate-400">
-          没有符合筛选条件的比赛 — 试试切换或清掉筛选。
+          {t('match.noFilterResults')}
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
@@ -83,13 +88,23 @@ interface ChipsProps {
   value: Quality;
   onChange: (v: Quality) => void;
   totals: { highSignal: number; highConfidence: number };
+  allLabel: string;
+  highEvLabel: string;
+  highConfidenceLabel: string;
 }
 
-function QualityChips({ value, onChange, totals }: ChipsProps) {
+function QualityChips({
+  value,
+  onChange,
+  totals,
+  allLabel,
+  highEvLabel,
+  highConfidenceLabel,
+}: ChipsProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Chip active={value === 'all'} onClick={() => onChange('all')}>
-        全部
+        {allLabel}
       </Chip>
       <Chip
         active={value === 'high_signal'}
@@ -97,7 +112,7 @@ function QualityChips({ value, onChange, totals }: ChipsProps) {
         icon={<Flame size={12} className="text-amber-300" />}
         count={totals.highSignal}
       >
-        高 EV 信号
+        {highEvLabel}
       </Chip>
       <Chip
         active={value === 'high_confidence'}
@@ -105,7 +120,7 @@ function QualityChips({ value, onChange, totals }: ChipsProps) {
         icon={<Star size={12} className="text-cyan-300" />}
         count={totals.highConfidence}
       >
-        高置信
+        {highConfidenceLabel}
       </Chip>
     </div>
   );

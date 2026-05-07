@@ -1,5 +1,8 @@
+'use client';
+
 import { TeamLogo } from '@/components/match/TeamLogo';
 import { Card, CardBody } from '@/components/ui/Card';
+import { useT } from '@/i18n/I18nProvider';
 import { formatMatchDate } from '@/lib/utils';
 import type { MatchSummary } from '@/types';
 
@@ -8,6 +11,7 @@ interface MatchHeaderProps {
 }
 
 export function MatchHeader({ match }: MatchHeaderProps) {
+  const t = useT();
   const finished = match.status === 'finished';
   const score =
     finished &&
@@ -21,14 +25,14 @@ export function MatchHeader({ match }: MatchHeaderProps) {
     <Card className="overflow-hidden">
       <CardBody>
         <div className="flex items-center justify-between text-xs uppercase tracking-widest text-slate-400">
-          <span>{match.competition ?? '比赛'}</span>
+          <span>{match.competition ?? t('match.competition')}</span>
           {match.round ? <span className="text-slate-500">{match.round}</span> : null}
         </div>
         <div className="mt-4 flex items-center justify-between gap-3 sm:gap-6">
           <Side
             name={match.homeTeam}
             logo={match.homeTeamLogo}
-            role="主队"
+            role={t('match.homeTeam')}
             align="right"
           />
           <div className="text-center">
@@ -38,7 +42,7 @@ export function MatchHeader({ match }: MatchHeaderProps) {
               </div>
             ) : (
               <div className="text-xs uppercase tracking-widest text-brand-400">
-                VS
+                {t('match.vs')}
               </div>
             )}
             <div className="mt-1 text-xs font-medium tabular-nums text-slate-400 sm:text-sm">
@@ -48,7 +52,7 @@ export function MatchHeader({ match }: MatchHeaderProps) {
           <Side
             name={match.awayTeam}
             logo={match.awayTeamLogo}
-            role="客队"
+            role={t('match.awayTeam')}
             align="left"
           />
         </div>

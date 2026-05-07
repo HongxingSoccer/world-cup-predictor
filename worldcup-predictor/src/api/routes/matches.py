@@ -42,6 +42,7 @@ class TeamFormRow(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     label: str
+    label_key: Optional[str] = None  # i18n key — frontend translates when set
     home: str
     away: str
 
@@ -214,16 +215,19 @@ def _team_form_rows(session: Session, match: Match) -> list[TeamFormRow]:
     return [
         TeamFormRow(
             label=f"近{FORM_WINDOW}场胜率",
+            label_key="match.form.last5WinRate",
             home=_pct_str(home_form["wins"], home_form["count"]),
             away=_pct_str(away_form["wins"], away_form["count"]),
         ),
         TeamFormRow(
             label=f"近{FORM_WINDOW}场均进球",
+            label_key="match.form.last5GoalsFor",
             home=_avg_str(home_form["goals_for"], home_form["count"]),
             away=_avg_str(away_form["goals_for"], away_form["count"]),
         ),
         TeamFormRow(
             label=f"近{FORM_WINDOW}场均失球",
+            label_key="match.form.last5GoalsAgainst",
             home=_avg_str(home_form["goals_against"], home_form["count"]),
             away=_avg_str(away_form["goals_against"], away_form["count"]),
         ),

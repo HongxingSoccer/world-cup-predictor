@@ -7,6 +7,7 @@ import { useEffect, useState, useTransition } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { useT } from '@/i18n/I18nProvider';
 import { useAuth } from '@/hooks/useAuth';
 import { apiGet, api } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -63,39 +64,40 @@ function pickBool(camel: boolean | undefined, snake: boolean | undefined, fallba
 
 interface ChannelDef {
   key: keyof Pick<PushSettings, 'enableHighEv' | 'enableReports' | 'enableMatchStart' | 'enableRedHit'>;
-  label: string;
-  detail: string;
+  labelKey: string;
+  detailKey: string;
   icon: LucideIcon;
 }
 
 const CHANNELS: ChannelDef[] = [
   {
     key: 'enableHighEv',
-    label: '价值信号 (高 EV)',
-    detail: '⭐⭐ 及以上的赔率价值机会即时推送',
+    labelKey: 'notifications.channelHighEv',
+    detailKey: 'notifications.channelHighEvDetail',
     icon: Star,
   },
   {
     key: 'enableMatchStart',
-    label: '比赛开球提醒',
-    detail: '关注的比赛开球前 15 分钟通知',
+    labelKey: 'notifications.channelMatchStart',
+    detailKey: 'notifications.channelMatchStartDetail',
     icon: Trophy,
   },
   {
     key: 'enableRedHit',
-    label: '红单战报',
-    detail: '当 AI 预测命中时第一时间通知',
+    labelKey: 'notifications.channelRedHit',
+    detailKey: 'notifications.channelRedHitDetail',
     icon: Zap,
   },
   {
     key: 'enableReports',
-    label: 'AI 比赛分析报告',
-    detail: '重点比赛的赛前 AI 深度分析发布时',
+    labelKey: 'notifications.channelAiReport',
+    detailKey: 'notifications.channelAiReportDetail',
     icon: Bell,
   },
 ];
 
 export default function NotificationsPage() {
+  const t = useT();
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const [settings, setSettings] = useState<PushSettings | null>(null);
@@ -105,7 +107,7 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !isAuthenticated) {
-      router.replace('/login');
+      router.replace('/login?next=/notifications');
     }
   }, [isAuthenticated, router]);
 
@@ -120,18 +122,18 @@ export default function NotificationsPage() {
       } catch {
         if (cancelled) return;
         setSettings(DEFAULTS);
-        setError('未能加载已有偏好，已套用默认值');
+        setError(t('notifications.loadFallback'));
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, t]);
 
   if (!settings) {
     return (
       <div className="space-y-3">
-        <h1 className="text-xl font-bold text-slate-100">通知偏好</h1>
+        <h1 className="text-xl font-bold text-slate-100">{t('notifications.title')}</h1>
         <Card>
           <CardBody>
             <div className="space-y-2">
@@ -167,7 +169,7 @@ export default function NotificationsPage() {
         });
         setSavedAt(Date.now());
       } catch {
-        setError('保存失败，请稍后重试');
+        setError(t('notifications.saveFailed'));
       }
     });
   };
@@ -177,26 +179,24 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-bold text-slate-100">通知偏好</h1>
-        <p className="mt-1 text-xs text-slate-400">
-          决定哪些事件给你发推送 — 关掉不感兴趣的频道，免静默时间避免夜里被吵醒。
-        </p>
+        <h1 className="text-xl font-bold text-slate-100">{t('notifications.title')}</h1>
+        <p className="mt-1 text-xs text-slate-400">{t('notifications.subtitle')}</p>
       </div>
 
       <Card>
         <CardHeader>
-          <h2 className="text-sm font-semibold text-slate-100">推送频道</h2>
+          <h2 className="text-sm font-semibold text-slate-100">{t('notifications.channels')}</h2>
           {allOff ? (
-            <span className="text-xs text-amber-300">所有通知已关闭</span>
+            <span className="text-xs text-amber-300">{t('notifications.allDisabled')}</span>
           ) : null}
         </CardHeader>
         <CardBody className="space-y-1">
-          {CHANNELS.map(({ key, label, detail, icon: Icon }) => (
+          {CHANNELS.map(({ key, labelKey, detailKey, icon: Icon }) => (
             <ToggleRow
               key={key}
               icon={Icon}
-              label={label}
-              detail={detail}
+              label={t(labelKey)}
+              detail={t(detailKey)}
               checked={settings[key]}
               onChange={(v) => setBool(key, v)}
             />
@@ -206,17 +206,17 @@ export default function NotificationsPage() {
 
       <Card>
         <CardHeader>
-          <h2 className="text-sm font-semibold text-slate-100">免打扰时段</h2>
-          <span className="text-xs text-slate-400">UTC 时区，留空表示全天可推送</span>
+          <h2 className="text-sm font-semibold text-slate-100">{t('notifications.quietHours')}</h2>
+          <span className="text-xs text-slate-400">{t('notifications.quietSubtitle')}</span>
         </CardHeader>
         <CardBody className="grid grid-cols-2 gap-3">
           <TimeInput
-            label="开始"
+            label={t('notifications.quietStart')}
             value={settings.quietHoursStart ?? ''}
             onChange={(v) => setQuiet('quietHoursStart', v)}
           />
           <TimeInput
-            label="结束"
+            label={t('notifications.quietEnd')}
             value={settings.quietHoursEnd ?? ''}
             onChange={(v) => setQuiet('quietHoursEnd', v)}
           />
@@ -226,17 +226,17 @@ export default function NotificationsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-xs">
           {savedAt ? (
-            <span className="text-emerald-300">✓ 已保存</span>
+            <span className="text-emerald-300">{t('notifications.savedOk')}</span>
           ) : error ? (
             <span className="text-rose-400">{error}</span>
           ) : (
-            <span className="text-slate-500">未保存</span>
+            <span className="text-slate-500">{t('notifications.notSaved')}</span>
           )}
         </div>
         <div className="flex flex-wrap gap-2">
           <TestPushButton />
           <Button onClick={save} disabled={pending}>
-            {pending ? '保存中…' : '保存'}
+            {pending ? t('common.saving') : t('common.save')}
           </Button>
         </div>
       </div>
@@ -245,14 +245,15 @@ export default function NotificationsPage() {
 }
 
 function TestPushButton() {
+  const t = useT();
   const [state, setState] = useState<'idle' | 'pending' | 'sent' | 'error'>('idle');
   const click = async () => {
     setState('pending');
     try {
       await api.post('/api/v1/push/settings/test', {
         channel: 'wechat',
-        title: 'WCP 测试推送',
-        body: '这是一条测试通知，用以验证你的推送偏好已正确保存。',
+        title: 'WCP test',
+        body: 'This is a test notification.',
       });
       setState('sent');
       setTimeout(() => setState('idle'), 3000);
@@ -264,12 +265,12 @@ function TestPushButton() {
   return (
     <Button variant="ghost" onClick={click} disabled={state === 'pending'}>
       {state === 'pending'
-        ? '发送中…'
+        ? t('notifications.testPushSending')
         : state === 'sent'
-          ? '✓ 已发送（演练）'
+          ? t('notifications.testPushSent')
           : state === 'error'
-            ? '发送失败'
-            : '发条测试推送'}
+            ? t('notifications.testPushFailed')
+            : t('notifications.testPush')}
     </Button>
   );
 }

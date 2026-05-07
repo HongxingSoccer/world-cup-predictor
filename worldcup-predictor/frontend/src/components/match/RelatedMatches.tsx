@@ -1,21 +1,25 @@
+'use client';
+
 import { CompactMatchCard, type CompactMatch } from '@/components/match/CompactMatchCard';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { useT } from '@/i18n/I18nProvider';
 
 interface Props {
   matches: CompactMatch[];
 }
 
 /**
- * "同组其他比赛" / 同赛季同轮次的相关比赛卡片. 父组件已经做了 normalize；
- * 这里只关心渲染。
+ * Same-season / same-round sibling matches shown beneath the match-detail
+ * body. Parent already normalises the array — this component just renders.
  */
 export function RelatedMatches({ matches }: Props) {
+  const t = useT();
   if (!matches.length) return null;
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-sm font-semibold text-slate-100">相关比赛</h3>
-        <span className="text-xs text-slate-400">同赛季 / 同轮次</span>
+        <h3 className="text-sm font-semibold text-slate-100">{t('match.relatedMatches')}</h3>
+        <span className="text-xs text-slate-400">{t('match.relatedSubtitle')}</span>
       </CardHeader>
       <CardBody>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">

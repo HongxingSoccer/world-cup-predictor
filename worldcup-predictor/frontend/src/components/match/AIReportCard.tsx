@@ -1,6 +1,9 @@
+'use client';
+
 import { Sparkles } from 'lucide-react';
 
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { useT } from '@/i18n/I18nProvider';
 
 interface ReportPayload {
   title?: string;
@@ -23,6 +26,7 @@ interface Props {
  * to be the common case until the LLM client is configured.
  */
 export function AIReportCard({ report }: Props) {
+  const t = useT();
   const title = report?.title;
   const summary = report?.summary ?? '';
   const body = report?.contentMd ?? report?.content_md ?? '';
@@ -35,16 +39,12 @@ export function AIReportCard({ report }: Props) {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Sparkles size={16} className="text-amber-300" />
-            <h3 className="text-sm font-semibold text-slate-100">AI 赛前分析</h3>
+            <h3 className="text-sm font-semibold text-slate-100">{t('match.aiAnalysis')}</h3>
           </div>
-          <span className="text-xs text-slate-400">未发布</span>
+          <span className="text-xs text-slate-400">{t('match.unpublished')}</span>
         </CardHeader>
         <CardBody>
-          <p className="text-sm leading-relaxed text-slate-400">
-            本场尚未生成 AI 分析报告。重点比赛会在赛前 24 小时内自动发布，包含 8
-            个章节：比赛概览 / 近况对比 / 伤病情况 / 历史交锋 / 数据分析 /
-            模型判断 / 赔率洞察 / 总结建议。
-          </p>
+          <p className="text-sm leading-relaxed text-slate-400">{t('match.aiNotGenerated')}</p>
         </CardBody>
       </Card>
     );

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useState, useTransition } from 'react';
 
 import { Button } from '@/components/ui/Button';
+import { useT } from '@/i18n/I18nProvider';
 import { useAuth } from '@/hooks/useAuth';
 import { apiPost } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -25,6 +26,7 @@ interface ToggleResponse {
  * Link to /login; authenticated users get the optimistic toggle.
  */
 export function FavoriteButton({ matchId, initialFavorited }: FavoriteButtonProps) {
+  const t = useT();
   const { isAuthenticated } = useAuth();
   const [favorited, setFavorited] = useState<boolean>(Boolean(initialFavorited));
   const [pending, startTransition] = useTransition();
@@ -34,7 +36,7 @@ export function FavoriteButton({ matchId, initialFavorited }: FavoriteButtonProp
     return (
       <Link href="/login">
         <Button variant="ghost" size="sm" leftIcon={<Heart size={16} />}>
-          登录后收藏
+          {t('match.favLoginRequired')}
         </Button>
       </Link>
     );
@@ -54,7 +56,7 @@ export function FavoriteButton({ matchId, initialFavorited }: FavoriteButtonProp
         setFavorited(result.favorite);
       } catch {
         setFavorited(!next);
-        setError('收藏失败，请稍后重试');
+        setError(t('match.favError'));
       }
     });
   };
@@ -66,7 +68,7 @@ export function FavoriteButton({ matchId, initialFavorited }: FavoriteButtonProp
         onClick={onClick}
         disabled={pending}
         aria-pressed={favorited}
-        aria-label={favorited ? '取消收藏' : '收藏比赛'}
+        aria-label={favorited ? t('match.favRemoveAria') : t('match.favAddAria')}
         className={cn(
           'inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors',
           'disabled:cursor-not-allowed',
@@ -79,7 +81,7 @@ export function FavoriteButton({ matchId, initialFavorited }: FavoriteButtonProp
           size={16}
           className={cn('transition-transform', favorited && 'scale-110 fill-current')}
         />
-        {favorited ? '已收藏' : '收藏'}
+        {favorited ? t('match.favFavorited') : t('match.favButton')}
       </button>
       {error ? <span className="text-xs text-rose-400">{error}</span> : null}
     </div>

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 
 import { CompactMatchCard, type CompactMatch } from '@/components/match/CompactMatchCard';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { useT } from '@/i18n/I18nProvider';
 import { apiGet } from '@/lib/api';
 import { toCompactMatches } from '@/lib/match-mappers';
 
@@ -14,6 +15,7 @@ import { toCompactMatches } from '@/lib/match-mappers';
  * drops it into the layout.
  */
 export function MyFavoritesCard() {
+  const t = useT();
   const [matches, setMatches] = useState<CompactMatch[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
 
@@ -40,11 +42,11 @@ export function MyFavoritesCard() {
       <CardHeader>
         <div className="flex items-center gap-2">
           <Heart size={16} className="text-rose-400" />
-          <h2 className="text-base font-semibold text-slate-100">我的收藏</h2>
+          <h2 className="text-base font-semibold text-slate-100">{t('match.myFavorites')}</h2>
         </div>
         {state === 'ready' && matches.length > 0 ? (
           <span className="text-xs tabular-nums text-slate-400">
-            {matches.length} 场
+            {t('match.matchCount').replace('{count}', String(matches.length))}
           </span>
         ) : null}
       </CardHeader>
@@ -55,12 +57,10 @@ export function MyFavoritesCard() {
             <div className="h-20 animate-pulse rounded-xl bg-slate-800/60" />
           </div>
         ) : state === 'error' ? (
-          <div className="py-4 text-sm text-rose-400">
-            收藏列表加载失败，请稍后刷新重试。
-          </div>
+          <div className="py-4 text-sm text-rose-400">{t('match.myFavoritesError')}</div>
         ) : matches.length === 0 ? (
           <div className="py-6 text-center text-sm text-slate-400">
-            还没有收藏任何比赛 — 在比赛详情页点 ❤️ 即可加入。
+            {t('match.myFavoritesEmpty')}
           </div>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2">

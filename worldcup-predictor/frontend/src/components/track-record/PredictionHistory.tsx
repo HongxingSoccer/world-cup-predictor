@@ -1,7 +1,10 @@
+'use client';
+
 import Link from 'next/link';
 
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { useT } from '@/i18n/I18nProvider';
 import { formatMatchDate } from '@/lib/utils';
 
 export interface PredictionHistoryRow {
@@ -19,13 +22,20 @@ interface PredictionHistoryProps {
   rows: PredictionHistoryRow[];
 }
 
-const RESULT_LABEL: Record<'H' | 'D' | 'A', string> = { H: '主胜', D: '平', A: '客胜' };
-
 export function PredictionHistory({ rows }: PredictionHistoryProps) {
+  const t = useT();
+  const RESULT_LABEL: Record<'H' | 'D' | 'A', string> = {
+    H: t('match.homeWin'),
+    D: t('trackRecord.predicted') === '预测' ? '平' : t('match.draw'),
+    A: t('match.awayWin'),
+  };
+  // The above ternary is a quick zh/en check via translation result; cleaner:
+  RESULT_LABEL.D = t('match.draw');
+
   if (rows.length === 0) {
     return (
       <Card>
-        <CardBody className="text-sm text-slate-400">暂无历史预测记录。</CardBody>
+        <CardBody className="text-sm text-slate-400">{t('trackRecord.noHistoryRecords')}</CardBody>
       </Card>
     );
   }
@@ -33,7 +43,7 @@ export function PredictionHistory({ rows }: PredictionHistoryProps) {
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-sm font-semibold text-slate-100">历史预测</h3>
+        <h3 className="text-sm font-semibold text-slate-100">{t('trackRecord.history')}</h3>
       </CardHeader>
       <CardBody className="divide-y divide-slate-800/70 p-0">
         {rows.map((row) => (
@@ -45,16 +55,19 @@ export function PredictionHistory({ rows }: PredictionHistoryProps) {
             <div className="flex items-center justify-between text-xs text-slate-400">
               <span className="tabular-nums">{formatMatchDate(row.matchDate)}</span>
               <Badge tone={row.hit ? 'success' : 'danger'}>
-                {row.hit ? '✓ 红' : '✗ 黑'}
+                {row.hit ? t('trackRecord.hitMark') : t('trackRecord.missMark')}
               </Badge>
             </div>
             <div className="mt-1 flex items-center justify-between">
               <div className="font-semibold text-slate-100">
-                {row.homeTeam} <span className="text-slate-500">vs</span> {row.awayTeam}
+                {row.homeTeam} <span className="text-slate-500">{t('match.vs')}</span> {row.awayTeam}
               </div>
               <div className="text-sm text-slate-400">
-                预测 <span className="font-semibold text-slate-100">{RESULT_LABEL[row.predicted]}</span>
-                {' · '}实际 <span className="font-semibold text-slate-100">{RESULT_LABEL[row.actual]}</span>
+                {t('trackRecord.predicted')}{' '}
+                <span className="font-semibold text-slate-100">{RESULT_LABEL[row.predicted]}</span>
+                {' · '}
+                {t('trackRecord.actual')}{' '}
+                <span className="font-semibold text-slate-100">{RESULT_LABEL[row.actual]}</span>
               </div>
             </div>
             {row.pnlUnit !== 0 ? (
@@ -64,7 +77,7 @@ export function PredictionHistory({ rows }: PredictionHistoryProps) {
                 }`}
               >
                 {row.pnlUnit > 0 ? '+' : ''}
-                {row.pnlUnit.toFixed(2)} 单位
+                {row.pnlUnit.toFixed(2)} {t('trackRecord.cumulativeUnit')}
               </div>
             ) : null}
           </Link>

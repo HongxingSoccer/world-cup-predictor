@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 
 import { Button } from '@/components/ui/Button';
+import { useT } from '@/i18n/I18nProvider';
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -19,6 +20,7 @@ interface ErrorProps {
  * is fire-and-forget — failure to phone home never blocks the UI.
  */
 export default function GlobalErrorBoundary({ error, reset }: ErrorProps) {
+  const t = useT();
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (error.digest) {
@@ -45,19 +47,17 @@ export default function GlobalErrorBoundary({ error, reset }: ErrorProps) {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
       <div className="hero-number text-7xl font-black sm:text-8xl">500</div>
-      <h1 className="mt-3 text-xl font-bold text-slate-100">出了点问题</h1>
-      <p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-400">
-        服务器在处理这个请求时遇到错误。我们已经记录此事件，工程师会跟进。
-      </p>
+      <h1 className="mt-3 text-xl font-bold text-slate-100">{t('error.title')}</h1>
+      <p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-400">{t('error.body')}</p>
       {error.digest ? (
         <p className="mt-2 text-[11px] font-mono tabular-nums text-slate-500">
-          错误编号 · {error.digest}
+          {t('error.errorNo')} {error.digest}
         </p>
       ) : null}
       <div className="mt-6 flex flex-wrap gap-3">
-        <Button onClick={() => reset()}>重试</Button>
+        <Button onClick={() => reset()}>{t('common.retry')}</Button>
         <Button variant="ghost" onClick={() => (window.location.href = '/')}>
-          回到首页
+          {t('common.backHome')}
         </Button>
       </div>
     </div>

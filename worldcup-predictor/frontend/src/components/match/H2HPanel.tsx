@@ -1,4 +1,7 @@
+'use client';
+
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { useT } from '@/i18n/I18nProvider';
 import { formatPercent } from '@/lib/utils';
 
 export interface H2HSummary {
@@ -16,6 +19,7 @@ interface H2HPanelProps {
 }
 
 export function H2HPanel({ homeTeam, awayTeam, summary }: H2HPanelProps) {
+  const t = useT();
   const total = Math.max(summary.totalMatches, 1);
   const homeRate = summary.homeWins / total;
   const drawRate = summary.draws / total;
@@ -25,11 +29,11 @@ export function H2HPanel({ homeTeam, awayTeam, summary }: H2HPanelProps) {
     return (
       <Card>
         <CardHeader>
-          <h3 className="text-sm font-semibold text-slate-100">历史交锋</h3>
-          <span className="text-xs text-slate-400">暂无</span>
+          <h3 className="text-sm font-semibold text-slate-100">{t('match.h2h')}</h3>
+          <span className="text-xs text-slate-400">{t('match.h2hEmpty')}</span>
         </CardHeader>
         <CardBody>
-          <div className="py-6 text-center text-sm text-slate-500">两队尚无历史交锋记录</div>
+          <div className="py-6 text-center text-sm text-slate-500">{t('match.h2hNoRecords')}</div>
         </CardBody>
       </Card>
     );
@@ -38,9 +42,9 @@ export function H2HPanel({ homeTeam, awayTeam, summary }: H2HPanelProps) {
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-sm font-semibold text-slate-100">历史交锋</h3>
+        <h3 className="text-sm font-semibold text-slate-100">{t('match.h2h')}</h3>
         <span className="text-xs text-slate-400">
-          共 <span className="tabular-nums">{summary.totalMatches}</span> 场
+          {t('match.h2hCount').replace('{count}', String(summary.totalMatches))}
         </span>
       </CardHeader>
       <CardBody className="space-y-3">
@@ -50,12 +54,21 @@ export function H2HPanel({ homeTeam, awayTeam, summary }: H2HPanelProps) {
           <div className="bg-rose-500/90" style={{ width: `${awayRate * 100}%` }} />
         </div>
         <div className="grid grid-cols-3 text-center text-xs">
-          <Cell label={`${homeTeam} 胜`} value={`${summary.homeWins} (${formatPercent(homeRate)})`} />
-          <Cell label="平局" value={`${summary.draws} (${formatPercent(drawRate)})`} />
-          <Cell label={`${awayTeam} 胜`} value={`${summary.awayWins} (${formatPercent(awayRate)})`} />
+          <Cell
+            label={`${homeTeam}${t('match.winSuffix')}`}
+            value={`${summary.homeWins} (${formatPercent(homeRate)})`}
+          />
+          <Cell
+            label={t('match.drawFull')}
+            value={`${summary.draws} (${formatPercent(drawRate)})`}
+          />
+          <Cell
+            label={`${awayTeam}${t('match.winSuffix')}`}
+            value={`${summary.awayWins} (${formatPercent(awayRate)})`}
+          />
         </div>
         <div className="mt-2 text-center text-sm text-slate-400">
-          均总进球{' '}
+          {t('match.avgGoals')}{' '}
           <span className="font-semibold tabular-nums text-slate-100">
             {summary.avgGoals.toFixed(2)}
           </span>

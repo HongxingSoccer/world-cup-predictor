@@ -4,6 +4,7 @@ import { Sparkles, X } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+import { useT } from '@/i18n/I18nProvider';
 import { useSubscription } from '@/hooks/useSubscription';
 
 const STORAGE_KEY = 'wcp_promo_dismissed_at';
@@ -17,6 +18,7 @@ const SNOOZE_MS = 14 * 24 * 3600 * 1000;
  * hidden for SNOOZE_MS, then reappears.
  */
 export function PromotionBanner() {
+  const t = useT();
   const { tier } = useSubscription();
   const [hidden, setHidden] = useState(true); // start hidden until we read storage
 
@@ -47,20 +49,18 @@ export function PromotionBanner() {
         <div className="flex items-center gap-3">
           <Sparkles size={22} />
           <div className="flex-1 pr-8">
-            <div className="text-base font-bold">解锁完整 AI 预测</div>
-            <div className="text-sm opacity-90">
-              比分矩阵 · 赔率 EV 分析 · 价值信号 — 基础版 $9.99/月起
-            </div>
+            <div className="text-base font-bold">{t('subscription.title')}</div>
+            <div className="text-sm opacity-90">{t('subscription.promoDescription')}</div>
           </div>
           <span className="hidden rounded-full bg-slate-950/20 px-3 py-1 text-xs font-semibold sm:inline-block">
-            立即开通 →
+            {t('subscription.promoCta')}
           </span>
         </div>
       </Link>
       <button
         type="button"
         onClick={dismiss}
-        aria-label="关闭推广横幅"
+        aria-label={t('subscription.closeBanner')}
         className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-slate-950/20 text-slate-950 transition hover:bg-slate-950/40"
       >
         <X size={14} />

@@ -7,8 +7,10 @@ import {
 } from '@/components/track-record/PredictionHistory';
 import { ROIChart, type RoiPoint } from '@/components/track-record/ROIChart';
 import { StatsOverview } from '@/components/track-record/StatsOverview';
-import { ShareButton } from '@/components/share/ShareButton';
-import { Card, CardBody } from '@/components/ui/Card';
+import {
+  EmptyTrackRecordCard,
+  TrackRecordHeader,
+} from '@/components/track-record/TrackRecordHeader';
 import type { TrackRecordOverview } from '@/types';
 
 export const revalidate = 600; // Track record page rebuilds every 10 minutes.
@@ -144,10 +146,7 @@ export default async function TrackRecordPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-slate-100">战绩追踪</h1>
-        <ShareButton targetType="track_record" targetUrl="/track-record" />
-      </div>
+      <TrackRecordHeader />
 
       <StatsOverview overview={overview} />
 
@@ -156,25 +155,5 @@ export default async function TrackRecordPage() {
       <MarketBreakdown rows={byPeriod} />
       <PredictionHistory rows={history} />
     </div>
-  );
-}
-
-function EmptyTrackRecordCard() {
-  return (
-    <Card>
-      <CardBody>
-        <div className="flex flex-col items-center gap-2 py-10 text-center">
-          <div className="text-3xl">⏳</div>
-          <h3 className="text-lg font-semibold text-slate-100">战绩将在世界杯开赛后累计</h3>
-          <p className="max-w-md text-sm leading-relaxed text-slate-400">
-            首场比赛 <span className="tabular-nums text-cyan-300">2026/06/11</span>{' '}
-            开球，每场结束 2 小时内自动结算并更新本页 ROI、命中率、连红等统计。
-          </p>
-          <p className="text-xs text-slate-500">
-            订阅可在赛后第一时间收到战绩推送通知。
-          </p>
-        </div>
-      </CardBody>
-    </Card>
   );
 }

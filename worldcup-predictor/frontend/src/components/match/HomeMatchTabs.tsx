@@ -8,6 +8,7 @@ import { CompactMatchCard, type CompactMatch } from '@/components/match/CompactM
 import { MatchListClient } from '@/components/match/MatchListClient';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
+import { useT } from '@/i18n/I18nProvider';
 import { useAuth } from '@/hooks/useAuth';
 import { apiGet } from '@/lib/api';
 import { toCompactMatches } from '@/lib/match-mappers';
@@ -21,14 +22,8 @@ interface HomeMatchTabsProps {
   upcomingDays: number;
 }
 
-/**
- * Client-island that swaps the home page's match list between today /
- * upcoming / favorites. Today + upcoming come from SSR props (always
- * available); favorites are lazy-loaded only when authenticated and the
- * tab is selected. The favorites tab is hidden entirely for anonymous
- * users so the segmented control reads as just "今日 / 即将开赛".
- */
 export function HomeMatchTabs({ today, upcoming, upcomingDays }: HomeMatchTabsProps) {
+  const t = useT();
   const { isAuthenticated } = useAuth();
   const [tab, setTab] = useState<TabId>('today');
   const [favorites, setFavorites] = useState<CompactMatch[] | null>(null);
@@ -36,18 +31,18 @@ export function HomeMatchTabs({ today, upcoming, upcomingDays }: HomeMatchTabsPr
 
   const items = useMemo<ReadonlyArray<TabItem<TabId>>>(() => {
     const base: TabItem<TabId>[] = [
-      { id: 'today', label: '今日比赛', count: today.length || null },
-      { id: 'upcoming', label: '即将开赛', count: upcoming.length || null },
+      { id: 'today', label: t('match.today'), count: today.length || null },
+      { id: 'upcoming', label: t('match.upcoming'), count: upcoming.length || null },
     ];
     if (isAuthenticated) {
       base.push({
         id: 'favorites',
-        label: '我的收藏',
+        label: t('match.myFavorites'),
         count: favorites?.length ?? null,
       });
     }
     return base;
-  }, [isAuthenticated, today.length, upcoming.length, favorites]);
+  }, [isAuthenticated, today.length, upcoming.length, favorites, t]);
 
   useEffect(() => {
     if (tab !== 'favorites' || favorites !== null || !isAuthenticated) return;
@@ -74,7 +69,7 @@ export function HomeMatchTabs({ today, upcoming, upcomingDays }: HomeMatchTabsPr
 
       {tab === 'today' ? (
         today.length === 0 ? (
-          <EmptyState text="今日暂无可预测的比赛。" />
+          <EmptyState text={t('match.noTodayMatches')} />
         ) : (
           <MatchListClient matches={today} />
         )
@@ -82,14 +77,17 @@ export function HomeMatchTabs({ today, upcoming, upcomingDays }: HomeMatchTabsPr
 
       {tab === 'upcoming' ? (
         upcoming.length === 0 ? (
-          <EmptyState text={`未来 ${upcomingDays} 天内暂无已生成预测的比赛。`} />
+          <EmptyState
+            text={t('match.noUpcomingMatches').replace('{days}', String(upcomingDays))}
+          />
         ) : (
           <Card>
             <CardHeader>
-              <h2 className="text-sm font-semibold text-slate-100">即将开赛</h2>
+              <h2 className="text-sm font-semibold text-slate-100">{t('match.upcoming')}</h2>
               <p className="text-xs text-slate-400">
-                未来 {upcomingDays} 天内已生成预测的{' '}
-                <span className="tabular-nums">{upcoming.length}</span> 场比赛
+                {t('match.upcomingDescription')
+                  .replace('{count}', String(upcoming.length))
+                  .replace('{days}', String(upcomingDays))}
               </p>
             </CardHeader>
             <CardBody>
@@ -119,6 +117,7 @@ function FavoritesPanel({
   rows: CompactMatch[] | null;
   error: boolean;
 }) {
+  const t = useT();
   if (rows === null) {
     return (
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -132,7 +131,7 @@ function FavoritesPanel({
     return (
       <Card>
         <CardBody className="text-center text-sm text-rose-400">
-          收藏列表加载失败，请稍后刷新重试。
+          {t('match.myFavoritesError')}
         </CardBody>
       </Card>
     );
@@ -142,15 +141,12 @@ function FavoritesPanel({
       <Card>
         <CardBody className="flex flex-col items-center gap-2 py-8 text-center">
           <Heart size={28} className="text-rose-400/70" />
-          <p className="text-sm text-slate-300">还没有收藏任何比赛</p>
-          <p className="text-xs text-slate-500">
-            进入比赛详情页点 ❤️，关注的比赛会在这里聚合显示。
-          </p>
+          <p className="text-sm text-slate-300">{t('match.myFavoritesEmpty')}</p>
           <Link
             href="/worldcup/bracket"
             className="mt-2 text-xs text-cyan-300 underline-offset-4 hover:underline"
           >
-            浏览淘汰赛 →
+            {t('match.browseKnockout')}
           </Link>
         </CardBody>
       </Card>

@@ -1,5 +1,8 @@
-import type { SignalLevel } from '@/types';
+'use client';
+
+import { useT } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/utils';
+import type { SignalLevel } from '@/types';
 
 interface ValueSignalBadgeProps {
   level: SignalLevel | null | undefined;
@@ -20,11 +23,12 @@ const TONE_BY_LEVEL: Record<NonNullable<Exclude<SignalLevel, 0>>, string> = {
 };
 
 export function ValueSignalBadge({ level, hideEmpty = false }: ValueSignalBadgeProps) {
+  const t = useT();
   if (level === null || level === undefined || level === 0) {
     if (hideEmpty) return null;
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-slate-700 bg-slate-800/60 px-2.5 py-0.5 text-xs text-slate-400">
-        无信号
+        {t('prediction.noSignal')}
       </span>
     );
   }
@@ -34,10 +38,12 @@ export function ValueSignalBadge({ level, hideEmpty = false }: ValueSignalBadgeP
         'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold',
         TONE_BY_LEVEL[level],
       )}
-      aria-label={`价值信号 ${level} 级`}
+      aria-label={t('prediction.signalLevel').replace('{level}', String(level))}
     >
       {STAR_LABEL[level]}
-      <span className="ml-1 text-[10px] uppercase tracking-wider opacity-75">价值</span>
+      <span className="ml-1 text-[10px] uppercase tracking-wider opacity-75">
+        {t('prediction.signalLabel')}
+      </span>
     </span>
   );
 }
