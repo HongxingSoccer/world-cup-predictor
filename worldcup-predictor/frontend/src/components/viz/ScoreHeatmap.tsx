@@ -43,7 +43,7 @@ export function ScoreHeatmap({ matrix, size = 360, lockBlurredCells = false }: S
 
   return (
     <figure className="inline-block" aria-label={t('viz.heatmap.title', 'Score heatmap')}>
-      <figcaption className="mb-2 text-sm font-medium text-slate-700">
+      <figcaption className="mb-2 text-sm font-medium text-slate-300">
         {t('viz.heatmap.title', 'Score heatmap')}
       </figcaption>
       <svg width={size} height={size} role="img" className="overflow-visible">
@@ -107,7 +107,7 @@ export function ScoreHeatmap({ matrix, size = 360, lockBlurredCells = false }: S
         ))}
       </svg>
       {hover && !lockBlurredCells && (
-        <div className="mt-2 text-xs text-slate-600" role="status">
+        <div className="mt-2 text-xs text-slate-400" role="status">
           <span className="font-mono">
             {hover.h}-{hover.a}
           </span>{' '}

@@ -58,7 +58,7 @@ export function KnockoutBracket({ matches, onHover }: BracketProps) {
 
   return (
     <figure className="overflow-x-auto" aria-label={t('viz.bracket.title', 'Knockout bracket')}>
-      <figcaption className="mb-2 text-sm font-medium text-slate-700">
+      <figcaption className="mb-2 text-sm font-medium text-slate-300">
         {t('viz.bracket.title', 'Knockout bracket')}
       </figcaption>
       <svg width={width} height={height} role="img">

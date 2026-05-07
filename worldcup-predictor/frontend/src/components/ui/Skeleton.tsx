@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('animate-pulse rounded-md bg-slate-200', className)}
+      className={cn('animate-pulse rounded-md bg-slate-700/70', className)}
       {...props}
     />
   );
@@ -19,7 +19,7 @@ export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>
 /** Pre-baked card-shaped skeleton for match list / track-record placeholders. */
 export function SkeletonCard() {
   return (
-    <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="space-y-3 rounded-2xl surface-card p-5 shadow-sm">
       <Skeleton className="h-4 w-32" />
       <Skeleton className="h-6 w-full" />
       <Skeleton className="h-3 w-3/4" />

@@ -9,13 +9,56 @@
     line-height: 1.625;
   }
   body {
-    color: #0f172a;
-    background-color: #f8fafc;
+    color: #e2e8f0; /* slate-200 — primary text on dark background */
+    background-color: #0a0e1a;
+    background-image:
+      radial-gradient(at 20% 0%, rgba(8, 145, 178, 0.18) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.08) 0px, transparent 60%),
+      linear-gradient(180deg, #070b15 0%, #0a0e1a 50%, #0f172a 100%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-size: cover;
+    min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
   /* Avoid the bottom mobile-nav overlapping content. */
   main {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Restrained selection highlight matches the cyan accent. */
+  ::selection {
+    background-color: rgba(34, 211, 238, 0.28);
+    color: #f8fafc;
+  }
+}
+
+@layer components {
+  /* Glass-card surface used by Card primitive — semi-transparent over the
+     gradient background, with a hairline border that picks up cyan on hover. */
+  .surface-card {
+    background-color: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border: 1px solid rgba(51, 65, 85, 0.6);
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+  }
+  .surface-card:hover {
+    border-color: rgba(34, 211, 238, 0.35);
+    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.16),
+                0 8px 32px -12px rgba(34, 211, 238, 0.3);
+  }
+
+  /* Hero-number text: tabular alignment + cyan→amber gradient fill so the
+     stat reads as a screen-printed dial. Apply via class="hero-number". */
+  .hero-number {
+    font-variant-numeric: tabular-nums;
+    background-image: linear-gradient(135deg, #67e8f9 0%, #fbbf24 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.02em;
   }
 }

@@ -22,11 +22,11 @@ export function GroupStandings({ groupName, rows }: GroupStandingsProps) {
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-sm font-semibold text-slate-900">小组 {groupName}</h3>
+        <h3 className="text-sm font-semibold text-slate-100">小组 {groupName}</h3>
       </CardHeader>
       <CardBody className="overflow-x-auto p-0">
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+          <thead className="bg-slate-900/50 text-xs uppercase tracking-wider text-slate-400">
             <tr>
               <th className="px-3 py-2 text-left">#</th>
               <th className="px-3 py-2 text-left">球队</th>
@@ -42,9 +42,9 @@ export function GroupStandings({ groupName, rows }: GroupStandingsProps) {
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.team} className="border-t border-slate-100">
-                <td className="px-3 py-2 text-slate-500">{row.position}</td>
-                <td className="px-3 py-2 font-medium text-slate-900">{row.team}</td>
+              <tr key={row.team} className="border-t border-slate-800/70">
+                <td className="px-3 py-2 text-slate-400">{row.position}</td>
+                <td className="px-3 py-2 font-medium text-slate-100">{row.team}</td>
                 <td className="px-2 py-2 text-right tabular-nums">{row.played}</td>
                 <td className="px-2 py-2 text-right tabular-nums">{row.wins}</td>
                 <td className="px-2 py-2 text-right tabular-nums">{row.draws}</td>

@@ -23,22 +23,22 @@ export function MatchCard({ match }: MatchCardProps) {
   return (
     <Link
       href={`/match/${match.matchId}`}
-      className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md"
+      className="surface-card block rounded-2xl p-4 transition"
     >
-      <div className="flex items-center justify-between text-xs text-slate-500">
+      <div className="flex items-center justify-between text-xs text-slate-400">
         <span className="truncate">{match.competition ?? 'WCP'}</span>
-        <span>{formatMatchDate(match.matchDate)}</span>
+        <span className="tabular-nums">{formatMatchDate(match.matchDate)}</span>
       </div>
 
       <div className="mt-3 flex items-center justify-between gap-4">
         <div className="flex-1 text-right">
-          <div className="text-base font-semibold text-slate-900">{match.homeTeam}</div>
+          <div className="text-base font-semibold text-slate-100">{match.homeTeam}</div>
         </div>
-        <div className="shrink-0 text-center text-sm font-semibold text-slate-700">
-          {finished ? <FinalScorePlaceholder /> : 'VS'}
+        <div className="shrink-0 text-center text-sm font-semibold text-slate-300">
+          {finished ? <FinalScorePlaceholder /> : <span className="text-brand-400">VS</span>}
         </div>
         <div className="flex-1 text-left">
-          <div className="text-base font-semibold text-slate-900">{match.awayTeam}</div>
+          <div className="text-base font-semibold text-slate-100">{match.awayTeam}</div>
         </div>
       </div>
 
@@ -49,9 +49,12 @@ export function MatchCard({ match }: MatchCardProps) {
       />
 
       <div className="mt-3 flex items-center justify-between text-xs">
-        <div className="text-slate-500">
-          置信 <span className="font-semibold text-slate-800">{match.confidenceScore ?? '—'}</span>
-          /100
+        <div className="text-slate-400">
+          置信{' '}
+          <span className="font-semibold tabular-nums text-slate-100">
+            {match.confidenceScore ?? '—'}
+          </span>
+          <span className="text-slate-500">/100</span>
         </div>
         <ValueSignalBadge level={match.topSignalLevel} />
       </div>
@@ -60,11 +63,8 @@ export function MatchCard({ match }: MatchCardProps) {
 }
 
 function FinalScorePlaceholder() {
-  // Final-score isn't carried by the matches/today response in the current
-  // backend contract — we surface a neutral pill rather than fabricating
-  // numbers. The match-detail view shows the real score.
   return (
-    <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs uppercase tracking-wider text-slate-500">
+    <span className="rounded-md border border-slate-700 bg-slate-800/70 px-2 py-0.5 text-xs uppercase tracking-wider text-slate-400">
       已结束
     </span>
   );
@@ -84,27 +84,30 @@ function ProbabilityBar({
   const a = clampProb(away);
   if (h + d + a === 0) {
     return (
-      <div className="mt-3 h-7 w-full rounded-full bg-slate-100" aria-label="暂无预测" />
+      <div
+        className="mt-3 h-7 w-full rounded-full border border-slate-800 bg-slate-900/60"
+        aria-label="暂无预测"
+      />
     );
   }
   return (
-    <div className="mt-3 flex h-7 w-full overflow-hidden rounded-full text-[11px] font-semibold leading-7 text-white">
+    <div className="mt-3 flex h-7 w-full overflow-hidden rounded-full text-[11px] font-semibold leading-7 ring-1 ring-slate-800/80">
       <div
-        className="flex justify-center bg-emerald-500"
+        className="flex justify-center bg-emerald-500/90 text-emerald-950"
         style={{ width: `${(h * 100).toFixed(1)}%` }}
         title={`主胜 ${formatPercent(h)}`}
       >
         {formatPercent(h)}
       </div>
       <div
-        className="flex justify-center bg-amber-400 text-amber-950"
+        className="flex justify-center bg-amber-400/90 text-amber-950"
         style={{ width: `${(d * 100).toFixed(1)}%` }}
         title={`平局 ${formatPercent(d)}`}
       >
         {formatPercent(d)}
       </div>
       <div
-        className="flex justify-center bg-rose-500"
+        className="flex justify-center bg-rose-500/90 text-rose-50"
         style={{ width: `${(a * 100).toFixed(1)}%` }}
         title={`客胜 ${formatPercent(a)}`}
       >

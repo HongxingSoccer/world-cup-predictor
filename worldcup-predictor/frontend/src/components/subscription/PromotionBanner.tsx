@@ -13,7 +13,7 @@ export function PromotionBanner() {
   return (
     <Link
       href="/subscribe"
-      className="block rounded-2xl bg-gradient-to-r from-brand-600 to-emerald-500 p-5 text-white shadow-lg transition hover:shadow-xl"
+      className="block rounded-2xl bg-gradient-to-r from-brand-500 to-accent-500 p-5 text-white shadow-lg transition hover:shadow-xl"
     >
       <div className="flex items-center gap-3">
         <Sparkles size={22} />
@@ -23,7 +23,7 @@ export function PromotionBanner() {
             比分矩阵 · 赔率 EV 分析 · 价值信号 — 基础版仅 ¥29.9/月起
           </div>
         </div>
-        <span className="hidden rounded-full bg-white/20 px-3 py-1 text-xs font-semibold sm:inline-block">
+        <span className="hidden rounded-full bg-slate-900/70/20 px-3 py-1 text-xs font-semibold sm:inline-block">
           立即开通 →
         </span>
       </div>

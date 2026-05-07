@@ -54,8 +54,8 @@ export function SubscribePageClient() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-slate-900">解锁完整 AI 预测</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-2xl font-bold text-slate-100">解锁完整 AI 预测</h1>
+        <p className="mt-1 text-sm text-slate-400">
           世界杯期间限时优惠，通票更划算。
         </p>
       </div>
@@ -79,9 +79,9 @@ export function SubscribePageClient() {
 
       <Card>
         <CardHeader>
-          <h2 className="text-base font-semibold text-slate-900">常见问题</h2>
+          <h2 className="text-base font-semibold text-slate-100">常见问题</h2>
         </CardHeader>
-        <CardBody className="space-y-3 text-sm text-slate-700">
+        <CardBody className="space-y-3 text-sm text-slate-300">
           <Faq
             q="可以随时取消吗？"
             a="可以。订阅默认不开启自动续费；月度订阅到期后自动转回免费版。"
@@ -103,8 +103,8 @@ export function SubscribePageClient() {
 function Faq({ q, a }: { q: string; a: string }) {
   return (
     <div>
-      <div className="font-semibold text-slate-900">Q · {q}</div>
-      <div className="text-slate-600">A · {a}</div>
+      <div className="font-semibold text-slate-100">Q · {q}</div>
+      <div className="text-slate-400">A · {a}</div>
     </div>
   );
 }

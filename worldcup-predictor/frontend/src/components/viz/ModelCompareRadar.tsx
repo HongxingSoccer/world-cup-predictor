@@ -55,7 +55,7 @@ export function ModelCompareRadar({ outputs, height = 360 }: ModelCompareProps) 
 
   return (
     <figure className="w-full" aria-label={t('viz.compare.title', 'Model comparison')}>
-      <figcaption className="mb-2 text-sm font-medium text-slate-700">
+      <figcaption className="mb-2 text-sm font-medium text-slate-300">
         {t('viz.compare.title', 'Model comparison')}
       </figcaption>
       <div style={{ height }}>

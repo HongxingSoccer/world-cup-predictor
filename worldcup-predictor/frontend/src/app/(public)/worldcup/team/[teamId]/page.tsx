@@ -88,7 +88,7 @@ export default async function TeamPathPage({
           ← 返回夺冠概率榜
         </Link>
         <Card>
-          <CardBody className="text-center text-sm text-slate-500">
+          <CardBody className="text-center text-sm text-slate-400">
             该球队尚未出现在最近一次模拟中。
           </CardBody>
         </Card>
@@ -106,8 +106,8 @@ export default async function TeamPathPage({
       </Link>
       <Card>
         <CardHeader>
-          <h1 className="text-xl font-bold text-slate-900">{teamName}</h1>
-          <p className="text-xs text-slate-500">
+          <h1 className="text-xl font-bold text-slate-100">{teamName}</h1>
+          <p className="text-xs text-slate-400">
             模拟 #{data.simulation_id} · {data.simulation_version} · 计算于{' '}
             {data.computed_at
               ? new Date(data.computed_at).toLocaleString('zh-CN', { hour12: false })
@@ -117,21 +117,21 @@ export default async function TeamPathPage({
         <CardBody className="space-y-6">
           {/* 各阶段晋级概率 */}
           <div className="space-y-2">
-            <h2 className="text-sm font-semibold text-slate-700">各阶段晋级概率</h2>
+            <h2 className="text-sm font-semibold text-slate-300">各阶段晋级概率</h2>
             <div className="space-y-2">
               {STAGES.map((stage) => {
                 const value = path[stage.key] as number;
                 const width = Math.min(100, value * 100);
                 return (
                   <div key={stage.key} className="flex items-center gap-3">
-                    <span className="w-24 text-sm text-slate-700">{stage.label}</span>
-                    <div className="h-2 flex-1 rounded-full bg-slate-100">
+                    <span className="w-24 text-sm text-slate-300">{stage.label}</span>
+                    <div className="h-2 flex-1 rounded-full bg-slate-800/70">
                       <div
                         className={`h-full rounded-full ${stage.accent}`}
                         style={{ width: `${width}%` }}
                       />
                     </div>
-                    <span className="w-20 text-right text-sm tabular-nums text-slate-700">
+                    <span className="w-20 text-right text-sm tabular-nums text-slate-300">
                       {pct(value)}
                     </span>
                   </div>
@@ -142,12 +142,12 @@ export default async function TeamPathPage({
 
           {/* 决赛阶段名次 */}
           <div className="space-y-2">
-            <h2 className="text-sm font-semibold text-slate-700">最终名次概率</h2>
+            <h2 className="text-sm font-semibold text-slate-300">最终名次概率</h2>
             <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
               {PODIUM.map((pod) => (
-                <div key={pod.key} className="rounded-lg border border-slate-200 p-3">
-                  <div className="text-xs text-slate-500">{pod.label}</div>
-                  <div className="text-lg font-bold text-slate-900 tabular-nums">
+                <div key={pod.key} className="rounded-lg border border-slate-800/70 p-3">
+                  <div className="text-xs text-slate-400">{pod.label}</div>
+                  <div className="text-lg font-bold text-slate-100 tabular-nums">
                     {pct(path[pod.key] as number)}
                   </div>
                 </div>
@@ -157,29 +157,29 @@ export default async function TeamPathPage({
 
           {/* 小组赛预期 */}
           <div className="space-y-2">
-            <h2 className="text-sm font-semibold text-slate-700">小组赛预期</h2>
+            <h2 className="text-sm font-semibold text-slate-300">小组赛预期</h2>
             <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-              <div className="rounded-lg border border-slate-200 p-3">
-                <div className="text-xs text-slate-500">小组第一</div>
-                <div className="text-lg font-bold text-slate-900 tabular-nums">
+              <div className="rounded-lg border border-slate-800/70 p-3">
+                <div className="text-xs text-slate-400">小组第一</div>
+                <div className="text-lg font-bold text-slate-100 tabular-nums">
                   {pct(path.qualify_first_prob)}
                 </div>
               </div>
-              <div className="rounded-lg border border-slate-200 p-3">
-                <div className="text-xs text-slate-500">小组第二</div>
-                <div className="text-lg font-bold text-slate-900 tabular-nums">
+              <div className="rounded-lg border border-slate-800/70 p-3">
+                <div className="text-xs text-slate-400">小组第二</div>
+                <div className="text-lg font-bold text-slate-100 tabular-nums">
                   {pct(path.qualify_second_prob)}
                 </div>
               </div>
-              <div className="rounded-lg border border-slate-200 p-3">
-                <div className="text-xs text-slate-500">期望积分</div>
-                <div className="text-lg font-bold text-slate-900 tabular-nums">
+              <div className="rounded-lg border border-slate-800/70 p-3">
+                <div className="text-xs text-slate-400">期望积分</div>
+                <div className="text-lg font-bold text-slate-100 tabular-nums">
                   {path.expected_points.toFixed(2)}
                 </div>
               </div>
-              <div className="rounded-lg border border-slate-200 p-3">
-                <div className="text-xs text-slate-500">期望净胜球</div>
-                <div className="text-lg font-bold text-slate-900 tabular-nums">
+              <div className="rounded-lg border border-slate-800/70 p-3">
+                <div className="text-xs text-slate-400">期望净胜球</div>
+                <div className="text-lg font-bold text-slate-100 tabular-nums">
                   {path.expected_gd >= 0 ? '+' : ''}
                   {path.expected_gd.toFixed(2)}
                 </div>

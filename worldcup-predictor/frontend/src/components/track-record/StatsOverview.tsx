@@ -12,23 +12,32 @@ export function StatsOverview({ overview }: StatsOverviewProps) {
       label: '总命中率',
       value: overview ? formatPercent(overview.hitRate) : '—',
       detail: overview ? `${overview.hits} / ${overview.totalPredictions}` : '加载中…',
+      hero: true,
     },
     {
       label: 'ROI',
       value: overview ? formatSignedPercent(overview.roi) : '—',
-      detail: overview ? `单位投注` : '加载中…',
+      detail: '单位投注',
       good: (overview?.roi ?? 0) >= 0,
     },
     {
       label: '当前连续',
-      value: overview ? `${overview.currentStreak >= 0 ? '+' : ''}${overview.currentStreak}` : '—',
-      detail: overview && overview.currentStreak > 0 ? '🔥 连红' : overview && overview.currentStreak < 0 ? '连黑' : '',
+      value: overview
+        ? `${overview.currentStreak >= 0 ? '+' : ''}${overview.currentStreak}`
+        : '—',
+      detail:
+        overview && overview.currentStreak > 0
+          ? '🔥 连红'
+          : overview && overview.currentStreak < 0
+            ? '连黑'
+            : '—',
       good: (overview?.currentStreak ?? 0) >= 0,
     },
     {
       label: '历史最佳',
       value: overview ? `${overview.bestStreak}` : '—',
-      detail: overview ? '场连红' : '加载中…',
+      detail: '场连红',
+      hero: true,
     },
   ] as const;
 
@@ -37,14 +46,16 @@ export function StatsOverview({ overview }: StatsOverviewProps) {
       {stats.map((s) => (
         <Card key={s.label}>
           <CardBody>
-            <div className="text-xs uppercase tracking-wider text-slate-500">{s.label}</div>
+            <div className="text-xs uppercase tracking-wider text-slate-400">{s.label}</div>
             <div
               className={`mt-1 text-2xl font-black tabular-nums ${
-                'good' in s
-                  ? s.good
-                    ? 'text-emerald-600'
-                    : 'text-rose-600'
-                  : 'text-slate-900'
+                'hero' in s && s.hero
+                  ? 'hero-number'
+                  : 'good' in s
+                    ? s.good
+                      ? 'text-emerald-300'
+                      : 'text-rose-400'
+                    : 'text-slate-100'
               }`}
             >
               {s.value}

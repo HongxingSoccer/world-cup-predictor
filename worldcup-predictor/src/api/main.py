@@ -29,11 +29,13 @@ from src.api.middleware import (
 from src.api.routes import (
     admin,
     health,
+    matches,
     odds,
     predict,
     predictions,
     push_settings,
     reports,
+    track_record,
     worldcup,
 )
 from src.config.settings import settings
@@ -117,6 +119,8 @@ def _create_app() -> FastAPI:
     app.include_router(predict.router)
     app.include_router(odds.router)
     app.include_router(predictions.router)
+    app.include_router(matches.router)
+    app.include_router(track_record.router)
     app.include_router(reports.router)
     app.include_router(worldcup.router)
     app.include_router(worldcup.competitions_router)

@@ -57,7 +57,15 @@ public class ContentTierService {
 
                 // Mark the response as locked for clients that need a hint
                 // for "show paywall here".
-                !isAtLeastBasic
+                !isAtLeastBasic,
+
+                // Form / H2H / venue / score are all metadata: every tier sees them.
+                raw.teamStats(),
+                raw.h2h(),
+                raw.venue(),
+                raw.round(),
+                raw.homeScore(),
+                raw.awayScore()
         );
     }
 

@@ -30,10 +30,10 @@ function Bar({ value, max, accent }: { value: number; max: number; accent: strin
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   return (
     <div className="flex items-center gap-2">
-      <div className="h-1.5 w-14 rounded-full bg-slate-100">
+      <div className="h-1.5 w-14 rounded-full bg-slate-800/70">
         <div className={`h-full rounded-full ${accent}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="w-12 text-right tabular-nums text-slate-700">{formatPercent(value)}</span>
+      <span className="w-12 text-right tabular-nums text-slate-300">{formatPercent(value)}</span>
     </div>
   );
 }
@@ -51,15 +51,15 @@ export function ChampionLeaderboard({
   return (
     <Card>
       <CardHeader className="flex flex-col gap-1">
-        <h3 className="text-sm font-semibold text-slate-900">夺冠概率榜</h3>
-        <p className="text-xs text-slate-500">
+        <h3 className="text-sm font-semibold text-slate-100">夺冠概率榜</h3>
+        <p className="text-xs text-slate-400">
           基于 {trials.toLocaleString()} 次蒙特卡洛模拟 · 模型 {modelVersion} · 计算于{' '}
           {new Date(computedAt).toLocaleString('zh-CN', { hour12: false })}
         </p>
       </CardHeader>
       <CardBody className="overflow-x-auto p-0">
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+          <thead className="bg-slate-900/50 text-xs uppercase tracking-wider text-slate-400">
             <tr>
               <th className="px-3 py-2 text-left">#</th>
               <th className="px-3 py-2 text-left">球队</th>
@@ -75,10 +75,10 @@ export function ChampionLeaderboard({
             {rows.map((row, idx) => (
               <tr
                 key={row.teamId}
-                className="border-t border-slate-100 hover:bg-slate-50"
+                className="border-t border-slate-800/70 hover:bg-slate-900/50"
               >
-                <td className="px-3 py-2 text-slate-500">{idx + 1}</td>
-                <td className="px-3 py-2 font-medium text-slate-900">
+                <td className="px-3 py-2 text-slate-400">{idx + 1}</td>
+                <td className="px-3 py-2 font-medium text-slate-100">
                   <Link
                     href={`/worldcup/team/${row.teamId}`}
                     className="hover:text-brand-600 hover:underline"
@@ -95,13 +95,13 @@ export function ChampionLeaderboard({
                 <td className="px-3 py-2 text-right">
                   <Bar value={row.qualifyProb} max={maxQual} accent="bg-sky-500" />
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums text-slate-500">
+                <td className="px-3 py-2 text-right tabular-nums text-slate-400">
                   {formatPercent(row.runnerUpProb)}
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums text-slate-500">
+                <td className="px-3 py-2 text-right tabular-nums text-slate-400">
                   {formatPercent(row.thirdProb)}
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums text-slate-500">
+                <td className="px-3 py-2 text-right tabular-nums text-slate-400">
                   {formatPercent(row.fourthProb)}
                 </td>
               </tr>

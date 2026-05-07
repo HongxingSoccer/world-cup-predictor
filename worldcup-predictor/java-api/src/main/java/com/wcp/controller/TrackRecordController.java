@@ -1,10 +1,11 @@
 package com.wcp.controller;
 
 import com.wcp.dto.response.TrackRecordOverviewResponse;
-import com.wcp.exception.ApiException;
 import com.wcp.service.TrackRecordService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -29,9 +30,28 @@ public class TrackRecordController {
             @RequestParam(defaultValue = "overall") String statType,
             @RequestParam(defaultValue = "all_time") String period
     ) {
+        // Pre-tournament the table is genuinely empty. Return a zero default
+        // (200 OK) instead of 404 so the frontend can render its
+        // "data lands once the tournament starts" empty state instead of
+        // a broken page.
         return ResponseEntity.ok(
                 trackRecordService.overview(statType, period)
-                        .orElseThrow(() -> ApiException.notFound("track record"))
+                        .orElseGet(() -> zeroOverview(statType, period))
+        );
+    }
+
+    private static TrackRecordOverviewResponse zeroOverview(String statType, String period) {
+        return new TrackRecordOverviewResponse(
+                statType,
+                period,
+                0,
+                0,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                0,
+                0,
+                Instant.EPOCH
         );
     }
 

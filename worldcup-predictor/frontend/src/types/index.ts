@@ -39,6 +39,21 @@ export interface AuthResponse {
 
 // --- Match summary (today + detail responses) ---------------------------
 
+export interface TeamStatRow {
+  label: string;
+  home: string;
+  away: string;
+}
+
+export interface H2HSummary {
+  totalMatches: number;
+  homeWins: number;
+  draws: number;
+  awayWins: number;
+  avgGoals: number;
+  lastMatchDate?: string | null;
+}
+
 export interface MatchSummary {
   matchId: number;
   matchDate: string; // ISO-8601
@@ -64,6 +79,14 @@ export interface MatchSummary {
 
   /** Server hint for the paywall. */
   locked: boolean;
+
+  /** Detail-page only — null on list views. */
+  teamStats?: TeamStatRow[] | null;
+  h2h?: H2HSummary | null;
+  venue?: string | null;
+  round?: string | null;
+  homeScore?: number | null;
+  awayScore?: number | null;
 }
 
 // --- Subscription / payments --------------------------------------------
@@ -103,7 +126,19 @@ export interface TrackRecordOverview {
   roi: number; // 0..1 (signed)
   currentStreak: number;
   bestStreak: number;
-  updatedAt: string;
+  updatedAt: string | null;
+}
+
+export interface RoiTimeseriesPoint {
+  date: string; // YYYY-MM-DD
+  cumulativePnl: number;
+  cumulativeRoi: number; // 0..1 signed
+  settledCount: number;
+}
+
+export interface RoiTimeseries {
+  period: 'all_time' | 'last_30d' | 'last_7d' | 'worldcup';
+  points: RoiTimeseriesPoint[];
 }
 
 // --- Share links --------------------------------------------------------

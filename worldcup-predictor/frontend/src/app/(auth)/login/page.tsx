@@ -48,7 +48,7 @@ export default function LoginPage() {
 
   return (
     <div className="mx-auto max-w-md space-y-4">
-      <div className="grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
+      <div className="grid grid-cols-2 rounded-2xl bg-slate-800/70 p-1">
         {(['login', 'register'] as const).map((t) => (
           <button
             key={t}
@@ -56,7 +56,7 @@ export default function LoginPage() {
             onClick={() => setTab(t)}
             className={cn(
               'rounded-xl py-2 text-sm font-semibold',
-              tab === t ? 'bg-white text-slate-900 shadow' : 'text-slate-500',
+              tab === t ? 'bg-slate-900/70 text-slate-100 shadow' : 'text-slate-400',
             )}
           >
             {t === 'login' ? '登录' : '注册'}
@@ -66,7 +66,7 @@ export default function LoginPage() {
 
       <Card>
         <CardHeader>
-          <h1 className="text-base font-semibold text-slate-900">
+          <h1 className="text-base font-semibold text-slate-100">
             {tab === 'login' ? '欢迎回来' : '创建新账户'}
           </h1>
         </CardHeader>
@@ -113,9 +113,9 @@ export default function LoginPage() {
           </form>
 
           <div className="my-4 flex items-center gap-3 text-xs text-slate-400">
-            <div className="h-px flex-1 bg-slate-200" />
+            <div className="h-px flex-1 bg-slate-700/70" />
             或使用第三方登录
-            <div className="h-px flex-1 bg-slate-200" />
+            <div className="h-px flex-1 bg-slate-700/70" />
           </div>
 
           <Button variant="secondary" className="w-full" disabled>
@@ -145,7 +145,7 @@ export default function LoginPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium text-slate-600">{label}</span>
+      <span className="mb-1 block text-xs font-medium text-slate-400">{label}</span>
       {children}
     </label>
   );
