@@ -35,5 +35,8 @@ public record MatchSummaryResponse(
         String venue,
         String round,
         Integer homeScore,
-        Integer awayScore
+        Integer awayScore,
+        // Detail-only: true when the authenticated user has favourited this
+        // match. Always null on list views and for anonymous callers.
+        Boolean favorited
 ) {}

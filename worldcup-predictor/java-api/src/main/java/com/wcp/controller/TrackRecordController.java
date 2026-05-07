@@ -1,5 +1,6 @@
 package com.wcp.controller;
 
+import com.wcp.client.MlApiClient;
 import com.wcp.dto.response.TrackRecordOverviewResponse;
 import com.wcp.service.TrackRecordService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -7,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class TrackRecordController {
 
     private final TrackRecordService trackRecordService;
+    private final MlApiClient mlApiClient;
 
     @GetMapping("/overview")
     @Operation(summary = "Overall stat for a stat-type / period combo.")
@@ -63,6 +66,14 @@ public class TrackRecordController {
         return ResponseEntity.ok(trackRecordService.overviewByPeriod(period));
     }
 
+    @GetMapping("/timeseries")
+    @Operation(summary = "Daily cumulative-PnL series for the ROI chart.")
+    public ResponseEntity<Map<String, Object>> timeseries(
+            @RequestParam(defaultValue = "all_time") String period
+    ) {
+        return ResponseEntity.ok(mlApiClient.trackRecordTimeseries(period));
+    }
+
     @GetMapping("/by-market/{type}")
     @Operation(summary = "Per-market stats (1x2 / score / ou25 / btts / positive_ev).")
     public ResponseEntity<List<TrackRecordOverviewResponse>> byMarket(
@@ -76,12 +87,15 @@ public class TrackRecordController {
     }
 
     @GetMapping("/history")
-    @Operation(summary = "Phase 3.5 stub — paged historical predictions.")
-    public ResponseEntity<List<TrackRecordOverviewResponse>> history(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+    @Operation(summary = "Paged historical predictions — settled rows joined with match metadata.")
+    public ResponseEntity<Map<String, Object>> history(
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "0") int page
     ) {
-        // TODO(Phase 3.5): paged join over prediction_results + matches.
-        return ResponseEntity.ok(List.of());
+        // Convert page+size (REST-friendly) to ml-api's limit+offset.
+        int clampedSize = Math.max(1, Math.min(size, 100));
+        int clampedPage = Math.max(0, page);
+        int offset = clampedPage * clampedSize;
+        return ResponseEntity.ok(mlApiClient.trackRecordHistory(clampedSize, offset));
     }
 }

@@ -87,6 +87,9 @@ export interface MatchSummary {
   round?: string | null;
   homeScore?: number | null;
   awayScore?: number | null;
+
+  /** Detail-page only when authenticated. Null for anonymous callers / list views. */
+  favorited?: boolean | null;
 }
 
 // --- Subscription / payments --------------------------------------------

@@ -65,7 +65,8 @@ public class ContentTierService {
                 raw.venue(),
                 raw.round(),
                 raw.homeScore(),
-                raw.awayScore()
+                raw.awayScore(),
+                raw.favorited()
         );
     }
 
