@@ -95,6 +95,10 @@ reports/
 data/raw/
 data/processed/
 data/features/
+# Same dirs nested under the python package (where pipelines write today).
+worldcup-predictor/data/raw/
+worldcup-predictor/data/processed/
+worldcup-predictor/data/features/
 
 # ── Logs / runtime ───────────────────────────────────────────────────
 logs/

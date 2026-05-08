@@ -2,7 +2,17 @@
 # Map MLflow to 5001 on the host so docker compose up doesn't fail.
 services:
   mlflow-server:
+    # Pin to MLflow 2.x — v3 introduced a "security middleware" that forces
+    # 127.0.0.1 binding regardless of --host, breaking inter-container access.
+    image: ghcr.io/mlflow/mlflow:v2.18.0
     # !override replaces the base ports list instead of appending to it
     # (Compose default merges arrays, which would keep the conflicting 5000 entry).
     ports: !override
       - "5001:5000"
+    # Single-line form: the alpine /bin/sh in the v2.x image mis-parses the
+    # YAML folded-block form and treats backslash-newline as a literal break,
+    # so spell the command out explicitly.
+    command:
+      - /bin/sh
+      - -c
+      - "pip install --quiet psycopg2-binary && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri $$MLFLOW_BACKEND_STORE_URI --default-artifact-root $$MLFLOW_DEFAULT_ARTIFACT_ROOT"
