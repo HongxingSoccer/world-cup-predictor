@@ -171,9 +171,14 @@ public class SubscriptionService {
     }
 
     private SubscriptionPlanResponse findPlan(String tier, String planType) {
-        return PLAN_CATALOGUE.stream()
-                .filter(p -> p.tier().equals(tier) && p.planType().equals(planType))
+        double fx = currentFxRate();
+        return CATALOGUE.stream()
+                .filter(c -> c.tier().equals(tier) && c.planType().equals(planType))
                 .findFirst()
+                .map(c -> new SubscriptionPlanResponse(
+                        c.tier(), c.planType(), c.priceUsdCents(),
+                        usdCentsToCnyFen(c.priceUsdCents(), fx),
+                        c.days(), c.label()))
                 .orElseThrow(() -> ApiException.badRequest("unknown plan: " + tier + "/" + planType));
     }
 }

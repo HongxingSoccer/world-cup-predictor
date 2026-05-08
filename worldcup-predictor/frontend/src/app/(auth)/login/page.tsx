@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
@@ -11,7 +11,18 @@ import { cn } from '@/lib/utils';
 
 type Tab = 'login' | 'register';
 
+// useSearchParams() forces a client-side bailout during static generation,
+// so Next 14 requires it to live below a Suspense boundary. Without this
+// wrapper the build fails on /login with "missing-suspense-with-csr-bailout".
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto h-64 max-w-md animate-pulse" />}>
+      <LoginPageInner />
+    </Suspense>
+  );
+}
+
+function LoginPageInner() {
   const t = useT();
   const router = useRouter();
   const searchParams = useSearchParams();
