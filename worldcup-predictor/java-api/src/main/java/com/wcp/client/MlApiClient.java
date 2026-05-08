@@ -3,6 +3,7 @@ package com.wcp.client;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -160,6 +161,154 @@ public class MlApiClient {
         } catch (RestClientException ex) {
             log.warn("ml_api_history_failed error={}", ex.getMessage());
             return Map.of("total", 0, "items", List.of());
+        }
+    }
+
+    /**
+     * GET /api/v1/fx/usd-cny — live USD→CNY rate (frankfurter.app, cached
+     * by ml-api for 1h). Returns the parsed rate, or 0.0 on any error so
+     * the caller falls back to the configured constant.
+     */
+    @SuppressWarnings("unchecked")
+    public double fxUsdCny() {
+        try {
+            Map<String, Object> body = restTemplate.getForObject(
+                    "/api/v1/fx/usd-cny", Map.class);
+            if (body == null) return 0.0;
+            Object rate = body.get("rate");
+            if (rate instanceof Number n) {
+                return n.doubleValue();
+            }
+        } catch (RestClientException ex) {
+            log.warn("ml_api_fx_failed error={}", ex.getMessage());
+        }
+        return 0.0;
+    }
+
+    /**
+     * GET /api/v1/matches?ids=1,2,3 — batch read powering "我的收藏" + similar
+     * card lists. Returns one MatchSummary per match-id, preserving order.
+     * Falls back to an empty list on any error so the UI can still render.
+     */
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> matchesBatch(List<Long> matchIds) {
+        if (matchIds == null || matchIds.isEmpty()) {
+            return List.of();
+        }
+        String csv = matchIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+        String url = UriComponentsBuilder.fromPath("/api/v1/matches")
+                .queryParam("ids", csv)
+                .toUriString();
+        try {
+            List<?> body = restTemplate.getForObject(url, List.class);
+            if (body == null) return List.of();
+            return body.stream()
+                    .filter(Map.class::isInstance)
+                    .map(o -> (Map<String, Object>) o)
+                    .toList();
+        } catch (RestClientException ex) {
+            log.warn("ml_api_matches_batch_failed error={}", ex.getMessage());
+            return List.of();
+        }
+    }
+
+    /**
+     * GET /api/v1/matches/{id}/related — sibling matches (same season /
+     * round). Used by the match-detail page to suggest more reading.
+     */
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> matchesRelated(long matchId, int limit) {
+        String url = UriComponentsBuilder.fromPath("/api/v1/matches/" + matchId + "/related")
+                .queryParam("limit", limit)
+                .toUriString();
+        try {
+            List<?> body = restTemplate.getForObject(url, List.class);
+            if (body == null) return List.of();
+            return body.stream()
+                    .filter(Map.class::isInstance)
+                    .map(o -> (Map<String, Object>) o)
+                    .toList();
+        } catch (RestClientException ex) {
+            log.warn("ml_api_matches_related_failed match={} error={}", matchId, ex.getMessage());
+            return List.of();
+        }
+    }
+
+    /**
+     * GET /api/v1/push/settings?user_id=… — defaults are returned for new
+     * users so this never 404s. Java is the authentication boundary; this
+     * client is only meant to be called from PushService after a principal
+     * has been resolved.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getPushSettings(long userId) {
+        String url = UriComponentsBuilder.fromPath("/api/v1/push/settings")
+                .queryParam("user_id", userId)
+                .toUriString();
+        try {
+            Map<String, Object> body = restTemplate.getForObject(url, Map.class);
+            return body == null ? Map.of() : body;
+        } catch (RestClientException ex) {
+            log.warn("ml_api_push_get_failed user={} error={}", userId, ex.getMessage());
+            return Map.of();
+        }
+    }
+
+    /**
+     * GET /api/v1/matches/{id}/report — latest published AI analysis.
+     * Empty map → no published report yet (frontend renders the empty
+     * state instead of failing).
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> matchReport(long matchId) {
+        try {
+            Map<String, Object> body = restTemplate.getForObject(
+                    "/api/v1/matches/" + matchId + "/report", Map.class);
+            return body == null ? Map.of() : body;
+        } catch (HttpClientErrorException ex) {
+            log.info("ml_api_match_report_4xx match={} status={}", matchId, ex.getStatusCode());
+            return Map.of();
+        } catch (RestClientException ex) {
+            log.warn("ml_api_match_report_failed match={} error={}", matchId, ex.getMessage());
+            return Map.of();
+        }
+    }
+
+    /**
+     * POST /api/v1/push/test — dry-run a test push for the given user.
+     * Returns the previewed payload (currently a stub on the ml-api side
+     * until the real fan-out worker is wired up).
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> testPushNotification(Map<String, Object> payload) {
+        try {
+            Map<String, Object> body = restTemplate.postForObject(
+                    "/api/v1/push/test", payload, Map.class);
+            return body == null ? Map.of() : body;
+        } catch (RestClientException ex) {
+            log.warn("ml_api_push_test_failed error={}", ex.getMessage());
+            return Map.of();
+        }
+    }
+
+    /**
+     * PUT /api/v1/push/settings — payload must include user_id. Returns the
+     * persisted row.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> putPushSettings(Map<String, Object> payload) {
+        try {
+            Map<String, Object> body = restTemplate
+                    .exchange(
+                            "/api/v1/push/settings",
+                            org.springframework.http.HttpMethod.PUT,
+                            new org.springframework.http.HttpEntity<>(payload),
+                            Map.class)
+                    .getBody();
+            return body == null ? Map.of() : body;
+        } catch (RestClientException ex) {
+            log.warn("ml_api_push_put_failed error={}", ex.getMessage());
+            return Map.of();
         }
     }
 

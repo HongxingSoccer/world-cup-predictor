@@ -58,6 +58,8 @@ class OddsDTO(BaseModel):
         for key, odds in self.outcomes.items():
             # Light bound-check here; the full domain rules live in
             # src.utils.validators so they can be reused from the pipeline.
-            if odds < 1.01 or odds > 100.0:
-                raise ValueError(f"odds[{key}]={odds} outside [1.01, 100.0]")
+            # Upper bound matches odds_snapshots Numeric(6,3) column ceiling and
+            # accommodates longshot markets (e.g. World Cup outright winners).
+            if odds < 1.01 or odds > 999.999:
+                raise ValueError(f"odds[{key}]={odds} outside [1.01, 999.999]")
         return self

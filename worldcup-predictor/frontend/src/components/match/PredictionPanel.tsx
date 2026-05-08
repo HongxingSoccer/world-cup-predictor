@@ -1,4 +1,7 @@
+'use client';
+
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { useT } from '@/i18n/I18nProvider';
 import { clampProb, formatPercent } from '@/lib/utils';
 import type { MatchSummary } from '@/types';
 
@@ -6,11 +9,8 @@ interface PredictionPanelProps {
   match: MatchSummary;
 }
 
-/**
- * Tier-blind primary view of the 1x2 distribution. Always renders, even for
- * free users — it's the most basic signal we expose.
- */
 export function PredictionPanel({ match }: PredictionPanelProps) {
+  const t = useT();
   const home = clampProb(match.probHomeWin);
   const draw = clampProb(match.probDraw);
   const away = clampProb(match.probAwayWin);
@@ -19,18 +19,18 @@ export function PredictionPanel({ match }: PredictionPanelProps) {
     <Card>
       <CardHeader>
         <div>
-          <h3 className="text-sm font-semibold text-slate-100">胜平负预测</h3>
-          <p className="mt-0.5 text-xs text-slate-400">基于 Poisson 模型 + Elo 修正</p>
+          <h3 className="text-sm font-semibold text-slate-100">{t('match.predictionTitle')}</h3>
+          <p className="mt-0.5 text-xs text-slate-400">{t('match.predictionSubtitle')}</p>
         </div>
         <div className="text-right text-xs text-slate-400">
-          <div>置信度</div>
+          <div>{t('match.confidence')}</div>
           <div className="hero-number text-2xl font-bold">{match.confidenceScore ?? '—'}</div>
         </div>
       </CardHeader>
       <CardBody className="space-y-3">
-        <Row label={`${match.homeTeam} 胜`} value={home} barClass="bg-emerald-500" />
-        <Row label="平局" value={draw} barClass="bg-amber-400" />
-        <Row label={`${match.awayTeam} 胜`} value={away} barClass="bg-rose-500" />
+        <Row label={`${match.homeTeam}${t('match.winSuffix')}`} value={home} barClass="bg-emerald-500" />
+        <Row label={t('match.drawFull')} value={draw} barClass="bg-amber-400" />
+        <Row label={`${match.awayTeam}${t('match.winSuffix')}`} value={away} barClass="bg-rose-500" />
       </CardBody>
     </Card>
   );

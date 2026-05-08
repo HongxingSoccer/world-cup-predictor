@@ -100,6 +100,20 @@ class Settings(BaseSettings):
     # without code changes — set ACTIVE_MODEL_NAME in `.env` and restart.
     ACTIVE_MODEL_NAME: str = Field(default="poisson_v1")
 
+    # --- LLM (Phase 4 — AI match reports) ---
+    # Both keys empty → :class:`StubLLMClient` returns a templated report so
+    # the report task pipeline still runs end-to-end pre-launch. Once a real
+    # key is set, :func:`build_llm_client_from_settings` swaps in the real
+    # provider with no other code changes.
+    ANTHROPIC_API_KEY: str = Field(default="", description="Claude API key (Phase 4).")
+    OPENAI_API_KEY: str = Field(default="", description="OpenAI / DeepSeek / Qwen key.")
+    OPENAI_BASE_URL: str = Field(
+        default="",
+        description="Override OpenAI base_url for compatible providers (DeepSeek, Qwen).",
+    )
+    LLM_PRIMARY_MODEL: str = Field(default="claude-sonnet-4-20250514")
+    LLM_FALLBACK_MODEL: str = Field(default="gpt-4o-mini")
+
     # --- S3 / MinIO (Phase 3 — share-card object storage) ---
     # Endpoint can be a MinIO URL (e.g. http://minio:9000) or any S3-API-
     # compatible target. Empty string disables uploads — `CardGenerator`

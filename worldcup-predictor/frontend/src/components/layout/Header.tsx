@@ -3,11 +3,14 @@
 import Link from 'next/link';
 import { Trophy, User as UserIcon } from 'lucide-react';
 
+import { CompactLocaleToggle } from '@/components/i18n/CompactLocaleToggle';
+import { useT } from '@/i18n/I18nProvider';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { cn } from '@/lib/utils';
 
 export function Header() {
+  const t = useT();
   const { user, isAuthenticated } = useAuth();
   const { tier } = useSubscription();
 
@@ -16,31 +19,32 @@ export function Header() {
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2 text-slate-100">
           <Trophy size={20} className="text-brand-400" />
-          <span className="font-bold tracking-tight">WCP · 世界杯预测</span>
+          <span className="font-bold tracking-tight">{t('brand')}</span>
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm md:flex">
           <Link href="/" className="text-slate-300 transition-colors hover:text-brand-400">
-            今日比赛
+            {t('nav.today')}
           </Link>
           <Link href="/track-record" className="text-slate-300 transition-colors hover:text-brand-400">
-            战绩
+            {t('nav.trackRecord')}
           </Link>
           <Link href="/worldcup/groups" className="text-slate-300 transition-colors hover:text-brand-400">
-            小组赛
+            {t('nav.groups')}
           </Link>
           <Link href="/worldcup/bracket" className="text-slate-300 transition-colors hover:text-brand-400">
-            淘汰赛
+            {t('nav.knockout')}
           </Link>
           <Link href="/worldcup/simulation" className="text-slate-300 transition-colors hover:text-brand-400">
-            夺冠概率
+            {t('nav.winProb')}
           </Link>
           <Link href="/subscribe" className="text-slate-300 transition-colors hover:text-brand-400">
-            订阅
+            {t('nav.subscribe')}
           </Link>
         </nav>
 
         <div className="flex items-center gap-2">
+          <CompactLocaleToggle />
           {isAuthenticated && tier !== 'free' ? (
             <span
               className={cn(
@@ -50,13 +54,13 @@ export function Header() {
                   : 'border-brand-500/40 bg-brand-500/15 text-brand-400',
               )}
             >
-              {tier === 'premium' ? 'Premium' : 'Basic'}
+              {tier === 'premium' ? t('subscription.tier.premium') : t('subscription.tier.basic')}
             </span>
           ) : null}
           <Link
             href={isAuthenticated ? '/profile' : '/login'}
             className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-800/70 text-slate-300 transition-colors hover:border-brand-500/40 hover:bg-slate-700 hover:text-brand-400"
-            aria-label={isAuthenticated ? '个人中心' : '登录'}
+            aria-label={isAuthenticated ? t('nav.profile') : t('nav.login')}
           >
             <UserIcon size={18} />
             {user?.nickname ? <span className="sr-only">{user.nickname}</span> : null}

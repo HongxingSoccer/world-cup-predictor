@@ -93,4 +93,31 @@ public class MatchController {
         boolean nowFavorite = matchService.toggleFavorite(principal, id);
         return ResponseEntity.ok(Map.of("matchId", id, "favorite", nowFavorite));
     }
+
+    @GetMapping("/api/v1/matches/{id}/related")
+    @Operation(summary = "Sibling matches in the same season / round.")
+    public ResponseEntity<List<Map<String, Object>>> related(
+            @PathVariable long id,
+            @RequestParam(defaultValue = "6") int limit
+    ) {
+        int clamped = Math.max(1, Math.min(limit, 20));
+        return ResponseEntity.ok(matchService.getRelatedMatches(id, clamped));
+    }
+
+    @GetMapping("/api/v1/matches/{id}/report")
+    @Operation(summary = "Latest published AI match-analysis report.")
+    public ResponseEntity<Map<String, Object>> report(@PathVariable long id) {
+        return ResponseEntity.ok(matchService.getMatchReport(id));
+    }
+
+    @GetMapping("/api/v1/users/me/favorites")
+    @Operation(summary = "Authenticated caller's favourite matches with summary metadata.")
+    public ResponseEntity<List<Map<String, Object>>> myFavorites(
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        if (principal == null || principal.id() == null) {
+            throw ApiException.unauthorized("login required");
+        }
+        return ResponseEntity.ok(matchService.getFavoritesForUser(principal));
+    }
 }

@@ -76,7 +76,9 @@ public class MatchService {
                 base.hasValueSignal(), base.topSignalLevel(), base.oddsAnalysis(),
                 base.scoreMatrix(), base.overUnderProbs(), base.locked(),
                 base.teamStats(), base.h2h(), base.venue(), base.round(),
-                base.homeScore(), base.awayScore(), favorited
+                base.homeScore(), base.awayScore(), favorited,
+                base.homeTeamLogo(), base.awayTeamLogo(),
+                base.homeTeamNameZh(), base.awayTeamNameZh()
         );
     }
 
@@ -85,6 +87,32 @@ public class MatchService {
             throw ApiException.subscriptionExpired();
         }
         return mlApiClient.oddsAnalysis(matchId);
+    }
+
+    /** Pass-through for the {@code /matches/{id}/related} controller. */
+    public List<Map<String, Object>> getRelatedMatches(long matchId, int limit) {
+        return mlApiClient.matchesRelated(matchId, limit);
+    }
+
+    /** Pass-through for the {@code /matches/{id}/report} controller. */
+    public Map<String, Object> getMatchReport(long matchId) {
+        return mlApiClient.matchReport(matchId);
+    }
+
+    /**
+     * One round-trip per call: read the user's UserFavorite rows, then ask
+     * ml-api for compact match summaries in a single batch request. Order
+     * mirrors the favorite-creation timestamp (most recent first), which the
+     * repository already enforces.
+     */
+    public List<Map<String, Object>> getFavoritesForUser(UserPrincipal principal) {
+        List<UserFavorite> favorites = favoriteRepository.findByUserIdOrderByCreatedAtDesc(
+                principal.id());
+        if (favorites.isEmpty()) {
+            return List.of();
+        }
+        List<Long> ids = favorites.stream().map(UserFavorite::getMatchId).toList();
+        return mlApiClient.matchesBatch(ids);
     }
 
     @Transactional
@@ -146,7 +174,7 @@ public class MatchService {
                 (String) raw.get("confidence_level"),
                 hasValueSignal,
                 topSignalLevel,
-                oddsAnalysis instanceof Map<?, ?> m ? (Map<String, Object>) m : null,
+                asListOfMaps(oddsAnalysis),
                 probs.get("score_matrix"),
                 asMap(probs.get("over_under_probs")),
                 false,
@@ -156,7 +184,11 @@ public class MatchService {
                 (String) raw.get("round"),
                 asInteger(raw.get("home_score")),
                 asInteger(raw.get("away_score")),
-                null  // favorited — populated by getMatchDetail when authenticated
+                null,  // favorited — populated by getMatchDetail when authenticated
+                (String) raw.get("home_team_logo"),
+                (String) raw.get("away_team_logo"),
+                (String) raw.get("home_team_name_zh"),
+                (String) raw.get("away_team_name_zh")
         );
     }
 

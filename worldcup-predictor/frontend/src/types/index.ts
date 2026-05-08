@@ -41,6 +41,8 @@ export interface AuthResponse {
 
 export interface TeamStatRow {
   label: string;
+  /** Optional i18n key the frontend should translate when present. */
+  labelKey?: string | null;
   home: string;
   away: string;
 }
@@ -59,6 +61,10 @@ export interface MatchSummary {
   matchDate: string; // ISO-8601
   homeTeam: string;
   awayTeam: string;
+  homeTeamLogo?: string | null;
+  awayTeamLogo?: string | null;
+  homeTeamNameZh?: string | null;
+  awayTeamNameZh?: string | null;
   competition: string | null;
   status: MatchStatus;
 
@@ -72,8 +78,9 @@ export interface MatchSummary {
   hasValueSignal: boolean | null;
   topSignalLevel: SignalLevel | null;
 
-  /** Paid content — null for free users. */
-  oddsAnalysis: Record<string, unknown> | null;
+  /** Paid content — null for free users. ml-api ships this as an array of
+   *  per-(market, outcome) rows; `toOddsRows` normalises it to camelCase. */
+  oddsAnalysis: Array<Record<string, unknown>> | null;
   scoreMatrix: number[][] | null;
   overUnderProbs: Record<string, { over: number; under: number }> | null;
 
@@ -97,7 +104,10 @@ export interface MatchSummary {
 export interface SubscriptionPlan {
   tier: 'basic' | 'premium';
   planType: 'monthly' | 'worldcup_pass';
-  priceCny: number; // whole RMB cents
+  /** Display price (USD cents). The user-facing default everywhere. */
+  priceUsd: number;
+  /** Charge price (CNY fen). Surfaced when the user picks Alipay / WeChat. */
+  priceCny: number;
   durationDays: number;
   displayName: string;
 }
@@ -105,6 +115,9 @@ export interface SubscriptionPlan {
 export interface PaymentInitResponse {
   orderNo: string;
   paymentChannel: 'alipay' | 'wechat_pay';
+  /** USD cents — what the receipt + history shows. */
+  amountUsd: number;
+  /** CNY fen — what Alipay / WeChat actually charges. */
   amountCny: number;
   paymentParams: Record<string, unknown>;
 }

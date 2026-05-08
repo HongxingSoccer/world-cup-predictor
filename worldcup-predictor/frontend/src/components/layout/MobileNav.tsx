@@ -4,23 +4,25 @@ import { Calendar, ListChecks, Trophy, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { useT } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/utils';
 
 const ITEMS = [
-  { href: '/', label: '今日', icon: Calendar },
-  { href: '/track-record', label: '战绩', icon: ListChecks },
-  { href: '/worldcup/bracket', label: '淘汰赛', icon: Trophy },
-  { href: '/profile', label: '我的', icon: User },
+  { href: '/', key: 'nav.todayShort', icon: Calendar },
+  { href: '/track-record', key: 'nav.trackRecord', icon: ListChecks },
+  { href: '/worldcup/bracket', key: 'nav.knockout', icon: Trophy },
+  { href: '/profile', key: 'nav.myMatches', icon: User },
 ] as const;
 
 export function MobileNav() {
+  const t = useT();
   const pathname = usePathname();
   return (
     <nav
-      aria-label="主导航"
+      aria-label={t('nav.mainNav')}
       className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-slate-800/70 bg-ink-900/85 backdrop-blur-xl supports-[backdrop-filter]:bg-ink-900/70 md:hidden"
     >
-      {ITEMS.map(({ href, label, icon: Icon }) => {
+      {ITEMS.map(({ href, key, icon: Icon }) => {
         const active = pathname === href || (href !== '/' && pathname.startsWith(href));
         return (
           <Link
@@ -32,7 +34,7 @@ export function MobileNav() {
             )}
           >
             <Icon size={20} />
-            <span>{label}</span>
+            <span>{t(key)}</span>
           </Link>
         );
       })}

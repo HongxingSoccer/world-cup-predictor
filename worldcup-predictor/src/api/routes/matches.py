@@ -5,6 +5,12 @@ already exists in the DB so the public match-detail page can render even when
 features are missing or the prediction hasn't been computed yet. Bundles
 recent form (last 5 matches per side) and a head-to-head summary so the
 frontend doesn't need a second round-trip.
+
+Two companion routes live in this file:
+- ``GET /api/v1/matches?ids=1,2,3`` — batch lookup powering the
+  "我的收藏" card on the profile page.
+- ``GET /api/v1/matches/{id}/related`` — same-round / same-season
+  siblings shown beneath the match-detail body.
 """
 from __future__ import annotations
 
@@ -12,7 +18,7 @@ from datetime import datetime
 from typing import Any, Optional
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import and_, desc, or_, select
 from sqlalchemy.orm import Session
@@ -36,6 +42,7 @@ class TeamFormRow(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     label: str
+    label_key: Optional[str] = None  # i18n key — frontend translates when set
     home: str
     away: str
 
@@ -60,6 +67,10 @@ class MatchDetailResponse(BaseModel):
     match_date: datetime
     home_team: str
     away_team: str
+    home_team_logo: Optional[str] = None
+    away_team_logo: Optional[str] = None
+    home_team_name_zh: Optional[str] = None
+    away_team_name_zh: Optional[str] = None
     competition: Optional[str]
     venue: Optional[str]
     round: Optional[str]
@@ -116,6 +127,10 @@ def match_detail(
         match_date=match.match_date,
         home_team=_team_label(home_team),
         away_team=_team_label(away_team),
+        home_team_logo=home_team.logo_url if home_team else None,
+        away_team_logo=away_team.logo_url if away_team else None,
+        home_team_name_zh=home_team.name_zh if home_team else None,
+        away_team_name_zh=away_team.name_zh if away_team else None,
         competition=str(season.year) if season and season.year else None,
         venue=match.venue,
         round=match.round,
@@ -200,16 +215,19 @@ def _team_form_rows(session: Session, match: Match) -> list[TeamFormRow]:
     return [
         TeamFormRow(
             label=f"近{FORM_WINDOW}场胜率",
+            label_key="match.form.last5WinRate",
             home=_pct_str(home_form["wins"], home_form["count"]),
             away=_pct_str(away_form["wins"], away_form["count"]),
         ),
         TeamFormRow(
             label=f"近{FORM_WINDOW}场均进球",
+            label_key="match.form.last5GoalsFor",
             home=_avg_str(home_form["goals_for"], home_form["count"]),
             away=_avg_str(away_form["goals_for"], away_form["count"]),
         ),
         TeamFormRow(
             label=f"近{FORM_WINDOW}场均失球",
+            label_key="match.form.last5GoalsAgainst",
             home=_avg_str(home_form["goals_against"], home_form["count"]),
             away=_avg_str(away_form["goals_against"], away_form["count"]),
         ),
@@ -295,3 +313,171 @@ def _avg_str(total: int, denominator: int) -> str:
     if denominator <= 0:
         return "—"
     return f"{total / denominator:.1f}"
+
+
+# --- Batch lookup + related-matches ---------------------------------------
+
+
+class MatchSummary(BaseModel):
+    """Compact match payload used by the batch + related routes.
+
+    Distinct from MatchDetailResponse (which carries form / H2H / odds).
+    Keep this lean — favorite cards and "same group" siblings render a card
+    grid where dozens of these can be on screen at once.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    match_id: int
+    match_date: datetime
+    home_team: str
+    away_team: str
+    home_team_logo: Optional[str] = None
+    away_team_logo: Optional[str] = None
+    competition: Optional[str] = None
+    status: str
+    round: Optional[str] = None
+    venue: Optional[str] = None
+    home_score: Optional[int] = None
+    away_score: Optional[int] = None
+    prob_home_win: Optional[float] = None
+    prob_draw: Optional[float] = None
+    prob_away_win: Optional[float] = None
+    confidence_score: Optional[int] = None
+
+
+@router.get("", response_model=list[MatchSummary])
+def matches_batch(
+    ids: str = Query(default="", description="Comma-separated match ids."),
+    db_session: Session = Depends(get_db_session),
+) -> list[MatchSummary]:
+    """Bulk-read matches by id list. Powers profile favourites in one round-trip."""
+    parsed = _parse_id_list(ids)
+    if not parsed:
+        return []
+    return _summaries_for(db_session, parsed)
+
+
+@router.get("/{match_id}/related", response_model=list[MatchSummary])
+def match_related(
+    match_id: int,
+    limit: int = Query(default=6, ge=1, le=20),
+    db_session: Session = Depends(get_db_session),
+) -> list[MatchSummary]:
+    """Sibling matches in the same season (and round when available).
+
+    Falls back to season-only matches if the source has no round set, so
+    pre-tournament rows without a knockout label still surface a meaningful
+    list. The source match itself is excluded.
+    """
+    source = db_session.get(Match, match_id)
+    if source is None:
+        return []
+    stmt = (
+        select(Match)
+        .where(Match.season_id == source.season_id, Match.id != source.id)
+        .order_by(Match.match_date)
+        .limit(limit)
+    )
+    if source.round:
+        stmt = stmt.where(Match.round == source.round)
+    sibling_ids = [m.id for m in db_session.execute(stmt).scalars().all()]
+    if not sibling_ids:
+        return []
+    return _summaries_for(db_session, sibling_ids)
+
+
+def _parse_id_list(raw: str) -> list[int]:
+    """Coerce a comma-separated string of ids to a deduped list, ignoring noise."""
+    out: list[int] = []
+    seen: set[int] = set()
+    for part in raw.split(","):
+        cleaned = part.strip()
+        if not cleaned:
+            continue
+        try:
+            value = int(cleaned)
+        except ValueError:
+            continue
+        if value in seen:
+            continue
+        seen.add(value)
+        out.append(value)
+        if len(out) >= 50:  # cap to defend the DB
+            break
+    return out
+
+
+def _summaries_for(session: Session, match_ids: list[int]) -> list[MatchSummary]:
+    """Build lightweight MatchSummary rows preserving caller-supplied id order."""
+    HomeTeam = Team.__table__.alias("home_team")  # noqa: N806
+    AwayTeam = Team.__table__.alias("away_team")  # noqa: N806
+
+    stmt = (
+        select(
+            Match.id,
+            Match.match_date,
+            Match.status,
+            Match.round,
+            Match.venue,
+            Match.home_score,
+            Match.away_score,
+            HomeTeam.c.name.label("home_team"),
+            HomeTeam.c.logo_url.label("home_team_logo"),
+            AwayTeam.c.name.label("away_team"),
+            AwayTeam.c.logo_url.label("away_team_logo"),
+            Season.year.label("competition"),
+        )
+        .join(HomeTeam, HomeTeam.c.id == Match.home_team_id)
+        .join(AwayTeam, AwayTeam.c.id == Match.away_team_id)
+        .join(Season, Season.id == Match.season_id, isouter=True)
+        .where(Match.id.in_(match_ids))
+    )
+    rows = {row.id: row for row in session.execute(stmt).all()}
+
+    pred_stmt = (
+        select(
+            Prediction.match_id,
+            Prediction.prob_home_win,
+            Prediction.prob_draw,
+            Prediction.prob_away_win,
+            Prediction.confidence_score,
+        )
+        .where(
+            Prediction.match_id.in_(match_ids),
+            Prediction.model_version == settings.ACTIVE_MODEL_NAME,
+        )
+        .order_by(desc(Prediction.published_at))
+    )
+    # Keep the most-recent prediction per match (first hit wins thanks to ORDER BY).
+    preds: dict[int, Any] = {}
+    for row in session.execute(pred_stmt).all():
+        preds.setdefault(row.match_id, row)
+
+    out: list[MatchSummary] = []
+    for mid in match_ids:
+        row = rows.get(mid)
+        if row is None:
+            continue
+        pred = preds.get(mid)
+        out.append(
+            MatchSummary(
+                match_id=row.id,
+                match_date=row.match_date,
+                home_team=row.home_team,
+                away_team=row.away_team,
+                home_team_logo=row.home_team_logo,
+                away_team_logo=row.away_team_logo,
+                competition=str(row.competition) if row.competition else None,
+                status=row.status,
+                round=row.round,
+                venue=row.venue,
+                home_score=row.home_score,
+                away_score=row.away_score,
+                prob_home_win=float(pred.prob_home_win) if pred else None,
+                prob_draw=float(pred.prob_draw) if pred else None,
+                prob_away_win=float(pred.prob_away_win) if pred else None,
+                confidence_score=int(pred.confidence_score) if pred else None,
+            )
+        )
+    return out

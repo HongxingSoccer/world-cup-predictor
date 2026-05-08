@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { Button } from '@/components/ui/Button';
+import { useT } from '@/i18n/I18nProvider';
 import { useSubscription } from '@/hooks/useSubscription';
 import { cn } from '@/lib/utils';
 import type { FeatureKey } from '@/stores/subscription-store';
@@ -31,6 +32,7 @@ export function PaywallOverlay({
   ctaText,
   className,
 }: PaywallOverlayProps) {
+  const t = useT();
   const { canAccess } = useSubscription();
   if (canAccess(feature)) {
     return <div className={className}>{children}</div>;
@@ -49,11 +51,9 @@ export function PaywallOverlay({
           <div className="mb-1 text-sm font-semibold text-slate-100">
             {featureLabel}
           </div>
-          <div className="mb-4 text-xs text-slate-400">
-            订阅后可查看完整分析。基础版 ¥29.9/月起。
-          </div>
+          <div className="mb-4 text-xs text-slate-400">{t('subscription.paywallCopy')}</div>
           <Link href="/subscribe">
-            <Button size="sm">{ctaText ?? '解锁查看完整分析'}</Button>
+            <Button size="sm">{ctaText ?? t('subscription.unlock')}</Button>
           </Link>
         </div>
       </div>

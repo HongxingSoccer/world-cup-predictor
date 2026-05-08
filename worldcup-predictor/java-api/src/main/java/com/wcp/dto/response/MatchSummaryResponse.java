@@ -26,7 +26,11 @@ public record MatchSummaryResponse(
         String confidenceLevel,
         Boolean hasValueSignal,
         Integer topSignalLevel,
-        Map<String, Object> oddsAnalysis,
+        // ml-api returns this as a flat array of odds_analysis rows, one
+        // per (market, outcome) pair. Earlier we typed it as Map and the
+        // cast in MatchService silently nulled the field — even premium
+        // users saw an empty odds-comparison table.
+        List<Map<String, Object>> oddsAnalysis,
         Object scoreMatrix,
         Map<String, Object> overUnderProbs,
         Boolean locked,
@@ -38,5 +42,11 @@ public record MatchSummaryResponse(
         Integer awayScore,
         // Detail-only: true when the authenticated user has favourited this
         // match. Always null on list views and for anonymous callers.
-        Boolean favorited
+        Boolean favorited,
+        // Team crests + Chinese names (populated only by the detail endpoint;
+        // null on the today / upcoming list views).
+        String homeTeamLogo,
+        String awayTeamLogo,
+        String homeTeamNameZh,
+        String awayTeamNameZh
 ) {}

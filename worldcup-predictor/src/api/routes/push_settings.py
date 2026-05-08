@@ -57,15 +57,30 @@ def _to_out(row: UserPushSettings) -> PushSettingsOut:
 def get_settings(
     user_id: int, session: Session = Depends(get_db_session)
 ) -> PushSettingsOut:
+    """Return the user's push prefs.
+
+    First-time callers (no row yet) get the design-doc defaults — every
+    channel enabled, no quiet hours — so the settings page renders a
+    populated form on first visit instead of erroring out. ``id`` falls back
+    to 0 in that case to signal "not yet persisted".
+    """
     row = (
         session.query(UserPushSettings)
         .filter(UserPushSettings.user_id == user_id)
         .one_or_none()
     )
     if row is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"code": 40400, "error": "PUSH_SETTINGS_NOT_FOUND"},
+        return PushSettingsOut(
+            id=0,
+            user_id=user_id,
+            wechat_openid=None,
+            web_push_subscription=None,
+            enable_high_ev=True,
+            enable_reports=True,
+            enable_match_start=True,
+            enable_red_hit=True,
+            quiet_hours_start=None,
+            quiet_hours_end=None,
         )
     return _to_out(row)
 

@@ -21,7 +21,10 @@ MAX_FUTURE_MATCH_DAYS: int = 365
 MAX_REASONABLE_GOALS: int = 30
 
 MIN_DECIMAL_ODDS: Decimal = Decimal("1.01")
-MAX_DECIMAL_ODDS: Decimal = Decimal("100.00")
+# Ceiling matches odds_snapshots Numeric(6,3) column max (999.999) so the
+# validator never rejects values the DB would accept. Longshot World Cup
+# outright / 1x2 quotes routinely exceed 100.
+MAX_DECIMAL_ODDS: Decimal = Decimal("999.999")
 ODDS_DEDUP_WINDOW: timedelta = timedelta(hours=1)
 
 MIN_PLAYER_VALUE_EUR: int = 1

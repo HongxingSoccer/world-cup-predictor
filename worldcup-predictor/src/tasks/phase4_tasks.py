@@ -60,7 +60,13 @@ def generate_match_report(
 ) -> int:
     """Generate (and publish) one Chinese AI report. Returns the new row id."""
     if llm_client is None:
-        raise RuntimeError("llm_client must be supplied (use task signature wiring)")
+        # Pre-launch builds run without LLM keys configured. The factory
+        # returns a StubLLMClient that emits a templated 8-section report,
+        # so the rest of the pipeline (persistence + push fan-out) can be
+        # exercised end-to-end before keys arrive.
+        from src.content.ai_report import build_llm_client_from_settings
+
+        llm_client = build_llm_client_from_settings()
     generator = AIReportGenerator(llm_client)
     ctx = MatchReportContext(**context)
     body = generator.generate(ctx)

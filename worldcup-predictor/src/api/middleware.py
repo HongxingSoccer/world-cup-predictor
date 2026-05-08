@@ -29,7 +29,27 @@ from src.config.settings import settings
 logger = structlog.get_logger(__name__)
 
 _PUBLIC_PATHS: Final[frozenset[str]] = frozenset(
-    {"/api/v1/model/health", "/health", "/", "/docs", "/redoc", "/openapi.json"}
+    {
+        "/api/v1/model/health",
+        "/health",
+        "/",
+        "/docs",
+        "/redoc",
+        "/openapi.json",
+        # Browser error reporting — must accept anonymous fire-and-forget POSTs
+        # so the public `error.tsx` boundary can phone home with the digest.
+        "/api/v1/client-errors",
+        # Live USD↔CNY rate — public, used by the subscribe page on every load.
+        "/api/v1/fx/usd-cny",
+    }
+)
+
+# Path *prefixes* that bypass API-key auth. Distinct from `_PUBLIC_PATHS`
+# (exact match) because these endpoints have a path parameter (match id).
+_PUBLIC_PREFIXES: Final[tuple[str, ...]] = (
+    # Additional markets are derived from public predictions and have no
+    # PII; the match-detail page calls them straight from the browser.
+    "/api/v1/markets/",
 )
 
 
@@ -130,7 +150,9 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
 
 
 def _is_public(path: str) -> bool:
-    return path in _PUBLIC_PATHS
+    if path in _PUBLIC_PATHS:
+        return True
+    return any(path.startswith(prefix) for prefix in _PUBLIC_PREFIXES)
 
 
 def _client_ip(request: Request) -> str:

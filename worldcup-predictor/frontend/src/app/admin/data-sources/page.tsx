@@ -60,7 +60,7 @@ export default function AdminDataSourcesPage() {
     );
   }
   if (!logs.data || !summary.data) {
-    return <div className="text-sm text-slate-500">{t('admin.common.loading')}</div>;
+    return <div className="text-sm text-slate-400">{t('admin.common.loading')}</div>;
   }
 
   const total = logs.data.total;
@@ -68,14 +68,14 @@ export default function AdminDataSourcesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border border-slate-200 bg-white">
-        <div className="border-b border-slate-100 p-4">
-          <h2 className="text-base font-semibold text-slate-800">{t('admin.dataSources.title')}</h2>
-          <p className="mt-1 text-xs text-slate-500">{t('admin.dataSources.description')}</p>
+      <div className="rounded-md surface-card">
+        <div className="border-b border-slate-800/70 p-4">
+          <h2 className="text-base font-semibold text-slate-200">{t('admin.dataSources.title')}</h2>
+          <p className="mt-1 text-xs text-slate-400">{t('admin.dataSources.description')}</p>
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+            <tr className="bg-slate-900/50 text-left text-xs uppercase text-slate-400">
               <th className="px-4 py-2">{t('admin.dataSources.summary.source')}</th>
               <th className="px-4 py-2">{t('admin.dataSources.summary.lastRun')}</th>
               <th className="px-4 py-2">{t('admin.dataSources.summary.lastStatus')}</th>
@@ -83,15 +83,15 @@ export default function AdminDataSourcesPage() {
               <th className="px-4 py-2">{t('admin.dataSources.summary.failed24h')}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-800/70">
             {summary.data.sources.map((s) => (
               <tr key={s.source_name}>
-                <td className="px-4 py-2 text-slate-700">{s.source_name}</td>
-                <td className="px-4 py-2 text-slate-500">
+                <td className="px-4 py-2 text-slate-300">{s.source_name}</td>
+                <td className="px-4 py-2 text-slate-400">
                   {s.last_run_at ? new Date(s.last_run_at).toLocaleString() : '—'}
                 </td>
-                <td className="px-4 py-2 text-slate-700">{s.last_status ?? '—'}</td>
-                <td className="px-4 py-2 text-emerald-600">{s.success_24h}</td>
+                <td className="px-4 py-2 text-slate-300">{s.last_status ?? '—'}</td>
+                <td className="px-4 py-2 text-emerald-300">{s.success_24h}</td>
                 <td className="px-4 py-2 text-red-600">{s.failed_24h}</td>
               </tr>
             ))}
@@ -99,10 +99,10 @@ export default function AdminDataSourcesPage() {
         </table>
       </div>
 
-      <div className="rounded-md border border-slate-200 bg-white">
+      <div className="rounded-md surface-card">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+            <tr className="bg-slate-900/50 text-left text-xs uppercase text-slate-400">
               <th className="px-4 py-2">{t('admin.dataSources.columns.id')}</th>
               <th className="px-4 py-2">{t('admin.dataSources.columns.source')}</th>
               <th className="px-4 py-2">{t('admin.dataSources.columns.task')}</th>
@@ -113,24 +113,24 @@ export default function AdminDataSourcesPage() {
               <th className="px-4 py-2">{t('admin.dataSources.columns.finishedAt')}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-800/70">
             {logs.data.items.map((l) => (
               <tr key={l.id}>
-                <td className="px-4 py-2 text-slate-700">{l.id}</td>
-                <td className="px-4 py-2 text-slate-700">{l.source_name}</td>
-                <td className="px-4 py-2 text-slate-700">{l.task_type}</td>
-                <td className="px-4 py-2 text-slate-700">{l.status}</td>
-                <td className="px-4 py-2 text-slate-700">{l.records_fetched ?? '—'}</td>
-                <td className="px-4 py-2 text-slate-700">{l.records_inserted ?? '—'}</td>
-                <td className="px-4 py-2 text-slate-500">{new Date(l.started_at).toLocaleString()}</td>
-                <td className="px-4 py-2 text-slate-500">
+                <td className="px-4 py-2 text-slate-300">{l.id}</td>
+                <td className="px-4 py-2 text-slate-300">{l.source_name}</td>
+                <td className="px-4 py-2 text-slate-300">{l.task_type}</td>
+                <td className="px-4 py-2 text-slate-300">{l.status}</td>
+                <td className="px-4 py-2 text-slate-300">{l.records_fetched ?? '—'}</td>
+                <td className="px-4 py-2 text-slate-300">{l.records_inserted ?? '—'}</td>
+                <td className="px-4 py-2 text-slate-400">{new Date(l.started_at).toLocaleString()}</td>
+                <td className="px-4 py-2 text-slate-400">
                   {l.finished_at ? new Date(l.finished_at).toLocaleString() : '—'}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
+        <div className="flex items-center justify-between border-t border-slate-800/70 px-4 py-3 text-xs text-slate-400">
           <span>
             {t('admin.common.total').replace('{n}', String(total))} ·{' '}
             {t('admin.common.page').replace('{n}', String(page))}
@@ -138,7 +138,7 @@ export default function AdminDataSourcesPage() {
           <div className="flex gap-2">
             <button
               type="button"
-              className="rounded-md border border-slate-200 px-3 py-1 disabled:opacity-50"
+              className="rounded-md border border-slate-800/70 px-3 py-1 disabled:opacity-50"
               disabled={offset === 0}
               onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
               aria-label="prev-page"
@@ -147,7 +147,7 @@ export default function AdminDataSourcesPage() {
             </button>
             <button
               type="button"
-              className="rounded-md border border-slate-200 px-3 py-1 disabled:opacity-50"
+              className="rounded-md border border-slate-800/70 px-3 py-1 disabled:opacity-50"
               disabled={offset + PAGE_SIZE >= total}
               onClick={() => setOffset(offset + PAGE_SIZE)}
               aria-label="next-page"

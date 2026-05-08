@@ -66,7 +66,11 @@ public class ContentTierService {
                 raw.round(),
                 raw.homeScore(),
                 raw.awayScore(),
-                raw.favorited()
+                raw.favorited(),
+                raw.homeTeamLogo(),
+                raw.awayTeamLogo(),
+                raw.homeTeamNameZh(),
+                raw.awayTeamNameZh()
         );
     }
 

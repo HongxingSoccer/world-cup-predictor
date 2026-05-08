@@ -1,0 +1,102 @@
+'use client';
+
+import Link from 'next/link';
+
+import { TeamLogo } from '@/components/match/TeamLogo';
+import { useT } from '@/i18n/I18nProvider';
+import { clampProb, formatMatchDate, formatPercent } from '@/lib/utils';
+
+export interface CompactMatch {
+  matchId: number;
+  matchDate: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeTeamLogo?: string | null;
+  awayTeamLogo?: string | null;
+  competition?: string | null;
+  status: string;
+  round?: string | null;
+  homeScore?: number | null;
+  awayScore?: number | null;
+  probHomeWin?: number | null;
+  probDraw?: number | null;
+  probAwayWin?: number | null;
+  confidenceScore?: number | null;
+}
+
+interface Props {
+  match: CompactMatch;
+}
+
+/**
+ * Slim card for "my favorites" + "same group". Smaller than MatchCard —
+ * drops the full probability bar in favour of a single VS vs final-score
+ * line so a grid of these stays scannable.
+ */
+export function CompactMatchCard({ match }: Props) {
+  const t = useT();
+  const finished = match.status === 'finished';
+  const score =
+    finished && match.homeScore !== null && match.homeScore !== undefined
+      ? `${match.homeScore} - ${match.awayScore ?? 0}`
+      : null;
+
+  const favored = pickFavored(match, t('match.drawFull'));
+  return (
+    <Link
+      href={`/match/${match.matchId}`}
+      className="surface-card block rounded-xl p-3 transition"
+    >
+      <div className="flex items-center justify-between text-[11px] text-slate-400">
+        <span className="truncate">
+          {match.round ?? match.competition ?? 'WCP'}
+        </span>
+        <span className="tabular-nums">{formatMatchDate(match.matchDate)}</span>
+      </div>
+
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <div className="flex flex-1 items-center gap-1.5 overflow-hidden">
+          <TeamLogo src={match.homeTeamLogo} name={match.homeTeam} size="sm" />
+          <span className="truncate text-sm font-semibold text-slate-100">
+            {match.homeTeam}
+          </span>
+        </div>
+        <div className="shrink-0 text-xs font-semibold tabular-nums">
+          {score ? (
+            <span className="text-slate-100">{score}</span>
+          ) : (
+            <span className="text-brand-400">{t('match.vs')}</span>
+          )}
+        </div>
+        <div className="flex flex-1 items-center justify-end gap-1.5 overflow-hidden">
+          <span className="truncate text-sm font-semibold text-slate-100">
+            {match.awayTeam}
+          </span>
+          <TeamLogo src={match.awayTeamLogo} name={match.awayTeam} size="sm" />
+        </div>
+      </div>
+
+      {favored && !finished ? (
+        <div className="mt-2 text-[11px] text-slate-400">
+          <span className="font-semibold text-cyan-300">{favored.label}</span>
+          <span className="ml-1 tabular-nums text-slate-300">
+            {formatPercent(clampProb(favored.prob))}
+          </span>
+        </div>
+      ) : null}
+    </Link>
+  );
+}
+
+function pickFavored(
+  m: CompactMatch,
+  drawLabel: string,
+): { label: string; prob: number } | null {
+  const home = m.probHomeWin ?? null;
+  const draw = m.probDraw ?? null;
+  const away = m.probAwayWin ?? null;
+  if (home === null || draw === null || away === null) return null;
+  if (home >= draw && home >= away) return { label: m.homeTeam, prob: home };
+  if (away >= draw && away >= home) return { label: m.awayTeam, prob: away };
+  return { label: drawLabel, prob: draw };
+}

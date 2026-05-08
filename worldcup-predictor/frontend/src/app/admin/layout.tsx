@@ -1,5 +1,6 @@
 'use client';
 
+import { Shield } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -25,9 +26,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="grid grid-cols-12 gap-4">
       <aside className="col-span-12 md:col-span-3">
-        <div className="rounded-md border border-slate-200 bg-white p-3">
+        <div className="surface-card rounded-2xl p-3">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-700">Admin</h2>
+            <h2 className="text-sm font-semibold text-slate-100">Admin</h2>
             <LocaleSwitcher />
           </div>
           <nav className="flex flex-col gap-1 text-sm">
@@ -37,10 +38,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <Link
                   key={item.href}
                   href={item.href as never}
-                  className={`rounded-md px-2 py-1.5 ${
+                  className={`rounded-md px-2 py-1.5 transition-colors ${
                     active
-                      ? 'bg-emerald-50 font-medium text-emerald-700'
-                      : 'text-slate-600 hover:bg-slate-50'
+                      ? 'bg-cyan-500/15 font-medium text-cyan-300'
+                      : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
                   }`}
                 >
                   {t(item.key)}
@@ -48,6 +49,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               );
             })}
           </nav>
+          <div className="mt-3 border-t border-slate-800/70 pt-3">
+            <Link
+              href="/admin/login"
+              className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${
+                pathname === '/admin/login'
+                  ? 'bg-amber-500/15 text-amber-300'
+                  : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+              }`}
+            >
+              <Shield size={14} />
+              管理员令牌
+            </Link>
+          </div>
         </div>
       </aside>
       <section className="col-span-12 md:col-span-9">{children}</section>

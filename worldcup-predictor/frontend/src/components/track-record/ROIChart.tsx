@@ -11,9 +11,10 @@ import {
 } from 'recharts';
 
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { useT } from '@/i18n/I18nProvider';
 
 export interface RoiPoint {
-  date: string;       // 'YYYY-MM-DD'
+  date: string;
   cumulativePnl: number;
 }
 
@@ -21,16 +22,15 @@ interface ROIChartProps {
   series: RoiPoint[];
 }
 
-/**
- * Cumulative P&L line chart. Recharts is theme-blind, so axis / grid / line
- * colors are inlined to match the dark slate palette.
- */
 export function ROIChart({ series }: ROIChartProps) {
+  const t = useT();
+  const cumulativeLabel = t('trackRecord.cumulativePnL');
+  const unit = t('trackRecord.cumulativeUnit');
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-sm font-semibold text-slate-100">ROI 累计曲线</h3>
-        <span className="text-xs text-slate-400">单位下注，按日累计</span>
+        <h3 className="text-sm font-semibold text-slate-100">{t('trackRecord.roiCurve')}</h3>
+        <span className="text-xs text-slate-400">{t('trackRecord.dailyCumulative')}</span>
       </CardHeader>
       <CardBody>
         <div className="h-64 w-full">
@@ -45,7 +45,7 @@ export function ROIChart({ series }: ROIChartProps) {
               />
               <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} stroke="#475569" />
               <Tooltip
-                formatter={(value: number) => [`${value.toFixed(2)} 单位`, '累计 P&L']}
+                formatter={(value: number) => [`${value.toFixed(2)} ${unit}`, cumulativeLabel]}
                 contentStyle={{
                   borderRadius: 12,
                   border: '1px solid rgba(34, 211, 238, 0.35)',

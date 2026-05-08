@@ -35,6 +35,12 @@ class OddsPipeline(BasePipeline[OddsDTO]):
     task_type = "odds"
     event_type = TOPIC_ODDS_UPDATED
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        # external_id → matches.id overrides for sources without an integer
+        # api_football_id. Populated via :meth:`set_match_resolution_hint`.
+        self._match_id_hints: dict[str, int] = {}
+
     async def fetch_dtos(self, **kwargs: Any) -> list[OddsDTO]:
         match_id = kwargs.get("match_id")
         if match_id is None:
@@ -119,7 +125,23 @@ class OddsPipeline(BasePipeline[OddsDTO]):
         try:
             api_id = int(external_id)
         except ValueError:
-            return None
+            # OddsAPI / scraper sources expose UUID-shaped ids that don't map
+            # to api_football_id. Callers can stash a (home_id, away_id, date)
+            # hint on the pipeline via :meth:`set_match_resolution_hint` before
+            # invoking ``persist`` — see ``scripts/pull_odds_api.py``.
+            hint = self._match_id_hints.get(external_id)
+            return hint
         return session.execute(
             select(Match.id).where(Match.api_football_id == api_id).limit(1)
         ).scalar()
+
+    # --- Public helper used by non-API-Football ingestion paths ---
+
+    def set_match_resolution_hint(self, external_id: str, match_id: int) -> None:
+        """Pre-register an ``external_id → matches.id`` mapping.
+
+        Lets callers that already resolved the match (e.g. by team-name + date)
+        feed odds DTOs through the standard pipeline without needing the
+        adapter to expose an integer ``api_football_id``.
+        """
+        self._match_id_hints[external_id] = match_id

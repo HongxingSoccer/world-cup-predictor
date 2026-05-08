@@ -53,14 +53,24 @@ export function formatMatchDate(iso: string): string {
   }
 }
 
-/** "¥29.90" from 2990 cents. */
-export function formatPriceCny(cents: number): string {
-  const yuan = cents / 100;
+/** "¥29.90" from 2990 fen. */
+export function formatPriceCny(fen: number): string {
+  const yuan = fen / 100;
   return new Intl.NumberFormat('zh-CN', {
     style: 'currency',
     currency: 'CNY',
     minimumFractionDigits: yuan === Math.round(yuan) ? 0 : 2,
   }).format(yuan);
+}
+
+/** "$9.99" from 999 USD cents. */
+export function formatPriceUsd(cents: number): string {
+  const dollars = cents / 100;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: dollars === Math.round(dollars) ? 0 : 2,
+  }).format(dollars);
 }
 
 // --- Subscription / signal helpers --------------------------------------

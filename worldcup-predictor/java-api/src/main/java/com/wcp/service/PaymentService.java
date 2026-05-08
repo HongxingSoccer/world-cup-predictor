@@ -58,16 +58,23 @@ public class PaymentService {
         Map<String, Object> params = new HashMap<>();
         params.put("orderNo", payment.getOrderNo());
         params.put("amount", payment.getAmountCny());
+        params.put("amountUsd", plan.priceUsd());
         params.put("subject", plan.displayName());
         // TODO(Phase 3.5): replace with real Alipay-trade-app-pay /
         // wechat-unifiedorder responses (signed strings, prepay_id, etc.).
         params.put("sdkPayload", "TODO-Phase-3.5-real-channel-call");
         params.put("userUuid", user.getUuid().toString());
-        log.info("payment_init order={} channel={} amount={}",
-                payment.getOrderNo(), payment.getPaymentChannel(), payment.getAmountCny());
+        log.info(
+                "payment_init order={} channel={} amount_cny={} amount_usd={}",
+                payment.getOrderNo(),
+                payment.getPaymentChannel(),
+                payment.getAmountCny(),
+                plan.priceUsd()
+        );
         return new PaymentInitResponse(
                 payment.getOrderNo(),
                 payment.getPaymentChannel(),
+                plan.priceUsd(),
                 payment.getAmountCny(),
                 params
         );
