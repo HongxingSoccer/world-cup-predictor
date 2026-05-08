@@ -44,6 +44,14 @@ _PUBLIC_PATHS: Final[frozenset[str]] = frozenset(
     }
 )
 
+# Path *prefixes* that bypass API-key auth. Distinct from `_PUBLIC_PATHS`
+# (exact match) because these endpoints have a path parameter (match id).
+_PUBLIC_PREFIXES: Final[tuple[str, ...]] = (
+    # Additional markets are derived from public predictions and have no
+    # PII; the match-detail page calls them straight from the browser.
+    "/api/v1/markets/",
+)
+
 
 class APIKeyMiddleware(BaseHTTPMiddleware):
     """Reject requests whose `X-API-Key` header doesn't match the configured key."""
@@ -142,7 +150,9 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
 
 
 def _is_public(path: str) -> bool:
-    return path in _PUBLIC_PATHS
+    if path in _PUBLIC_PATHS:
+        return True
+    return any(path.startswith(prefix) for prefix in _PUBLIC_PREFIXES)
 
 
 def _client_ip(request: Request) -> str:

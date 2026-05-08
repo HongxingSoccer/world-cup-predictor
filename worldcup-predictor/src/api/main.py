@@ -31,6 +31,7 @@ from src.api.routes import (
     client_errors,
     fx,
     health,
+    markets,
     matches,
     odds,
     predict,
@@ -126,6 +127,7 @@ def _create_app() -> FastAPI:
     app.include_router(reports.router)
     app.include_router(client_errors.router)
     app.include_router(fx.router)
+    app.include_router(markets.router)
     app.include_router(worldcup.router)
     app.include_router(worldcup.competitions_router)
     app.include_router(push_settings.router)
