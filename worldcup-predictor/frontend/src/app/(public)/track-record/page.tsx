@@ -13,7 +13,10 @@ import {
 } from '@/components/track-record/TrackRecordHeader';
 import type { TrackRecordOverview } from '@/types';
 
-export const revalidate = 600; // Track record page rebuilds every 10 minutes.
+// Same reason as the homepage: ISR caches HTML at build time, which
+// strips the cookie-driven locale. Force-dynamic so the layout's
+// per-request locale resolution wins.
+export const dynamic = 'force-dynamic';
 
 // SSR fetches inside docker need to reach java-api over the docker network;
 // SERVER_API_URL is set in docker-compose for that path. Browser bundles fall

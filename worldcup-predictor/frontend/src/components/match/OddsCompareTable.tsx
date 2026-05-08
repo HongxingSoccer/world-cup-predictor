@@ -53,8 +53,8 @@ export function OddsCompareTable({ rows }: OddsCompareTableProps) {
               <th className="px-4 py-2 text-right">{t('match.model')}</th>
               <th className="px-4 py-2 text-right">{t('match.odds')}</th>
               <th className="px-4 py-2 text-left">{t('match.bookmaker')}</th>
-              <th className="px-4 py-2 text-right">EV</th>
-              <th className="px-4 py-2 text-right">Edge</th>
+              <th className="px-4 py-2 text-right">{t('match.evShort')}</th>
+              <th className="px-4 py-2 text-right">{t('match.edgeShort')}</th>
               <th className="px-4 py-2 text-right">{t('match.signal')}</th>
             </tr>
           </thead>

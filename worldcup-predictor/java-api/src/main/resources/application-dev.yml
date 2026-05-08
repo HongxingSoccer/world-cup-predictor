@@ -15,4 +15,7 @@ logging:
 
 wcp:
   cors:
-    allowed-origins: "http://localhost:3000,http://localhost:8000"
+    # Include the bare `http://localhost` (port 80) so requests proxied
+    # through nginx are accepted in dev. The other entries cover direct
+    # hits on the dev frontend / Python API / Java port for tooling.
+    allowed-origins: "http://localhost,http://localhost:3000,http://localhost:8000,http://localhost:8080"

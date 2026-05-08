@@ -21,10 +21,16 @@ import {
 import enMessages from '@/i18n/en.json';
 import zhMessages from '@/i18n/zh-CN.json';
 
-export type Locale = 'zh-CN' | 'en';
-export const DEFAULT_LOCALE: Locale = 'zh-CN';
-export const SUPPORTED_LOCALES: Locale[] = ['zh-CN', 'en'];
-export const LOCALE_COOKIE = 'locale';
+// Constants live in `./config` so the server layout can import them by
+// value (a `'use client'` file's exports become reference proxies on the
+// server). Re-exported here for ergonomic backwards-compatible imports.
+export {
+  DEFAULT_LOCALE,
+  LOCALE_COOKIE,
+  SUPPORTED_LOCALES,
+  type Locale,
+} from '@/i18n/config';
+import { DEFAULT_LOCALE, LOCALE_COOKIE, type Locale, SUPPORTED_LOCALES } from '@/i18n/config';
 
 const MESSAGES: Record<Locale, Record<string, unknown>> = {
   'zh-CN': zhMessages as Record<string, unknown>,

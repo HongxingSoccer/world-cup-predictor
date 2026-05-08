@@ -18,8 +18,12 @@ import type { AuthResponse } from '@/types';
 
 import { clearTokens, getAccessToken, getRefreshToken, saveTokens } from './auth';
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+// Default to a relative baseURL — every browser request goes to the same
+// origin nginx is fronting (port 80 in dev, the public domain in prod),
+// which sidesteps CORS entirely. NEXT_PUBLIC_API_URL is still honoured for
+// off-domain deployments (e.g. preview environments served from a separate
+// host) but should be left unset for the standard nginx-fronted setup.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 interface RetriableConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;

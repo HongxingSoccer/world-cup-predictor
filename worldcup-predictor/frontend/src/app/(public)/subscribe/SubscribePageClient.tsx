@@ -40,16 +40,16 @@ export function SubscribePageClient() {
   // still works if a key is missing.
   const FEATURES: FeatureGroups = {
     basic: [
-      t('subscription.features.basic1', '完整 1x2 胜平负概率'),
+      t('subscription.features.basic1', '完整胜平负概率'),
       t('subscription.features.basic2', '比分概率 Top10 + 10×10 矩阵'),
-      t('subscription.features.basic3', '大小球 / BTTS 预测'),
-      t('subscription.features.basic4', '赔率 EV 分析 + 价值信号'),
+      t('subscription.features.basic3', '大小球 / 双方进球 预测'),
+      t('subscription.features.basic4', '赔率价值分析 + 高价值推荐'),
     ],
     premium: [
       t('subscription.features.premium1', '包含 Basic 全部权益'),
-      t('subscription.features.premium2', 'xG / 伤病情报面板'),
-      t('subscription.features.premium3', '置信度筛选器'),
-      t('subscription.features.premium4', '世界杯通票优先权'),
+      t('subscription.features.premium2', '进攻威胁深度数据 + 进球分布图'),
+      t('subscription.features.premium3', '把握度 / 高价值赛事筛选器'),
+      t('subscription.features.premium4', 'AI 分析报告抢先看 + 世界杯通票优先权'),
     ],
   };
 

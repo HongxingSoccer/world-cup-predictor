@@ -26,8 +26,10 @@ export default function GlobalErrorBoundary({ error, reset }: ErrorProps) {
     if (error.digest) {
       console.error('[error.tsx]', error.digest, error.message);
     }
-    const baseUrl =
-      process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+    // Same rationale as `lib/api.ts`: relative URLs go to the same nginx
+    // origin and avoid CORS. Override with NEXT_PUBLIC_API_URL only for
+    // off-domain deployments.
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
     const payload = {
       digest: error.digest ?? null,
       pathname: window.location.pathname,
