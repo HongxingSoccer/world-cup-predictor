@@ -26,7 +26,11 @@ public record MatchSummaryResponse(
         String confidenceLevel,
         Boolean hasValueSignal,
         Integer topSignalLevel,
-        Map<String, Object> oddsAnalysis,
+        // ml-api returns this as a flat array of odds_analysis rows, one
+        // per (market, outcome) pair. Earlier we typed it as Map and the
+        // cast in MatchService silently nulled the field — even premium
+        // users saw an empty odds-comparison table.
+        List<Map<String, Object>> oddsAnalysis,
         Object scoreMatrix,
         Map<String, Object> overUnderProbs,
         Boolean locked,

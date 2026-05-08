@@ -174,7 +174,7 @@ public class MatchService {
                 (String) raw.get("confidence_level"),
                 hasValueSignal,
                 topSignalLevel,
-                oddsAnalysis instanceof Map<?, ?> m ? (Map<String, Object>) m : null,
+                asListOfMaps(oddsAnalysis),
                 probs.get("score_matrix"),
                 asMap(probs.get("over_under_probs")),
                 false,

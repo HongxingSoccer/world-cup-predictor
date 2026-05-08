@@ -1,10 +1,12 @@
 'use client';
 
-import { Flame, Star } from 'lucide-react';
+import { Flame, Lock, Star } from 'lucide-react';
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
 import { CompetitionFilter } from './CompetitionFilter';
 import { MatchCard } from './MatchCard';
+import { useSubscription } from '@/hooks/useSubscription';
 import { useT } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/utils';
 import type { MatchSummary } from '@/types';
@@ -25,6 +27,8 @@ const HIGH_CONFIDENCE_THRESHOLD = 70;
  */
 export function MatchListClient({ matches }: MatchListClientProps) {
   const t = useT();
+  const { canAccess } = useSubscription();
+  const canFilterByConfidence = canAccess('confidence_filter');
   const [competition, setCompetition] = useState<string | null>(null);
   const [quality, setQuality] = useState<Quality>('all');
 
@@ -44,13 +48,13 @@ export function MatchListClient({ matches }: MatchListClientProps) {
     if (competition) out = out.filter((m) => m.competition === competition);
     if (quality === 'high_signal') {
       out = out.filter((m) => (m.topSignalLevel ?? 0) >= 2);
-    } else if (quality === 'high_confidence') {
+    } else if (quality === 'high_confidence' && canFilterByConfidence) {
       out = out.filter(
         (m) => (m.confidenceScore ?? 0) >= HIGH_CONFIDENCE_THRESHOLD,
       );
     }
     return out;
-  }, [matches, competition, quality]);
+  }, [matches, competition, quality, canFilterByConfidence]);
 
   return (
     <div className="space-y-3">
@@ -62,6 +66,7 @@ export function MatchListClient({ matches }: MatchListClientProps) {
           allLabel={t('match.filterAll')}
           highEvLabel={t('match.highEVSignal')}
           highConfidenceLabel={t('match.highConfidence')}
+          confidenceLocked={!canFilterByConfidence}
         />
       ) : null}
       <CompetitionFilter
@@ -91,6 +96,8 @@ interface ChipsProps {
   allLabel: string;
   highEvLabel: string;
   highConfidenceLabel: string;
+  /** True for free / basic users — chip renders as a CTA to /subscribe. */
+  confidenceLocked: boolean;
 }
 
 function QualityChips({
@@ -100,6 +107,7 @@ function QualityChips({
   allLabel,
   highEvLabel,
   highConfidenceLabel,
+  confidenceLocked,
 }: ChipsProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -114,14 +122,31 @@ function QualityChips({
       >
         {highEvLabel}
       </Chip>
-      <Chip
-        active={value === 'high_confidence'}
-        onClick={() => onChange('high_confidence')}
-        icon={<Star size={12} className="text-cyan-300" />}
-        count={totals.highConfidence}
-      >
-        {highConfidenceLabel}
-      </Chip>
+      {confidenceLocked ? (
+        // Lock affordance: tap goes straight to subscribe instead of toggling.
+        // We deliberately do NOT change the visible count so users see the
+        // value of upgrading.
+        <Link href="/subscribe" className="inline-flex">
+          <Chip
+            active={false}
+            onClick={() => undefined}
+            icon={<Lock size={11} className="text-slate-500" />}
+            count={totals.highConfidence}
+            muted
+          >
+            {highConfidenceLabel}
+          </Chip>
+        </Link>
+      ) : (
+        <Chip
+          active={value === 'high_confidence'}
+          onClick={() => onChange('high_confidence')}
+          icon={<Star size={12} className="text-cyan-300" />}
+          count={totals.highConfidence}
+        >
+          {highConfidenceLabel}
+        </Chip>
+      )}
     </div>
   );
 }
@@ -131,12 +156,15 @@ function Chip({
   onClick,
   icon,
   count,
+  muted = false,
   children,
 }: {
   active: boolean;
   onClick: () => void;
   icon?: React.ReactNode;
   count?: number;
+  /** Locked / paywall-pending — renders dimmer than a normal inactive chip. */
+  muted?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -147,7 +175,9 @@ function Chip({
         'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
         active
           ? 'border-cyan-500/40 bg-cyan-500/15 text-cyan-200'
-          : 'border-slate-700 bg-slate-800/60 text-slate-400 hover:border-slate-600 hover:text-slate-200',
+          : muted
+            ? 'border-slate-800 bg-slate-900/40 text-slate-500 hover:border-slate-700 hover:text-slate-300'
+            : 'border-slate-700 bg-slate-800/60 text-slate-400 hover:border-slate-600 hover:text-slate-200',
       )}
     >
       {icon}

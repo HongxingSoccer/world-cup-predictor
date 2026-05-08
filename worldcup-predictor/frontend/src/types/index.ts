@@ -78,8 +78,9 @@ export interface MatchSummary {
   hasValueSignal: boolean | null;
   topSignalLevel: SignalLevel | null;
 
-  /** Paid content — null for free users. */
-  oddsAnalysis: Record<string, unknown> | null;
+  /** Paid content — null for free users. ml-api ships this as an array of
+   *  per-(market, outcome) rows; `toOddsRows` normalises it to camelCase. */
+  oddsAnalysis: Array<Record<string, unknown>> | null;
   scoreMatrix: number[][] | null;
   overUnderProbs: Record<string, { over: number; under: number }> | null;
 

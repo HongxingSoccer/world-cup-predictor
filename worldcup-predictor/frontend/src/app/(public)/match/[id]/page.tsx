@@ -1,6 +1,11 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 
+import { LOCALE_COOKIE } from '@/i18n/config';
+import { ACCESS_COOKIE } from '@/lib/auth';
+
+import { AdditionalMarketsCard } from '@/components/match/AdditionalMarketsCard';
 import { AIReportCard } from '@/components/match/AIReportCard';
 import type { CompactMatch } from '@/components/match/CompactMatchCard';
 import { FavoriteButton } from '@/components/match/FavoriteButton';
@@ -11,10 +16,15 @@ import { PredictionPanel } from '@/components/match/PredictionPanel';
 import { RelatedMatches } from '@/components/match/RelatedMatches';
 import { ScoreMatrix } from '@/components/match/ScoreMatrix';
 import { TeamStatsPanel } from '@/components/match/TeamStatsPanel';
+import { XgDeepPanel } from '@/components/match/XgDeepPanel';
 import { ShareButton } from '@/components/share/ShareButton';
 import { PaywallOverlay } from '@/components/subscription/PaywallOverlay';
 import { toCompactMatches } from '@/lib/match-mappers';
 import type { MatchSummary, SignalLevel } from '@/types';
+
+// Reading the locale cookie in generateMetadata makes this route dynamic;
+// state it explicitly so future ISR additions can't accidentally re-cache it.
+export const dynamic = 'force-dynamic';
 
 interface MatchPageProps {
   params: { id: string };
@@ -32,11 +42,23 @@ function ssrBaseUrl(): string {
   );
 }
 
+/** Pull the access token mirrored into a cookie at login time so the server
+ *  can fetch tier-gated content on behalf of the logged-in user. Without
+ *  this the SSR call goes out anonymous and Java strips the paid fields. */
+function authHeaders(): HeadersInit | undefined {
+  const access = cookies().get(ACCESS_COOKIE)?.value;
+  return access ? { Authorization: `Bearer ${access}` } : undefined;
+}
+
 async function fetchMatch(id: string): Promise<MatchSummary | null> {
   try {
-    const response = await fetch(`${ssrBaseUrl()}/api/v1/matches/${id}`, {
-      next: { revalidate: 60 },
-    });
+    const headers = authHeaders();
+    const init: RequestInit = headers
+      // With per-user auth we must NOT cache; otherwise one user's
+      // unlocked payload leaks to the next request.
+      ? { headers, cache: 'no-store' }
+      : { next: { revalidate: 60 } };
+    const response = await fetch(`${ssrBaseUrl()}/api/v1/matches/${id}`, init);
     if (!response.ok) return null;
     return (await response.json()) as MatchSummary;
   } catch {
@@ -74,19 +96,36 @@ async function fetchReport(id: string): Promise<Record<string, unknown> | null> 
 
 export async function generateMetadata({ params }: MatchPageProps): Promise<Metadata> {
   const match = await fetchMatch(params.id);
+  const isEn = cookies().get(LOCALE_COOKIE)?.value === 'en';
   if (!match) {
-    return { title: '比赛未找到' };
+    return { title: isEn ? 'Match not found' : '比赛未找到' };
   }
-  const homeProb =
-    match.probHomeWin != null ? `${(match.probHomeWin * 100).toFixed(0)}%胜率` : 'AI 预测';
-  return {
-    title: `${match.homeTeam} vs ${match.awayTeam} 预测`,
-    description: `${match.competition ?? 'WCP'} · ${match.homeTeam} vs ${match.awayTeam} — ${homeProb}, 比分概率, 价值信号。`,
-    openGraph: {
-      title: `${match.homeTeam} vs ${match.awayTeam} | AI模型: ${homeProb}`,
-      description: `比分概率矩阵 · 赔率 EV 分析 · 价值信号 — ${match.competition ?? 'WCP'}`,
-    },
-  };
+  const homePct =
+    match.probHomeWin != null ? `${(match.probHomeWin * 100).toFixed(0)}%` : null;
+  const homeProb = isEn
+    ? homePct != null
+      ? `${homePct} home-win probability`
+      : 'AI prediction'
+    : homePct != null
+      ? `${homePct}胜率`
+      : 'AI 预测';
+  return isEn
+    ? {
+        title: `${match.homeTeam} vs ${match.awayTeam} prediction`,
+        description: `${match.competition ?? 'WCP'} · ${match.homeTeam} vs ${match.awayTeam} — ${homeProb}, score probabilities, top picks.`,
+        openGraph: {
+          title: `${match.homeTeam} vs ${match.awayTeam} | AI: ${homeProb}`,
+          description: `Score matrix · Odds value analysis · Top picks — ${match.competition ?? 'WCP'}`,
+        },
+      }
+    : {
+        title: `${match.homeTeam} vs ${match.awayTeam} 预测`,
+        description: `${match.competition ?? 'WCP'} · ${match.homeTeam} vs ${match.awayTeam} — ${homeProb}, 比分概率, 高价值推荐。`,
+        openGraph: {
+          title: `${match.homeTeam} vs ${match.awayTeam} | AI模型: ${homeProb}`,
+          description: `比分概率矩阵 · 赔率价值分析 · 高价值推荐 — ${match.competition ?? 'WCP'}`,
+        },
+      };
 }
 
 export default async function MatchDetailPage({ params }: MatchPageProps) {
@@ -125,6 +164,12 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
 
       <PaywallOverlay feature="odds_analysis" featureLabel="赔率价值分析">
         <OddsCompareTable rows={oddsRows} />
+      </PaywallOverlay>
+
+      <AdditionalMarketsCard matchId={match.matchId} />
+
+      <PaywallOverlay feature="xg_panel" featureLabel="进攻威胁深度数据">
+        <XgDeepPanel match={match} />
       </PaywallOverlay>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -193,7 +238,7 @@ function buildJsonLd(match: MatchSummary): Record<string, unknown> {
     '@context': 'https://schema.org',
     '@type': 'SportsEvent',
     name: `${match.homeTeam} vs ${match.awayTeam}`,
-    description: `${match.competition ?? 'WCP'} · AI 模型预测、赔率价值信号、比分概率矩阵。`,
+    description: `${match.competition ?? 'WCP'} · AI 模型预测、赔率价值分析、比分概率矩阵。`,
     startDate: match.matchDate,
     eventStatus:
       match.status === 'finished'
