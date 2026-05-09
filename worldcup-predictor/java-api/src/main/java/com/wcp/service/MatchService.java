@@ -150,8 +150,9 @@ public class MatchService {
      *       {@code h2h}, {@code odds_analysis}, {@code score_matrix}.</li>
      * </ul>
      */
+    /** Package-private for unit testing. */
     @SuppressWarnings("unchecked")
-    private static MatchSummaryResponse toMatchSummary(Map<String, Object> raw) {
+    static MatchSummaryResponse toMatchSummary(Map<String, Object> raw) {
         Map<String, Object> probs = raw.get("predictions") instanceof Map<?, ?> p
                 ? (Map<String, Object>) p
                 : raw;
