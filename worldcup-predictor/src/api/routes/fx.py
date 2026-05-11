@@ -8,8 +8,7 @@ rate when the upstream is unreachable so the subscribe page never shows
 from __future__ import annotations
 
 import time
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 import httpx
 import structlog
@@ -83,12 +82,12 @@ def usd_cny_rate() -> FxRateResponse:
         pair="USD/CNY",
         rate=FALLBACK_RATE,
         source=FALLBACK_SOURCE,
-        as_of=datetime.now(timezone.utc),
+        as_of=datetime.now(UTC),
         cached=False,
     )
 
 
-def _fetch_upstream() -> Optional[tuple[float, datetime]]:
+def _fetch_upstream() -> tuple[float, datetime] | None:
     try:
         with httpx.Client(timeout=4.0) as client:
             response = client.get(UPSTREAM_URL)
@@ -97,12 +96,12 @@ def _fetch_upstream() -> Optional[tuple[float, datetime]]:
         rate = float(payload["rates"]["CNY"])
         as_of_str = payload.get("date")
         as_of = (
-            datetime.fromisoformat(as_of_str).replace(tzinfo=timezone.utc)
+            datetime.fromisoformat(as_of_str).replace(tzinfo=UTC)
             if as_of_str
-            else datetime.now(timezone.utc)
+            else datetime.now(UTC)
         )
         return rate, as_of
-    except Exception as exc:  # noqa: BLE001 — defensive against any transport err
+    except Exception as exc:
         logger.warning("fx_fetch_failed", error=str(exc))
         return None
 
@@ -110,4 +109,4 @@ def _fetch_upstream() -> Optional[tuple[float, datetime]]:
 def _coerce_dt(value: object) -> datetime:
     if isinstance(value, datetime):
         return value
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)

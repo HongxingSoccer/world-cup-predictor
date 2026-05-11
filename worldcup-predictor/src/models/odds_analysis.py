@@ -14,7 +14,6 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
 
 from sqlalchemy import (
     BigInteger,
@@ -46,7 +45,7 @@ class OddsAnalysis(Base):
 
     # '1x2' | 'over_under' | 'btts' | 'asian_handicap'
     market_type: Mapped[str] = mapped_column(String(30), nullable=False)
-    market_value: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    market_value: Mapped[str | None] = mapped_column(String(20), nullable=True)
     # 'home' | 'draw' | 'away' | 'over' | 'under' | 'yes' | 'no'
     outcome: Mapped[str] = mapped_column(String(20), nullable=False)
 

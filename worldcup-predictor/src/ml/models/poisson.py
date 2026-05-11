@@ -80,7 +80,7 @@ class PoissonBaselineModel(BasePredictionModel):
             "league_avg_attack": league_avg_attack,
             "league_avg_defense": league_avg_defense,
             "home_factor": home_factor,
-            "trained_on_n_matches": int(len(labels)),
+            "trained_on_n_matches": len(labels),
         }
         logger.info("poisson_trained", **self.params)
 

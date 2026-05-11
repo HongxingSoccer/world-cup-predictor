@@ -107,7 +107,7 @@ class PoissonGLMModel(BasePredictionModel):
             "scaler_mean": [float(m) for m in scaler.mean_],
             "scaler_scale": [float(s) for s in scaler.scale_],
             "regularisation_alpha": DEFAULT_REGULARISATION,
-            "trained_on_n_matches": int(len(labels)),
+            "trained_on_n_matches": len(labels),
         }
         coef_repr = {
             name: round(float(c), 4)

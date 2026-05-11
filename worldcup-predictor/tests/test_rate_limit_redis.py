@@ -7,7 +7,6 @@ from __future__ import annotations
 import time
 
 import fakeredis
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 

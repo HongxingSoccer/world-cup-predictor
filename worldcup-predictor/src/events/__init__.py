@@ -35,6 +35,13 @@ from .topics import (
 
 __all__ = [
     "ALL_TOPICS",
+    "TOPIC_DATA_QUALITY_ALERT",
+    "TOPIC_MATCH_CREATED",
+    "TOPIC_MATCH_FINISHED",
+    "TOPIC_MATCH_UPDATED",
+    "TOPIC_ODDS_UPDATED",
+    "TOPIC_PREDICTION_PUBLISHED",
+    "TOPIC_PREDICTION_RED_HIT",
     "DataQualityAlertPayload",
     "EventEnvelope",
     "EventProducer",
@@ -45,12 +52,5 @@ __all__ = [
     "OddsUpdatedPayload",
     "PredictionPublishedPayload",
     "PredictionRedHitPayload",
-    "TOPIC_DATA_QUALITY_ALERT",
-    "TOPIC_MATCH_CREATED",
-    "TOPIC_MATCH_FINISHED",
-    "TOPIC_MATCH_UPDATED",
-    "TOPIC_ODDS_UPDATED",
-    "TOPIC_PREDICTION_PUBLISHED",
-    "TOPIC_PREDICTION_RED_HIT",
     "build_producer",
 ]

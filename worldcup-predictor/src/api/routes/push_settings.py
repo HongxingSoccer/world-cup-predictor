@@ -10,9 +10,9 @@
 from __future__ import annotations
 
 from datetime import time
-from typing import Any, Optional
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -24,14 +24,14 @@ router = APIRouter(prefix="/api/v1/push", tags=["push"])
 
 class PushSettingsIn(BaseModel):
     user_id: int = Field(..., gt=0)
-    wechat_openid: Optional[str] = Field(None, max_length=100)
-    web_push_subscription: Optional[dict[str, Any]] = None
+    wechat_openid: str | None = Field(None, max_length=100)
+    web_push_subscription: dict[str, Any] | None = None
     enable_high_ev: bool = True
     enable_reports: bool = True
     enable_match_start: bool = True
     enable_red_hit: bool = True
-    quiet_hours_start: Optional[time] = None
-    quiet_hours_end: Optional[time] = None
+    quiet_hours_start: time | None = None
+    quiet_hours_end: time | None = None
 
 
 class PushSettingsOut(PushSettingsIn):

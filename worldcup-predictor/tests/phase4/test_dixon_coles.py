@@ -1,7 +1,7 @@
 """Unit tests for src.ml.models.dixon_coles."""
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 import pandas as pd
@@ -18,7 +18,7 @@ from src.ml.models.dixon_coles import (
 
 def _build_training_df(n: int = 50) -> pd.DataFrame:
     rng = np.random.default_rng(42)
-    base = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    base = datetime(2024, 1, 1, tzinfo=UTC)
     rows = []
     for i in range(n):
         rows.append(
@@ -62,10 +62,10 @@ def test_score_matrix_normalises_to_one():
 
 
 def test_time_decay_weights_recent_higher_than_old():
-    ref = datetime(2024, 6, 1, tzinfo=timezone.utc)
+    ref = datetime(2024, 6, 1, tzinfo=UTC)
     dates = pd.Series([
-        datetime(2023, 6, 1, tzinfo=timezone.utc),  # 365 days old
-        datetime(2024, 5, 25, tzinfo=timezone.utc),  # 7 days old
+        datetime(2023, 6, 1, tzinfo=UTC),  # 365 days old
+        datetime(2024, 5, 25, tzinfo=UTC),  # 7 days old
     ])
     weights = compute_time_decay_weights(dates, ref, xi=0.0019)
     assert weights[1] > weights[0]

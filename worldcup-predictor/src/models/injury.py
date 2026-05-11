@@ -6,7 +6,6 @@ to support availability-history features.
 from __future__ import annotations
 
 from datetime import date
-from typing import Optional
 
 from sqlalchemy import BigInteger, Boolean, Date, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -22,17 +21,17 @@ class Injury(Base, TimestampMixin):
     player_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("players.id", ondelete="CASCADE"), nullable=False
     )
-    team_id: Mapped[Optional[int]] = mapped_column(
+    team_id: Mapped[int | None] = mapped_column(
         BigInteger, ForeignKey("teams.id", ondelete="SET NULL"), nullable=True
     )
 
-    injury_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    injury_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
     # 'minor' | 'moderate' | 'major' | 'season-ending'
-    severity: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    severity: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
-    expected_return: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    actual_return: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    expected_return: Mapped[date | None] = mapped_column(Date, nullable=True)
+    actual_return: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
 

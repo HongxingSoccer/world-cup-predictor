@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
 
 from sqlalchemy import (
     BigInteger,
@@ -47,16 +46,16 @@ class PredictionResult(Base):
     result_1x2_hit: Mapped[bool] = mapped_column(Boolean, nullable=False)
     # Top-10 score-line hit.
     result_score_hit: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    result_ou25_hit: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
-    result_btts_hit: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    result_ou25_hit: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    result_btts_hit: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
 
     # Best-EV outcome we'd have staked, the odds we got, and whether it won.
-    best_ev_outcome: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
-    best_ev_odds: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 3), nullable=True)
-    best_ev_hit: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    best_ev_outcome: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    best_ev_odds: Mapped[Decimal | None] = mapped_column(Numeric(6, 3), nullable=True)
+    best_ev_hit: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
 
     # Profit / loss assuming a single-unit stake on the best-EV outcome.
-    pnl_unit: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 4), nullable=True)
+    pnl_unit: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
 
     settled_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

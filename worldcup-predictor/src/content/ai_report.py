@@ -17,7 +17,7 @@ import their SDKs so neither library is mandatory at runtime.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional, Protocol
+from typing import Protocol
 
 import structlog
 
@@ -69,9 +69,9 @@ class MatchReportContext:
     home_injuries: list[str] = field(default_factory=list)
     away_injuries: list[str] = field(default_factory=list)
     h2h_summary: str = ""
-    home_xg_avg: Optional[float] = None
-    away_xg_avg: Optional[float] = None
-    market_implied: Optional[dict[str, float]] = None  # {home,draw,away}
+    home_xg_avg: float | None = None
+    away_xg_avg: float | None = None
+    market_implied: dict[str, float] | None = None  # {home,draw,away}
     importance_note: str = ""  # e.g. "主队必须获胜才能出线"
 
 
@@ -103,13 +103,13 @@ class FallbackLLMClient:
         self.name = ",".join(c.name for c in clients)
 
     def complete(self, system: str, user: str, *, max_tokens: int) -> str:
-        last_err: Optional[Exception] = None
+        last_err: Exception | None = None
         for client in self._clients:
             try:
                 text = client.complete(system, user, max_tokens=max_tokens)
                 if text:
                     return text
-            except Exception as exc:  # noqa: BLE001 — try next client
+            except Exception as exc:
                 last_err = exc
                 logger.warning("llm_client_failed", name=client.name, error=str(exc))
         raise RuntimeError(
@@ -156,7 +156,7 @@ class StubLLMClient:
         return f"{header}\n{sections}\n\n{DISCLAIMER}"
 
 
-def _scan(text: str, key: str) -> Optional[str]:
+def _scan(text: str, key: str) -> str | None:
     """Best-effort key:value extractor for the StubLLMClient prompt scan."""
     needle = f'"{key}"'
     idx = text.find(needle)
@@ -215,7 +215,7 @@ class OpenAICompatibleClient:
         self,
         *,
         api_key: str,
-        base_url: Optional[str] = None,
+        base_url: str | None = None,
         model: str = DEFAULT_FALLBACK_MODEL,
         temperature: float = DEFAULT_TEMPERATURE,
     ) -> None:
@@ -227,7 +227,7 @@ class OpenAICompatibleClient:
         self.name = model
 
     def complete(self, system: str, user: str, *, max_tokens: int) -> str:
-        from openai import OpenAI  # noqa: WPS433 — lazy import
+        from openai import OpenAI
 
         client = OpenAI(api_key=self._api_key, base_url=self._base_url)
         response = client.chat.completions.create(
@@ -259,7 +259,7 @@ class AnthropicClient:
         self.name = model
 
     def complete(self, system: str, user: str, *, max_tokens: int) -> str:
-        from anthropic import Anthropic  # noqa: WPS433 — lazy import
+        from anthropic import Anthropic
 
         client = Anthropic(api_key=self._api_key)
         response = client.messages.create(

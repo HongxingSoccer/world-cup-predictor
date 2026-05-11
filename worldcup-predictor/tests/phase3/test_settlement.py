@@ -16,7 +16,6 @@ from src.utils.settlement import (
     predicted_1x2,
 )
 
-
 # --- 1x2 ---
 
 

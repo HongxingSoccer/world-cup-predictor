@@ -1,0 +1,11 @@
+# Exclusions for the java-api Dockerfile build context. Gradle's own
+# build/ and bin/ subdirs are big enough to make CI Docker layers churn
+# every time, so we always copy a clean tree.
+bin/
+build/
+.gradle/
+.idea/
+*.iml
+.classpath
+.project
+.settings/

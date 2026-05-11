@@ -23,8 +23,8 @@ from src.config.celery_config import (
     app,
 )
 from src.ml.features.pipeline import FeaturePipeline
-from src.ml.models.confidence import ConfidenceCalculator
 from src.ml.models.base import BasePredictionModel
+from src.ml.models.confidence import ConfidenceCalculator
 from src.ml.models.poisson import PoissonBaselineModel
 from src.ml.odds.analyzer import OddsAnalyzer
 from src.ml.prediction_service import PredictionService
@@ -153,7 +153,7 @@ def tournament_simulate_daily(self) -> dict[str, Any]:  # type: ignore[no-untype
     try:
         # Local import keeps script-level imports (pandas, etc.) out of the
         # task module's hot-import path.
-        from scripts.run_tournament_simulation import (  # noqa: PLC0415
+        from scripts.run_tournament_simulation import (
             DEFAULT_TRIALS,
             run_and_persist,
         )

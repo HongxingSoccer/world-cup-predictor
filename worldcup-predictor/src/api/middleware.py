@@ -19,7 +19,7 @@ import time
 import uuid
 from collections import defaultdict, deque
 from collections.abc import Awaitable, Callable
-from typing import Final, Optional
+from typing import Final
 
 import structlog
 from fastapi import Request, Response, status
@@ -96,7 +96,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self,
         app,  # type: ignore[no-untyped-def]
         requests_per_minute: int,
-        redis_limiter: Optional[RedisSlidingWindowLimiter] = None,
+        redis_limiter: RedisSlidingWindowLimiter | None = None,
     ) -> None:
         super().__init__(app)
         self._budget = max(requests_per_minute, 1)
@@ -106,7 +106,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Tests pass in a fakeredis-backed limiter. Production passes None and
         # the constructor tries to build one from settings on its own.
         if redis_limiter is not None:
-            self._redis_limiter: Optional[RedisSlidingWindowLimiter] = redis_limiter
+            self._redis_limiter: RedisSlidingWindowLimiter | None = redis_limiter
         else:
             self._redis_limiter = build_limiter_from_settings()
         if self._redis_limiter is None:

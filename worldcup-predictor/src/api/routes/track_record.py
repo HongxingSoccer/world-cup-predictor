@@ -8,9 +8,8 @@ than a broken page.
 """
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
-from typing import Optional
 
 import structlog
 from fastapi import APIRouter, Depends, Query
@@ -42,7 +41,7 @@ class TrackRecordOverview(BaseModel):
     roi: float
     current_streak: int
     best_streak: int
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
 
 class RoiPoint(BaseModel):
@@ -155,8 +154,8 @@ def history(
     if not total:
         return HistoryResponse(total=0, items=[])
 
-    HomeTeam = Team.__table__.alias("home_team")  # noqa: N806
-    AwayTeam = Team.__table__.alias("away_team")  # noqa: N806
+    HomeTeam = Team.__table__.alias("home_team")
+    AwayTeam = Team.__table__.alias("away_team")
 
     stmt = (
         select(
@@ -301,12 +300,12 @@ def _zero_overview(stat_type: str, period: str) -> TrackRecordOverview:
     )
 
 
-def _period_cutoff(period: str) -> Optional[datetime]:
+def _period_cutoff(period: str) -> datetime | None:
     from datetime import timedelta
 
     from src.utils.track_record import WORLDCUP_2026_START
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if period == "all_time":
         return None
     if period == "last_30d":

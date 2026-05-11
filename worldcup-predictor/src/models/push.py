@@ -12,7 +12,7 @@ Schemas follow ``docs/design/06_Phase4_ModelEvolution.md §5.3``.
 from __future__ import annotations
 
 from datetime import datetime, time
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import (
     BigInteger,
@@ -43,11 +43,11 @@ class PushNotification(Base):
     notification_type: Mapped[str] = mapped_column(String(30), nullable=False)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
-    target_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    target_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="pending")
-    sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    clicked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    meta: Mapped[Optional[Any]] = mapped_column(JSONB, nullable=True)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    clicked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    meta: Mapped[Any | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -65,14 +65,14 @@ class UserPushSettings(Base):
     user_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    wechat_openid: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    web_push_subscription: Mapped[Optional[Any]] = mapped_column(JSONB, nullable=True)
+    wechat_openid: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    web_push_subscription: Mapped[Any | None] = mapped_column(JSONB, nullable=True)
     enable_high_ev: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
     enable_reports: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
     enable_match_start: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
     enable_red_hit: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
-    quiet_hours_start: Mapped[Optional[time]] = mapped_column(Time, nullable=True)
-    quiet_hours_end: Mapped[Optional[time]] = mapped_column(Time, nullable=True)
+    quiet_hours_start: Mapped[time | None] = mapped_column(Time, nullable=True)
+    quiet_hours_end: Mapped[time | None] = mapped_column(Time, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,

@@ -16,6 +16,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from src.dto.player import PlayerDTO
+
 # Player events don't have a dedicated topic in Phase 1's event taxonomy,
 # so player updates go under match.updated as a generic "ingest progressed"
 # signal until Phase 2 introduces a player.* topic family.

@@ -7,9 +7,17 @@ numbers, so reconciliation can compare API-Football vs FBref vs scraped values.
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Optional
 
-from sqlalchemy import BigInteger, Boolean, ForeignKey, Index, Numeric, SmallInteger, String, UniqueConstraint
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    ForeignKey,
+    Index,
+    Numeric,
+    SmallInteger,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base, TimestampMixin
@@ -28,21 +36,21 @@ class MatchStats(Base, TimestampMixin):
     )
     is_home: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
-    possession: Mapped[Optional[Decimal]] = mapped_column(Numeric(4, 1), nullable=True)
-    shots: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    shots_on_target: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    xg: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), nullable=True)
-    xg_against: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), nullable=True)
-    passes: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    pass_accuracy: Mapped[Optional[Decimal]] = mapped_column(Numeric(4, 1), nullable=True)
-    corners: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    fouls: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    yellow_cards: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    red_cards: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    offsides: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    tackles: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    interceptions: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    saves: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
+    possession: Mapped[Decimal | None] = mapped_column(Numeric(4, 1), nullable=True)
+    shots: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    shots_on_target: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    xg: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)
+    xg_against: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)
+    passes: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    pass_accuracy: Mapped[Decimal | None] = mapped_column(Numeric(4, 1), nullable=True)
+    corners: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    fouls: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    yellow_cards: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    red_cards: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    offsides: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    tackles: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    interceptions: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    saves: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
 
     # 'api_football' | 'fbref' | 'understat' | 'scraper:<site>'
     data_source: Mapped[str] = mapped_column(String(30), nullable=False)

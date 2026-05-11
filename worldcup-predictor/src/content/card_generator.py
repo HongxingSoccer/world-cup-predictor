@@ -16,11 +16,12 @@ in the critical path of the generator's logic tests.
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import structlog
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -274,7 +275,7 @@ class CardGenerator:
 
 
 def _now_text() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    return datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
 
 
 def _label_1x2_from_prediction(prediction: Prediction) -> str:

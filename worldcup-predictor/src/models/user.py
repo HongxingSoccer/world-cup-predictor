@@ -11,17 +11,15 @@ from __future__ import annotations
 
 import uuid as uuid_pkg
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import (
-    Boolean,
     BigInteger,
+    Boolean,
     DateTime,
     Index,
     String,
     Text,
     Uuid,
-    func,
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -39,19 +37,19 @@ class User(Base, TimestampMixin):
         server_default=text("gen_random_uuid()"),
     )
 
-    phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    email: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(200), nullable=True)
     # BCrypt hash (cost 12+ per coding standards). NULL for OAuth-only users.
-    password_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
-    nickname: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    avatar_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    nickname: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # 'free' | 'basic' | 'premium'
     subscription_tier: Mapped[str] = mapped_column(
         String(20), nullable=False, default="free", server_default="free"
     )
-    subscription_expires: Mapped[Optional[datetime]] = mapped_column(
+    subscription_expires: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
 
@@ -65,7 +63,7 @@ class User(Base, TimestampMixin):
         server_default="Asia/Shanghai",
     )
 
-    last_login_at: Mapped[Optional[datetime]] = mapped_column(
+    last_login_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
     is_active: Mapped[bool] = mapped_column(

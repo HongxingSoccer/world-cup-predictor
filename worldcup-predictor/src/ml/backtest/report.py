@@ -12,18 +12,18 @@ from __future__ import annotations
 
 import base64
 import io
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import matplotlib
 
-matplotlib.use("Agg")  # noqa: E402 — must precede pyplot import in headless contexts
-import matplotlib.pyplot as plt  # noqa: E402
-from jinja2 import Template  # noqa: E402
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from jinja2 import Template
 
-from src.ml.backtest.evaluator import BacktestMetrics  # noqa: E402
-from src.ml.backtest.runner import BacktestSample  # noqa: E402
+from src.ml.backtest.evaluator import BacktestMetrics
+from src.ml.backtest.runner import BacktestSample
 
 # Concise template — one logical block per spec section. Inline CSS so the
 # output works as an email attachment / standalone artifact.
@@ -122,7 +122,7 @@ def generate_html_report(
         model_version=model_version,
         feature_version=feature_version,
         window=window,
-        generated_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        generated_at=datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC"),
         metrics=metrics,
         cumulative_chart_b64=_cumulative_pl_chart(samples),
         calibration_chart_b64=_calibration_chart(metrics),

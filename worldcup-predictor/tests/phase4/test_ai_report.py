@@ -4,12 +4,12 @@ from __future__ import annotations
 import pytest
 
 from src.content.ai_report import (
-    AIReportGenerator,
     DISCLAIMER,
+    REPORT_SECTIONS,
+    AIReportGenerator,
     FallbackLLMClient,
     MatchReportContext,
     OpenAICompatibleClient,
-    REPORT_SECTIONS,
     StubLLMClient,
     build_llm_client_from_settings,
     build_user_prompt,

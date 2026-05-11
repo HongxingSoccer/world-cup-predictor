@@ -17,7 +17,7 @@ To enable locally:
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import create_engine, text
@@ -65,7 +65,7 @@ def _seed_prediction(session: Session) -> int:
         ),
         {
             "hash": "a" * 64,
-            "ts": datetime.now(timezone.utc),
+            "ts": datetime.now(UTC),
         },
     ).first()
     session.commit()
@@ -133,7 +133,7 @@ def test_insert_into_predictions_is_allowed(pg_session: Session) -> None:
         ),
         {
             "hash": "b" * 64,
-            "ts": datetime.now(timezone.utc),
+            "ts": datetime.now(UTC),
         },
     )
     pg_session.commit()

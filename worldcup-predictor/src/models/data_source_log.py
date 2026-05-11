@@ -8,7 +8,7 @@ repeated failures.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import BigInteger, DateTime, Index, Integer, String, Text, func, text
 from sqlalchemy.dialects.postgresql import JSONB
@@ -29,16 +29,16 @@ class DataSourceLog(Base):
     # 'success' | 'partial' | 'failed' | 'skipped' | 'running'
     status: Mapped[str] = mapped_column(String(20), nullable=False)
 
-    records_fetched: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    records_inserted: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    records_updated: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    records_fetched: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    records_inserted: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    records_updated: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
-    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    meta: Mapped[Optional[dict[str, Any]]] = mapped_column(JSONB, nullable=True)
+    meta: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

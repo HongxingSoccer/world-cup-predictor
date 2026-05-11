@@ -7,7 +7,7 @@ between hard fail (abort the batch) and soft fail (drop the record + log).
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -54,7 +54,7 @@ def validate_match_fields(
             `MAX_FUTURE_MATCH_DAYS` days in the future, or any score is
             negative / above `MAX_REASONABLE_GOALS`.
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if match_date > now + timedelta(days=MAX_FUTURE_MATCH_DAYS):
         raise DataValidationError(
             f"match_date {match_date.isoformat()} is more than "

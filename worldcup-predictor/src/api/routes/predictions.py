@@ -7,8 +7,8 @@ the table is immutable so the response can be served directly via the CDN.
 from __future__ import annotations
 
 import json
-from datetime import date, datetime, time, timedelta, timezone
-from typing import Any, Optional
+from datetime import UTC, date, datetime, time, timedelta
+from typing import Any
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -20,13 +20,13 @@ from src.api.dependencies import (
     get_redis,
     predictions_today_cache_ttl,
 )
-from src.config.settings import settings
 from src.api.schemas.predictions import (
     PredictionDetailResponse,
     PredictionTodayItem,
     PredictionTodayResponse,
     PredictionUpcomingResponse,
 )
+from src.config.settings import settings
 from src.models.match import Match
 from src.models.odds_analysis import OddsAnalysis
 from src.models.prediction import Prediction
@@ -41,16 +41,16 @@ CACHE_KEY_PREFIX: str = "wcp:predictions:today"
 
 @router.get("/today", response_model=PredictionTodayResponse)
 def predictions_today(
-    target_date: Optional[date] = Query(default=None, alias="date"),
+    target_date: date | None = Query(default=None, alias="date"),
     min_confidence: int = Query(default=0, ge=0, le=100),
     min_signal: int = Query(default=0, ge=0, le=3),
-    competition_id: Optional[int] = Query(default=None),
+    competition_id: int | None = Query(default=None),
     db_session: Session = Depends(get_db_session),
-    redis_client: Optional[Any] = Depends(get_redis),
+    redis_client: Any | None = Depends(get_redis),
     cache_ttl: int = Depends(predictions_today_cache_ttl),
 ) -> PredictionTodayResponse:
     """Return all matches with predictions for `date` (default = today UTC)."""
-    target = target_date or datetime.now(timezone.utc).date()
+    target = target_date or datetime.now(UTC).date()
     cache_key = (
         f"{CACHE_KEY_PREFIX}:{target.isoformat()}"
         f":mc{min_confidence}:ms{min_signal}:c{competition_id or 'all'}"
@@ -85,11 +85,11 @@ def predictions_upcoming(
     rolls forward every day and the underlying query is small (≤ 100 rows
     in practice).
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     end = now + timedelta(days=days)
 
-    HomeTeam = Team.__table__.alias("home_team")  # noqa: N806
-    AwayTeam = Team.__table__.alias("away_team")  # noqa: N806
+    HomeTeam = Team.__table__.alias("home_team")
+    AwayTeam = Team.__table__.alias("away_team")
 
     stmt = (
         select(
@@ -199,13 +199,13 @@ def _fetch_today_items(
     *,
     min_confidence: int,
     min_signal: int,
-    competition_id: Optional[int],
+    competition_id: int | None,
 ) -> list[PredictionTodayItem]:
-    start = datetime.combine(target, time.min, tzinfo=timezone.utc)
+    start = datetime.combine(target, time.min, tzinfo=UTC)
     end = start + timedelta(days=1)
 
-    HomeTeam = Team.__table__.alias("home_team")  # noqa: N806
-    AwayTeam = Team.__table__.alias("away_team")  # noqa: N806
+    HomeTeam = Team.__table__.alias("home_team")
+    AwayTeam = Team.__table__.alias("away_team")
 
     stmt = (
         select(
@@ -294,7 +294,7 @@ def _row_to_dict(row: OddsAnalysis) -> dict[str, Any]:
     }
 
 
-def _try_cache_read(redis_client: Optional[Any], key: str) -> Optional[dict[str, Any]]:
+def _try_cache_read(redis_client: Any | None, key: str) -> dict[str, Any] | None:
     if redis_client is None:
         return None
     try:
@@ -311,7 +311,7 @@ def _try_cache_read(redis_client: Optional[Any], key: str) -> Optional[dict[str,
 
 
 def _try_cache_write(
-    redis_client: Optional[Any],
+    redis_client: Any | None,
     key: str,
     response: PredictionTodayResponse,
     ttl: int,

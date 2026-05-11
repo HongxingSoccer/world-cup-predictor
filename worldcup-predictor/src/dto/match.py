@@ -1,8 +1,7 @@
 """Match-related DTOs returned by data-source adapters."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -22,12 +21,12 @@ class MatchDTO(BaseModel):
     away_team_name: str = Field(min_length=1, description="Raw away-team name from the source.")
     match_date: datetime = Field(description="Kickoff datetime, normalized to UTC at validation.")
     status: str = Field(description="Source-mapped status: scheduled / live / finished / postponed / cancelled.")
-    home_score: Optional[int] = Field(default=None, ge=0, description="Final or current home goals.")
-    away_score: Optional[int] = Field(default=None, ge=0, description="Final or current away goals.")
-    venue: Optional[str] = Field(default=None, description="Stadium name, if known.")
-    round: Optional[str] = Field(default=None, description="Round / matchweek label (e.g. 'Group A', 'R16').")
+    home_score: int | None = Field(default=None, ge=0, description="Final or current home goals.")
+    away_score: int | None = Field(default=None, ge=0, description="Final or current away goals.")
+    venue: str | None = Field(default=None, description="Stadium name, if known.")
+    round: str | None = Field(default=None, description="Round / matchweek label (e.g. 'Group A', 'R16').")
     competition_name: str = Field(min_length=1, description="Competition name as reported by the source.")
-    home_team_external_id: Optional[str] = Field(
+    home_team_external_id: str | None = Field(
         default=None,
         description=(
             "Source-native team id for the home side (e.g. API-Football team id). "
@@ -36,7 +35,7 @@ class MatchDTO(BaseModel):
             "stats / player calls can lookup by external id."
         ),
     )
-    away_team_external_id: Optional[str] = Field(
+    away_team_external_id: str | None = Field(
         default=None,
         description="Same as home_team_external_id but for the away side.",
     )
@@ -50,17 +49,17 @@ class MatchDTO(BaseModel):
     )
 
     @model_validator(mode="after")
-    def _coerce_match_date_to_utc(self) -> "MatchDTO":
+    def _coerce_match_date_to_utc(self) -> MatchDTO:
         # Pydantic accepts naive datetimes; we treat them as already-UTC rather
         # than guessing local time. Aware datetimes are converted to UTC.
         if self.match_date.tzinfo is None:
-            object.__setattr__(self, "match_date", self.match_date.replace(tzinfo=timezone.utc))
+            object.__setattr__(self, "match_date", self.match_date.replace(tzinfo=UTC))
         else:
-            object.__setattr__(self, "match_date", self.match_date.astimezone(timezone.utc))
+            object.__setattr__(self, "match_date", self.match_date.astimezone(UTC))
         return self
 
     @model_validator(mode="after")
-    def _check_score_consistency(self) -> "MatchDTO":
+    def _check_score_consistency(self) -> MatchDTO:
         # If one score is set the other must be too — half-populated rows are
         # almost always a parsing bug.
         if (self.home_score is None) != (self.away_score is None):

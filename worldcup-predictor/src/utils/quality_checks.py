@@ -9,7 +9,7 @@ decides whether to publish to Kafka, print, or both.
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import and_, func, select
@@ -32,7 +32,7 @@ FAILURE_RATE_MAX: float = 0.05
 
 def run_all(session: Session, *, now: datetime | None = None) -> list[DataQualityAlertPayload]:
     """Run every check and return the payloads in stable order."""
-    when = now or datetime.now(timezone.utc)
+    when = now or datetime.now(UTC)
     return [
         check_missing_stats(session, when),
         check_odds_coverage(session, when),

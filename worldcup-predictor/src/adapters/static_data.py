@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import csv
 import io
-from datetime import datetime, time, timezone
+from datetime import UTC, datetime, time
 from pathlib import Path
 from typing import Any
 
@@ -149,7 +149,7 @@ class StaticDataAdapter(BaseDataSourceAdapter):
         return datetime.combine(
             datetime(year, month, day).date(),
             time.min,
-            tzinfo=timezone.utc,
+            tzinfo=UTC,
         )
 
     def _row_to_match_dto(self, row: dict[str, str], match_date: datetime) -> MatchDTO:

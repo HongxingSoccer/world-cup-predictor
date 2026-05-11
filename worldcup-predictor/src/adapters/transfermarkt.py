@@ -20,7 +20,7 @@ proxy and retry" condition.
 from __future__ import annotations
 
 import re
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Any
 
 import httpx
@@ -165,7 +165,7 @@ class TransfermarktAdapter(BaseDataSourceAdapter):
         # Transfermarkt's graph endpoint returns timestamps in milliseconds and
         # values in EUR (already in whole euros).
         ts_ms = int(point["datum_mw"])
-        captured = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
+        captured = datetime.fromtimestamp(ts_ms / 1000, tz=UTC)
         return ValuationDTO(
             player_external_id=player_id,
             team_external_id=str(point.get("verein")) if point.get("verein") else None,

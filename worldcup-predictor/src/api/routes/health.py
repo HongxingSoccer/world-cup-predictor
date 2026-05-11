@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends
 
@@ -37,5 +37,5 @@ def model_health(model: PoissonBaselineModel = Depends(get_model)) -> dict[str, 
         "trained_on_n_matches": model.params.get("trained_on_n_matches"),
         "status": "ok" if is_trained else "untrained",
         "uptime_seconds": round(time.monotonic() - started_at, 2),
-        "checked_at": datetime.now(timezone.utc).isoformat(),
+        "checked_at": datetime.now(UTC).isoformat(),
     }

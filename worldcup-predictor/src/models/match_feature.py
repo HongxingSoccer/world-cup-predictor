@@ -11,9 +11,17 @@ labels and back-filled once the match finishes.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, SmallInteger, String, UniqueConstraint, func
+from sqlalchemy import (
+    BigInteger,
+    DateTime,
+    ForeignKey,
+    SmallInteger,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -31,10 +39,10 @@ class MatchFeature(Base):
     feature_version: Mapped[str] = mapped_column(String(10), nullable=False)
     features: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
 
-    label_home_score: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    label_away_score: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
+    label_home_score: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    label_away_score: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     # 'H' (home win) | 'D' (draw) | 'A' (away win)
-    label_result: Mapped[Optional[str]] = mapped_column(String(5), nullable=True)
+    label_result: Mapped[str | None] = mapped_column(String(5), nullable=True)
 
     computed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

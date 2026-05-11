@@ -11,8 +11,8 @@ defined in §4.3.
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -46,7 +46,7 @@ router = APIRouter(
 class OverviewCard(BaseModel):
     label: str
     value: int
-    delta_24h: Optional[int] = None
+    delta_24h: int | None = None
 
 
 class OverviewResponse(BaseModel):
@@ -76,7 +76,7 @@ def admin_overview(
     db: Session = Depends(get_db_session),
 ) -> OverviewResponse:
     """Top-level KPI cards for the admin dashboard (§4.4.1 row 1)."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     yesterday = now - timedelta(hours=24)
 
     user_count = int(db.execute(select(func.count(User.id))).scalar_one())
@@ -148,11 +148,11 @@ def admin_update_flag(
 ) -> FlagsResponse:
     try:
         flags.set_flag(payload.name, payload.value)
-    except KeyError:
+    except KeyError as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"unknown flag: {payload.name}",
-        )
+        ) from err
     return FlagsResponse(flags=flags.all_flags())
 
 
@@ -172,7 +172,7 @@ def _clamp(limit: int, offset: int) -> tuple[int, int]:
 def admin_list_subscriptions(
     limit: int = 50,
     offset: int = 0,
-    status: Optional[str] = None,
+    status: str | None = None,
     db: Session = Depends(get_db_session),
 ) -> PaginatedItems:
     limit, offset = _clamp(limit, offset)
@@ -208,7 +208,7 @@ def admin_list_subscriptions(
 def admin_list_payments(
     limit: int = 50,
     offset: int = 0,
-    status: Optional[str] = None,
+    status: str | None = None,
     db: Session = Depends(get_db_session),
 ) -> PaginatedItems:
     limit, offset = _clamp(limit, offset)
@@ -276,7 +276,7 @@ def _report_dict(r: AnalysisReport) -> dict[str, Any]:
 
 
 def _list_reports(
-    db: Session, limit: int, offset: int, status_filter: Optional[str]
+    db: Session, limit: int, offset: int, status_filter: str | None
 ) -> PaginatedItems:
     limit, offset = _clamp(limit, offset)
     count_q = select(func.count(AnalysisReport.id))
@@ -293,7 +293,7 @@ def _list_reports(
 def admin_list_reports(
     limit: int = 50,
     offset: int = 0,
-    status: Optional[str] = None,
+    status: str | None = None,
     db: Session = Depends(get_db_session),
 ) -> PaginatedItems:
     return _list_reports(db, limit, offset, status)
@@ -308,7 +308,7 @@ def admin_publish_report(
     if row is None:
         raise HTTPException(status_code=404, detail="report not found")
     row.status = "published"
-    row.published_at = datetime.now(timezone.utc)
+    row.published_at = datetime.now(UTC)
     db.commit()
     db.refresh(row)
     return _report_dict(row)
@@ -363,7 +363,7 @@ def admin_list_data_sources(
 def admin_data_sources_summary(
     db: Session = Depends(get_db_session),
 ) -> dict[str, Any]:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     yesterday = now - timedelta(hours=24)
     sources = [
         s for (s,) in db.execute(
@@ -412,7 +412,7 @@ def admin_data_sources_summary(
 def admin_list_push(
     limit: int = 50,
     offset: int = 0,
-    status: Optional[str] = None,
+    status: str | None = None,
     db: Session = Depends(get_db_session),
 ) -> PaginatedItems:
     limit, offset = _clamp(limit, offset)
@@ -443,7 +443,7 @@ def admin_list_push(
 def admin_push_summary(
     db: Session = Depends(get_db_session),
 ) -> dict[str, int]:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     yesterday = now - timedelta(hours=24)
     pending = int(
         db.execute(

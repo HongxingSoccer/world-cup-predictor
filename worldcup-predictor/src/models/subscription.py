@@ -16,7 +16,6 @@ Plan types:
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import (
     BigInteger,
@@ -60,7 +59,7 @@ class Subscription(Base, TimestampMixin):
         Boolean, nullable=False, default=False, server_default=text("false")
     )
 
-    payment_id: Mapped[Optional[int]] = mapped_column(
+    payment_id: Mapped[int | None] = mapped_column(
         BigInteger, ForeignKey("payments.id", ondelete="SET NULL"), nullable=True
     )
 

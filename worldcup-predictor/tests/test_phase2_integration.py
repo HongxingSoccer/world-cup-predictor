@@ -27,9 +27,8 @@ import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
 
-from src.api.main import app
 from src.api.dependencies import get_db_session, get_model
-from src.config.settings import settings
+from src.api.main import app
 from src.ml.backtest.evaluator import BacktestEvaluator
 from src.ml.backtest.report import generate_html_report
 from src.ml.backtest.runner import BacktestRunner, BacktestSample
@@ -40,7 +39,6 @@ from src.ml.prediction_service import compute_content_hash
 from src.models.elo_rating import EloRating
 from src.models.match_stats import MatchStats
 from src.models.odds_snapshot import OddsSnapshot
-
 
 # --- 1. Feature pipeline ----------------------------------------------------
 

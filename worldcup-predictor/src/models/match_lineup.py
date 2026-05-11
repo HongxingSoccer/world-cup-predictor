@@ -7,9 +7,17 @@ substitutes are inserted with `is_starter=False` and may have non-null
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Optional
 
-from sqlalchemy import BigInteger, Boolean, ForeignKey, Index, Numeric, SmallInteger, String, UniqueConstraint
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    ForeignKey,
+    Index,
+    Numeric,
+    SmallInteger,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -31,12 +39,12 @@ class MatchLineup(Base):
     )
 
     is_starter: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    position: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
-    jersey_number: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    minutes_played: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    sub_in_minute: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    sub_out_minute: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    rating: Mapped[Optional[Decimal]] = mapped_column(Numeric(3, 1), nullable=True)
+    position: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    jersey_number: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    minutes_played: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    sub_in_minute: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    sub_out_minute: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    rating: Mapped[Decimal | None] = mapped_column(Numeric(3, 1), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("match_id", "team_id", "player_id", name="uq_lineups_match_team_player"),

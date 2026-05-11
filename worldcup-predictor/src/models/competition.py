@@ -6,7 +6,7 @@ and stores the optional API-Football foreign id used by ingest jobs.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, Boolean, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -21,16 +21,16 @@ class Competition(Base, TimestampMixin):
     __tablename__ = "competitions"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    api_football_id: Mapped[Optional[int]] = mapped_column(Integer, unique=True, nullable=True)
+    api_football_id: Mapped[int | None] = mapped_column(Integer, unique=True, nullable=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
-    name_zh: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    name_zh: Mapped[str | None] = mapped_column(String(200), nullable=True)
     # 'national' | 'club' | 'continental' | 'friendly' (kept open as VARCHAR per schema)
     competition_type: Mapped[str] = mapped_column(String(20), nullable=False)
-    country: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    logo_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    country: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    logo_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
 
-    seasons: Mapped[List["Season"]] = relationship(
+    seasons: Mapped[list[Season]] = relationship(
         back_populates="competition", cascade="all, delete-orphan"
     )
 

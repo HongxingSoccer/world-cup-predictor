@@ -23,7 +23,6 @@ from __future__ import annotations
 import asyncio
 import os
 import threading
-from typing import Optional
 
 import structlog
 from aiohttp import web
@@ -33,7 +32,7 @@ logger = structlog.get_logger(__name__)
 _DEFAULT_PORT = 8001
 
 
-def _truthy(raw: Optional[str]) -> bool:
+def _truthy(raw: str | None) -> bool:
     if raw is None:
         return False
     return raw.strip().lower() in {"1", "true", "yes", "on"}

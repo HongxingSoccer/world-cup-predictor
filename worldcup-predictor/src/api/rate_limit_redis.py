@@ -26,7 +26,7 @@ blip would be worse than honouring a temporarily un-rate-limited request.
 from __future__ import annotations
 
 import time
-from typing import Optional, Protocol
+from typing import Protocol
 
 import structlog
 
@@ -36,21 +36,21 @@ logger = structlog.get_logger(__name__)
 class _RedisClient(Protocol):
     """Subset of redis.Redis surface area the limiter needs."""
 
-    def pipeline(self, transaction: bool = ...) -> "_RedisPipeline":  # pragma: no cover
+    def pipeline(self, transaction: bool = ...) -> _RedisPipeline:  # pragma: no cover
         ...
 
 
 class _RedisPipeline(Protocol):
-    def zremrangebyscore(self, name: str, min_: float, max_: float) -> "_RedisPipeline":  # pragma: no cover
+    def zremrangebyscore(self, name: str, min_: float, max_: float) -> _RedisPipeline:  # pragma: no cover
         ...
 
-    def zadd(self, name: str, mapping: dict) -> "_RedisPipeline":  # pragma: no cover
+    def zadd(self, name: str, mapping: dict) -> _RedisPipeline:  # pragma: no cover
         ...
 
-    def zcard(self, name: str) -> "_RedisPipeline":  # pragma: no cover
+    def zcard(self, name: str) -> _RedisPipeline:  # pragma: no cover
         ...
 
-    def expire(self, name: str, seconds: int) -> "_RedisPipeline":  # pragma: no cover
+    def expire(self, name: str, seconds: int) -> _RedisPipeline:  # pragma: no cover
         ...
 
     def execute(self) -> list:  # pragma: no cover
@@ -144,7 +144,7 @@ def _uniq() -> str:
     return f"{_counter:06x}"
 
 
-def build_limiter_from_settings() -> Optional["RedisSlidingWindowLimiter"]:
+def build_limiter_from_settings() -> RedisSlidingWindowLimiter | None:
     """Build a Redis-backed limiter from settings, or None when REDIS_URL is empty.
 
     Returning None signals the middleware to fall back to the in-process

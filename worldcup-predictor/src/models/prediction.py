@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import (
     BigInteger,
@@ -35,7 +35,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
-
 
 from .base import Base
 
@@ -61,7 +60,7 @@ class Prediction(Base):
     score_matrix: Mapped[list[list[float]]] = mapped_column(JSONB, nullable=False)
     top_scores: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, nullable=False)
     over_under_probs: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    btts_prob: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 4), nullable=True)
+    btts_prob: Mapped[Decimal | None] = mapped_column(Numeric(5, 4), nullable=True)
 
     confidence_score: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     # 'low' | 'medium' | 'high'

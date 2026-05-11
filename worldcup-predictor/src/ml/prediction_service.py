@@ -25,7 +25,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
@@ -139,7 +139,7 @@ class PredictionService:
         """Persist + run odds analysis + emit Kafka. Returns enriched result."""
         prediction = full.prediction
         features = full.features_snapshot
-        published_at = datetime.now(timezone.utc)
+        published_at = datetime.now(UTC)
         content_hash = compute_content_hash(prediction, features, full.confidence)
 
         row = Prediction(

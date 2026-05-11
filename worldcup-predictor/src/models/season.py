@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, Boolean, Date, ForeignKey, SmallInteger, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -22,12 +22,12 @@ class Season(Base, TimestampMixin):
         BigInteger, ForeignKey("competitions.id", ondelete="CASCADE"), nullable=False
     )
     year: Mapped[int] = mapped_column(SmallInteger, nullable=False)
-    start_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     is_current: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
 
-    competition: Mapped["Competition"] = relationship(back_populates="seasons")
-    matches: Mapped[List["Match"]] = relationship(
+    competition: Mapped[Competition] = relationship(back_populates="seasons")
+    matches: Mapped[list[Match]] = relationship(
         back_populates="season", cascade="all, delete-orphan"
     )
 

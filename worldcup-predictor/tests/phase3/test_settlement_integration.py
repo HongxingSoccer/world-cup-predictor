@@ -21,10 +21,10 @@ What we pin:
 """
 from __future__ import annotations
 
+from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import Iterator
 
 import pytest
 from sqlalchemy.orm import Session
@@ -35,7 +35,6 @@ from src.models.prediction import Prediction
 from src.models.prediction_result import PredictionResult
 from src.models.track_record_stat import TrackRecordStat
 from src.tasks import settlement_tasks
-
 
 # ---------------------------------------------------------------------------
 # Test infrastructure
@@ -137,7 +136,7 @@ def _insert_prediction(
         confidence_level="high",
         features_snapshot={},
         content_hash="x" * 64,
-        published_at=datetime.now(timezone.utc),
+        published_at=datetime.now(UTC),
     )
     session.add(pred)
     session.flush()
@@ -168,7 +167,7 @@ def _insert_value_signal(
         ev=Decimal(str(ev)),
         edge=Decimal("0.05"),
         signal_level=signal_level,
-        analyzed_at=datetime.now(timezone.utc),
+        analyzed_at=datetime.now(UTC),
     )
     session.add(row)
     session.flush()
@@ -306,7 +305,7 @@ def test_scanner_dispatches_unsettled_only(
     patched_session, make_match, utc, monkeypatch, _silence_side_effects
 ):
     """_scan_and_dispatch fans out one settle_match task per unsettled finished match."""
-    long_ago = datetime.now(timezone.utc) - timedelta(hours=24)
+    long_ago = datetime.now(UTC) - timedelta(hours=24)
     unsettled = make_match(long_ago, home_score=2, away_score=1, status="finished")
     _insert_prediction(patched_session, unsettled.id)
 
@@ -317,7 +316,7 @@ def test_scanner_dispatches_unsettled_only(
         prediction_id=pred.id, match_id=already_done.id,
         actual_home_score=1, actual_away_score=0,
         result_1x2_hit=True, result_score_hit=False,
-        settled_at=datetime.now(timezone.utc),
+        settled_at=datetime.now(UTC),
     ))
     patched_session.flush()
 
@@ -333,7 +332,7 @@ def test_scanner_dispatches_unsettled_only(
 
 def test_scanner_respects_cutoff_delay(patched_session, make_match, utc, _silence_side_effects):
     """A match finishing only a few minutes ago is too fresh to settle — skip it."""
-    just_now = datetime.now(timezone.utc) - timedelta(minutes=5)
+    just_now = datetime.now(UTC) - timedelta(minutes=5)
     fresh = make_match(just_now, home_score=2, away_score=1, status="finished")
     _insert_prediction(patched_session, fresh.id)
 

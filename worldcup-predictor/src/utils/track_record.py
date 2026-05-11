@@ -9,7 +9,7 @@ serve directly from the cache row.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 import structlog
@@ -35,8 +35,8 @@ PERIODS: tuple[str, ...] = ("all_time", "last_30d", "last_7d", "worldcup")
 
 # Phase-3 placeholder: real WC2026 dates land closer to the tournament.
 # Update via env / config when fixtures finalise.
-WORLDCUP_2026_START: datetime = datetime(2026, 6, 11, tzinfo=timezone.utc)
-WORLDCUP_2026_END: datetime = datetime(2026, 7, 19, 23, 59, 59, tzinfo=timezone.utc)
+WORLDCUP_2026_START: datetime = datetime(2026, 6, 11, tzinfo=UTC)
+WORLDCUP_2026_END: datetime = datetime(2026, 7, 19, 23, 59, 59, tzinfo=UTC)
 
 
 @dataclass(frozen=True)
@@ -60,7 +60,7 @@ def recompute_all(session: Session, *, now: datetime | None = None) -> int:
 
     Returns the count of rows touched (always 24 — one per cell).
     """
-    when = now or datetime.now(timezone.utc)
+    when = now or datetime.now(UTC)
     rows = _load_settled_rows(session)
 
     written = 0
@@ -169,7 +169,7 @@ def _filter_for(
 def _ensure_utc(value: datetime) -> datetime:
     """Treat naive datetimes as UTC (the project's storage convention)."""
     if value.tzinfo is None:
-        return value.replace(tzinfo=timezone.utc)
+        return value.replace(tzinfo=UTC)
     return value
 
 

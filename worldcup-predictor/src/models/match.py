@@ -7,7 +7,7 @@ pipelines; downstream models should filter on it for training quality.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     BigInteger,
@@ -32,7 +32,7 @@ class Match(Base, TimestampMixin):
     __tablename__ = "matches"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    api_football_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    api_football_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     season_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("seasons.id", ondelete="RESTRICT"), nullable=False
@@ -45,27 +45,27 @@ class Match(Base, TimestampMixin):
     )
 
     match_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    venue: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    round: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    venue: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    round: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="scheduled", server_default="scheduled"
     )
 
-    home_score: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    away_score: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    home_score_ht: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    away_score_ht: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
+    home_score: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    away_score: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    home_score_ht: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    away_score_ht: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
 
-    referee: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    attendance: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    referee: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    attendance: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # 0..100 — completeness score across required attributes (stats, lineups, odds, …).
     data_completeness: Mapped[int] = mapped_column(
         SmallInteger, nullable=False, default=0, server_default="0"
     )
 
-    season: Mapped["Season"] = relationship(back_populates="matches")
+    season: Mapped[Season] = relationship(back_populates="matches")
 
     __table_args__ = (
         CheckConstraint(

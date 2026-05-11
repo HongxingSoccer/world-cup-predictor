@@ -14,7 +14,7 @@ All tasks return a small dict so Flower / the audit log can see what happened.
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import structlog
@@ -140,7 +140,7 @@ def dispatch_dynamic_jobs() -> dict[str, Any]:
     `match.sync_live`) — they're enqueued via `app.send_task` so this scanner
     doesn't import them at module-load time.
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     counts = {
         "live": 0,
         "post_match_stats": 0,

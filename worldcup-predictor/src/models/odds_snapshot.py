@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
 
 from sqlalchemy import (
     BigInteger,
@@ -38,18 +37,18 @@ class OddsSnapshot(Base):
     # '1x2' | 'over_under' | 'btts' | 'asian_handicap' | 'correct_score' ...
     market_type: Mapped[str] = mapped_column(String(30), nullable=False)
     # e.g. line for OU/AH ("2.5", "-1.5") or correct-score "2-1"; NULL for 1x2/btts
-    market_value: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    market_value: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     # 1x2 outcomes
-    outcome_home: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 3), nullable=True)
-    outcome_draw: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 3), nullable=True)
-    outcome_away: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 3), nullable=True)
+    outcome_home: Mapped[Decimal | None] = mapped_column(Numeric(6, 3), nullable=True)
+    outcome_draw: Mapped[Decimal | None] = mapped_column(Numeric(6, 3), nullable=True)
+    outcome_away: Mapped[Decimal | None] = mapped_column(Numeric(6, 3), nullable=True)
     # Over/Under
-    outcome_over: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 3), nullable=True)
-    outcome_under: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 3), nullable=True)
+    outcome_over: Mapped[Decimal | None] = mapped_column(Numeric(6, 3), nullable=True)
+    outcome_under: Mapped[Decimal | None] = mapped_column(Numeric(6, 3), nullable=True)
     # BTTS / Yes-No markets
-    outcome_yes: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 3), nullable=True)
-    outcome_no: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 3), nullable=True)
+    outcome_yes: Mapped[Decimal | None] = mapped_column(Numeric(6, 3), nullable=True)
+    outcome_no: Mapped[Decimal | None] = mapped_column(Numeric(6, 3), nullable=True)
 
     snapshot_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     data_source: Mapped[str] = mapped_column(String(30), nullable=False)

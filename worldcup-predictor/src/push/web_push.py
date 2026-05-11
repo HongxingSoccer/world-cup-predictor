@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-from typing import Optional
 
 import structlog
 
@@ -72,7 +71,7 @@ def _do_webpush(
 ) -> DeliveryResult:
     """Thin wrapper around :func:`pywebpush.webpush` with library-level errors trapped."""
     try:
-        from pywebpush import WebPushException, webpush  # noqa: WPS433
+        from pywebpush import WebPushException, webpush
     except ImportError:
         return DeliveryResult(channel, False, "pywebpush not installed")
     try:
@@ -83,7 +82,7 @@ def _do_webpush(
             vapid_claims={"sub": f"mailto:{claims_email}"},
             ttl=ttl,
         )
-        message_id: Optional[str] = response.headers.get("Location") if hasattr(response, "headers") else None
+        message_id: str | None = response.headers.get("Location") if hasattr(response, "headers") else None
         return DeliveryResult(channel, True, provider_message_id=message_id)
     except WebPushException as exc:  # type: ignore[misc]
         return DeliveryResult(channel, False, str(exc))

@@ -16,7 +16,7 @@ import asyncio
 import random
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, TypeVar
 
 import httpx
@@ -117,7 +117,7 @@ class BaseDataSourceAdapter(ABC):
         """Release the underlying HTTP client. Call once when done."""
         await self._client.aclose()
 
-    async def __aenter__(self) -> "BaseDataSourceAdapter":
+    async def __aenter__(self) -> BaseDataSourceAdapter:
         return self
 
     async def __aexit__(self, *_exc: object) -> None:
@@ -278,7 +278,7 @@ class BaseDataSourceAdapter(ABC):
         if self._session_factory is None:
             return
 
-        finished = finished_at or datetime.now(timezone.utc)
+        finished = finished_at or datetime.now(UTC)
         with self._session_factory() as session:
             session.add(
                 DataSourceLog(

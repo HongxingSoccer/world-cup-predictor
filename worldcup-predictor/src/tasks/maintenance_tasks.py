@@ -8,7 +8,7 @@ the same logic.
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import structlog
@@ -41,7 +41,7 @@ LOG_RETENTION_DAYS: int = 90
 def cleanup_old_logs(self) -> dict[str, Any]:  # type: ignore[no-untyped-def]
     """Delete `data_source_logs` rows older than `LOG_RETENTION_DAYS`."""
     try:
-        cutoff = datetime.now(timezone.utc) - timedelta(days=LOG_RETENTION_DAYS)
+        cutoff = datetime.now(UTC) - timedelta(days=LOG_RETENTION_DAYS)
         with session_scope() as session:
             count = (
                 session.query(DataSourceLog)

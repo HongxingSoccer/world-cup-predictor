@@ -6,9 +6,8 @@ a stub renderer that returns canned PNG bytes — no infra required.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Any
 
 import pytest
 
@@ -18,13 +17,11 @@ from src.content.card_generator import (
     PlatformDimensions,
 )
 from src.content.storage import CardStorage
-from src.models.match import Match
 from src.models.odds_analysis import OddsAnalysis
 from src.models.prediction import Prediction
 from src.models.prediction_result import PredictionResult
 from src.models.share_card import ShareCard
 from src.models.track_record_stat import TrackRecordStat
-
 
 # A 1×1 PNG (smallest valid bytes — caller doesn't decode it).
 _TINY_PNG = bytes.fromhex(
@@ -141,7 +138,7 @@ def test_generate_red_hit_card_persists_share_card_row(
         result_1x2_hit=True,
         result_score_hit=True,
         pnl_unit=Decimal("1.10"),
-        settled_at=datetime.now(timezone.utc),
+        settled_at=datetime.now(UTC),
     )
     db_session.add(result)
     db_session.commit()
@@ -211,7 +208,7 @@ def _seed_prediction(db_session, match) -> Prediction:
         confidence_level="high",
         features_snapshot={},
         content_hash="a" * 64,
-        published_at=datetime.now(timezone.utc),
+        published_at=datetime.now(UTC),
     )
     db_session.add(prediction)
     # Add an odds-analysis row so the prediction context has a signal level.
