@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -23,21 +22,21 @@ class MatchStatsDTO(BaseModel):
     team_external_id: str
     is_home: bool
 
-    possession: Optional[Decimal] = Field(default=None, ge=0, le=100, description="Ball-possession percentage 0–100.")
-    shots: Optional[int] = Field(default=None, ge=0)
-    shots_on_target: Optional[int] = Field(default=None, ge=0)
-    xg: Optional[Decimal] = Field(default=None, ge=0, le=10)
-    xg_against: Optional[Decimal] = Field(default=None, ge=0, le=10)
-    passes: Optional[int] = Field(default=None, ge=0)
-    pass_accuracy: Optional[Decimal] = Field(default=None, ge=0, le=100)
-    corners: Optional[int] = Field(default=None, ge=0)
-    fouls: Optional[int] = Field(default=None, ge=0)
-    yellow_cards: Optional[int] = Field(default=None, ge=0)
-    red_cards: Optional[int] = Field(default=None, ge=0)
-    offsides: Optional[int] = Field(default=None, ge=0)
-    tackles: Optional[int] = Field(default=None, ge=0)
-    interceptions: Optional[int] = Field(default=None, ge=0)
-    saves: Optional[int] = Field(default=None, ge=0)
+    possession: Decimal | None = Field(default=None, ge=0, le=100, description="Ball-possession percentage 0–100.")
+    shots: int | None = Field(default=None, ge=0)
+    shots_on_target: int | None = Field(default=None, ge=0)
+    xg: Decimal | None = Field(default=None, ge=0, le=10)
+    xg_against: Decimal | None = Field(default=None, ge=0, le=10)
+    passes: int | None = Field(default=None, ge=0)
+    pass_accuracy: Decimal | None = Field(default=None, ge=0, le=100)
+    corners: int | None = Field(default=None, ge=0)
+    fouls: int | None = Field(default=None, ge=0)
+    yellow_cards: int | None = Field(default=None, ge=0)
+    red_cards: int | None = Field(default=None, ge=0)
+    offsides: int | None = Field(default=None, ge=0)
+    tackles: int | None = Field(default=None, ge=0)
+    interceptions: int | None = Field(default=None, ge=0)
+    saves: int | None = Field(default=None, ge=0)
 
     data_source: str = Field(description="Provider tag, e.g. 'api_football' / 'fbref' / 'understat'.")
 
@@ -52,10 +51,10 @@ class MatchDetailDTO(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     match: MatchDTO = Field(description="Core fixture information.")
-    home_stats: Optional[MatchStatsDTO] = Field(
+    home_stats: MatchStatsDTO | None = Field(
         default=None, description="Home-team aggregate stats; may be None for unfinished matches."
     )
-    away_stats: Optional[MatchStatsDTO] = Field(default=None, description="Away-team aggregate stats.")
+    away_stats: MatchStatsDTO | None = Field(default=None, description="Away-team aggregate stats.")
     player_stats: list[PlayerStatDTO] = Field(
         default_factory=list, description="Per-player stats for both teams in this match."
     )
@@ -81,7 +80,7 @@ class TeamStatsDTO(BaseModel):
     losses: int = Field(ge=0)
     goals_for: int = Field(ge=0)
     goals_against: int = Field(ge=0)
-    xg_for: Optional[Decimal] = Field(default=None, ge=0)
-    xg_against: Optional[Decimal] = Field(default=None, ge=0)
-    clean_sheets: Optional[int] = Field(default=None, ge=0)
+    xg_for: Decimal | None = Field(default=None, ge=0)
+    xg_against: Decimal | None = Field(default=None, ge=0)
+    clean_sheets: int | None = Field(default=None, ge=0)
     data_source: str

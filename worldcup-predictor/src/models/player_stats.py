@@ -6,9 +6,16 @@ shot-level data (FBref/Understat); otherwise NULL.
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Optional
 
-from sqlalchemy import BigInteger, ForeignKey, Index, Numeric, SmallInteger, String, UniqueConstraint
+from sqlalchemy import (
+    BigInteger,
+    ForeignKey,
+    Index,
+    Numeric,
+    SmallInteger,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -29,17 +36,17 @@ class PlayerStats(Base):
         BigInteger, ForeignKey("teams.id", ondelete="RESTRICT"), nullable=False
     )
 
-    goals: Mapped[Optional[int]] = mapped_column(SmallInteger, default=0, server_default="0")
-    assists: Mapped[Optional[int]] = mapped_column(SmallInteger, default=0, server_default="0")
-    xg: Mapped[Optional[Decimal]] = mapped_column(Numeric(4, 2), nullable=True)
-    xa: Mapped[Optional[Decimal]] = mapped_column(Numeric(4, 2), nullable=True)
-    shots: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    key_passes: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    tackles: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    interceptions: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    saves: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    yellow_cards: Mapped[Optional[int]] = mapped_column(SmallInteger, default=0, server_default="0")
-    red_cards: Mapped[Optional[int]] = mapped_column(SmallInteger, default=0, server_default="0")
+    goals: Mapped[int | None] = mapped_column(SmallInteger, default=0, server_default="0")
+    assists: Mapped[int | None] = mapped_column(SmallInteger, default=0, server_default="0")
+    xg: Mapped[Decimal | None] = mapped_column(Numeric(4, 2), nullable=True)
+    xa: Mapped[Decimal | None] = mapped_column(Numeric(4, 2), nullable=True)
+    shots: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    key_passes: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    tackles: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    interceptions: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    saves: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    yellow_cards: Mapped[int | None] = mapped_column(SmallInteger, default=0, server_default="0")
+    red_cards: Mapped[int | None] = mapped_column(SmallInteger, default=0, server_default="0")
 
     data_source: Mapped[str] = mapped_column(String(30), nullable=False)
 

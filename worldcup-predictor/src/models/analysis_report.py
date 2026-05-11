@@ -9,7 +9,6 @@ Schema follows ``docs/design/06_Phase4_ModelEvolution.md §4.5``:
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import (
     BigInteger,
@@ -31,17 +30,17 @@ class AnalysisReport(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     match_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    prediction_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    prediction_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     content_md: Mapped[str] = mapped_column(Text, nullable=False)
-    content_html: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    content_html: Mapped[str | None] = mapped_column(Text, nullable=True)
     summary: Mapped[str] = mapped_column(String(500), nullable=False)
     model_used: Mapped[str] = mapped_column(String(30), nullable=False)
-    prompt_tokens: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    completion_tokens: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    prompt_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    completion_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="draft")
     generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    published_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

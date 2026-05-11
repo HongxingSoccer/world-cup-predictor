@@ -1,7 +1,7 @@
 """Integration tests for the Phase 5 admin page endpoints."""
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
@@ -44,7 +44,7 @@ def _h() -> dict[str, str]:
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _seed_user(db_session, email: str = "u@example.com") -> User:

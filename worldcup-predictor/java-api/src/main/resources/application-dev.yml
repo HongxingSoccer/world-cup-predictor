@@ -19,3 +19,9 @@ wcp:
     # through nginx are accepted in dev. The other entries cover direct
     # hits on the dev frontend / Python API / Java port for tooling.
     allowed-origins: "http://localhost,http://localhost:3000,http://localhost:8000,http://localhost:8080"
+
+  payments:
+    # Dev runs use the existing stub Alipay / WeChat path so the test
+    # suite can exercise the control flow end-to-end. The prod profile
+    # leaves this `false` (the application.yml default).
+    enable-cn-channels: true

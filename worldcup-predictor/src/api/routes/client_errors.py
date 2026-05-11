@@ -10,8 +10,6 @@ Stores nothing yet — just emits a structlog event tagged
 """
 from __future__ import annotations
 
-from typing import Optional
-
 import structlog
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, ConfigDict, Field
@@ -23,9 +21,9 @@ router = APIRouter(prefix="/api/v1", tags=["client-errors"])
 class ClientErrorIn(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    digest: Optional[str] = Field(default=None, max_length=128)
-    pathname: Optional[str] = Field(default=None, max_length=500)
-    message: Optional[str] = Field(default=None, max_length=2000)
+    digest: str | None = Field(default=None, max_length=128)
+    pathname: str | None = Field(default=None, max_length=500)
+    message: str | None = Field(default=None, max_length=2000)
 
 
 @router.post("/client-errors")

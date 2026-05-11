@@ -18,18 +18,23 @@ caps + immediate-dedup + quiet-hours rules from §5.4.
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from datetime import datetime, time, timezone
-from enum import Enum
-from typing import Iterable, Optional, Protocol
+from datetime import UTC, datetime, time
+from enum import StrEnum
+from typing import Protocol
 
 import structlog
 
 logger = structlog.get_logger(__name__)
 
 
-class NotificationKind(str, Enum):
-    """High-level notification trigger (matches design §5.1 verbatim)."""
+class NotificationKind(StrEnum):
+    """High-level notification trigger (matches design §5.1 verbatim).
+
+    `StrEnum` (Python 3.11+) gives us automatic `str` mixin semantics so
+    `NotificationKind.HIGH_EV == "high_ev"` keeps working.
+    """
 
     HIGH_EV = "high_ev"
     REPORT = "report"
@@ -52,8 +57,8 @@ class NotificationPayload:
     kind: NotificationKind
     title: str
     body: str
-    deep_link: Optional[str] = None
-    target_id: Optional[str] = None  # used for dedup (e.g. "match:42")
+    deep_link: str | None = None
+    target_id: str | None = None  # used for dedup (e.g. "match:42")
     data: dict = field(default_factory=dict)
 
 
@@ -63,9 +68,9 @@ class DeliveryResult:
 
     channel: str
     success: bool
-    error: Optional[str] = None
-    provider_message_id: Optional[str] = None
-    skipped_reason: Optional[str] = None  # populated when policy blocks delivery
+    error: str | None = None
+    provider_message_id: str | None = None
+    skipped_reason: str | None = None  # populated when policy blocks delivery
 
 
 class Notifier(Protocol):
@@ -92,8 +97,8 @@ class RateLimitPolicy:
     per_kind_cap: dict[NotificationKind, int] = field(
         default_factory=lambda: dict(PER_KIND_DAILY_CAP)
     )
-    quiet_start: Optional[time] = None  # local time (24h) inclusive
-    quiet_end: Optional[time] = None  # exclusive
+    quiet_start: time | None = None  # local time (24h) inclusive
+    quiet_end: time | None = None  # exclusive
     _per_user_day: dict[tuple[int, str], int] = field(default_factory=lambda: defaultdict(int))
     _per_user_kind_day: dict[tuple[int, str, str], int] = field(default_factory=lambda: defaultdict(int))
     _seen_targets: set[tuple[int, str, str]] = field(default_factory=set)
@@ -103,10 +108,10 @@ class RateLimitPolicy:
         *,
         user_id: int,
         payload: NotificationPayload,
-        now: Optional[datetime] = None,
-    ) -> Optional[str]:
+        now: datetime | None = None,
+    ) -> str | None:
         """Return ``None`` if delivery is allowed, else a reason string."""
-        now = now or datetime.now(timezone.utc)
+        now = now or datetime.now(UTC)
         day_key = now.date().isoformat()
 
         if payload.target_id is not None:
@@ -132,10 +137,10 @@ class RateLimitPolicy:
         *,
         user_id: int,
         payload: NotificationPayload,
-        now: Optional[datetime] = None,
+        now: datetime | None = None,
     ) -> None:
         """Increment counters after a *successful* dispatch."""
-        now = now or datetime.now(timezone.utc)
+        now = now or datetime.now(UTC)
         day_key = now.date().isoformat()
         self._per_user_day[(user_id, day_key)] += 1
         self._per_user_kind_day[(user_id, payload.kind.value, day_key)] += 1
@@ -164,7 +169,7 @@ class PushDispatcher:
         self,
         notifiers: Iterable[Notifier],
         *,
-        rate_limit: Optional[RateLimitPolicy] = None,
+        rate_limit: RateLimitPolicy | None = None,
     ) -> None:
         notifiers = list(notifiers)
         if not notifiers:
@@ -183,7 +188,7 @@ class PushDispatcher:
         user_id: int,
         recipients_by_channel: dict[str, str],
         payload: NotificationPayload,
-        enabled_channels: Optional[set[str]] = None,
+        enabled_channels: set[str] | None = None,
     ) -> list[DeliveryResult]:
         """Send ``payload`` to each ``(channel, recipient)`` pair allowed."""
         if self._rate_limit is not None:
@@ -228,7 +233,7 @@ def _safe_send(
     """Wrap ``notifier.send`` so a single channel failure doesn't poison the batch."""
     try:
         return notifier.send(recipient=recipient, payload=payload)
-    except Exception as exc:  # noqa: BLE001 — channel boundary, log + continue
+    except Exception as exc:
         logger.warning(
             "notifier_failed",
             channel=notifier.channel,

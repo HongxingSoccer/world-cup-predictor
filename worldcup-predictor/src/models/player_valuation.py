@@ -6,7 +6,6 @@ strength and squad-quality models.
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Optional
 
 from sqlalchemy import (
     BigInteger,
@@ -32,7 +31,7 @@ class PlayerValuation(Base):
     player_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("players.id", ondelete="CASCADE"), nullable=False
     )
-    team_id: Mapped[Optional[int]] = mapped_column(
+    team_id: Mapped[int | None] = mapped_column(
         BigInteger, ForeignKey("teams.id", ondelete="SET NULL"), nullable=True
     )
 

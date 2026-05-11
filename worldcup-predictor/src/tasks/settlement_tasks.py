@@ -20,7 +20,7 @@ filters them out cheaply with a NOT-EXISTS subquery.
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -94,7 +94,7 @@ def scan_finished_matches(self) -> dict[str, Any]:  # type: ignore[no-untyped-de
 
 def _scan_and_dispatch() -> dict[str, Any]:
     """Returns {scanned: int, dispatched: int} for Flower / audit logs."""
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=MATCH_SETTLE_DELAY_HOURS)
+    cutoff = datetime.now(UTC) - timedelta(hours=MATCH_SETTLE_DELAY_HOURS)
     dispatched = 0
     with session_scope() as session:
         candidates = list(
@@ -343,7 +343,7 @@ def _emit_red_hit_event(
         confidence_score=int(prediction.confidence_score),
         confidence_level=prediction.confidence_level,  # type: ignore[arg-type]
         pnl_unit=float(pnl_unit),
-        settled_at=datetime.now(timezone.utc),
+        settled_at=datetime.now(UTC),
     )
     try:
         producer.publish(

@@ -1,7 +1,7 @@
 """WeChat Mini Program template-message notifier."""
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 import structlog
@@ -33,7 +33,7 @@ class WeChatNotifier:
         appid: str,
         secret: str,
         template_id: str,
-        http_client: Optional[httpx.Client] = None,
+        http_client: httpx.Client | None = None,
     ) -> None:
         if not appid or not secret or not template_id:
             raise ValueError("appid / secret / template_id are required")
@@ -41,7 +41,7 @@ class WeChatNotifier:
         self._secret = secret
         self._template_id = template_id
         self._client = http_client or httpx.Client(timeout=10.0)
-        self._cached_token: Optional[str] = None
+        self._cached_token: str | None = None
 
     def send(
         self, *, recipient: str, payload: NotificationPayload
@@ -56,7 +56,7 @@ class WeChatNotifier:
         )
         return _post_subscribe(self._client, token, body, self.channel)
 
-    def _access_token(self) -> Optional[str]:
+    def _access_token(self) -> str | None:
         if self._cached_token:
             return self._cached_token
         try:

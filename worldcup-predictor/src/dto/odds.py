@@ -7,8 +7,7 @@ Generic across market types: `outcomes` is a flat dict keyed by outcome name
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -29,7 +28,7 @@ class OddsDTO(BaseModel):
         min_length=1,
         description="Market identifier: '1x2' / 'over_under' / 'btts' / 'asian_handicap' / 'correct_score'.",
     )
-    market_value: Optional[str] = Field(
+    market_value: str | None = Field(
         default=None,
         description="Market line/handicap/score, e.g. '2.5' for OU, '-1.5' for AH; None for 1x2/btts.",
     )
@@ -39,15 +38,15 @@ class OddsDTO(BaseModel):
     snapshot_at: datetime = Field(description="When the bookmaker quoted these odds (UTC).")
 
     @model_validator(mode="after")
-    def _coerce_snapshot_at_to_utc(self) -> "OddsDTO":
+    def _coerce_snapshot_at_to_utc(self) -> OddsDTO:
         if self.snapshot_at.tzinfo is None:
-            object.__setattr__(self, "snapshot_at", self.snapshot_at.replace(tzinfo=timezone.utc))
+            object.__setattr__(self, "snapshot_at", self.snapshot_at.replace(tzinfo=UTC))
         else:
-            object.__setattr__(self, "snapshot_at", self.snapshot_at.astimezone(timezone.utc))
+            object.__setattr__(self, "snapshot_at", self.snapshot_at.astimezone(UTC))
         return self
 
     @model_validator(mode="after")
-    def _check_outcomes(self) -> "OddsDTO":
+    def _check_outcomes(self) -> OddsDTO:
         if not self.outcomes:
             raise ValueError("outcomes must contain at least one outcome")
 

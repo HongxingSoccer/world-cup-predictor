@@ -67,7 +67,7 @@ class EnsembleModel(BasePredictionModel):
         """Train each sub-model independently on the same DataFrame."""
         for model in self._models:
             model.train(features_df)
-        self.params["trained_on_n_matches"] = int(len(features_df))
+        self.params["trained_on_n_matches"] = len(features_df)
         logger.info("ensemble_trained", **self.params)
 
     def predict(self, features: dict[str, Any]) -> PredictionResult:

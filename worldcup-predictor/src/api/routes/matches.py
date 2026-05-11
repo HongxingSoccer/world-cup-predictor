@@ -15,7 +15,7 @@ Two companion routes live in this file:
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -42,7 +42,7 @@ class TeamFormRow(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     label: str
-    label_key: Optional[str] = None  # i18n key — frontend translates when set
+    label_key: str | None = None  # i18n key — frontend translates when set
     home: str
     away: str
 
@@ -55,7 +55,7 @@ class H2HSummary(BaseModel):
     draws: int
     away_wins: int
     avg_goals: float
-    last_match_date: Optional[str] = None
+    last_match_date: str | None = None
 
 
 class MatchDetailResponse(BaseModel):
@@ -67,29 +67,29 @@ class MatchDetailResponse(BaseModel):
     match_date: datetime
     home_team: str
     away_team: str
-    home_team_logo: Optional[str] = None
-    away_team_logo: Optional[str] = None
-    home_team_name_zh: Optional[str] = None
-    away_team_name_zh: Optional[str] = None
-    competition: Optional[str]
-    venue: Optional[str]
-    round: Optional[str]
+    home_team_logo: str | None = None
+    away_team_logo: str | None = None
+    home_team_name_zh: str | None = None
+    away_team_name_zh: str | None = None
+    competition: str | None
+    venue: str | None
+    round: str | None
     status: str
-    home_score: Optional[int]
-    away_score: Optional[int]
+    home_score: int | None
+    away_score: int | None
 
     # Latest active-model prediction (None when no row exists yet).
-    prob_home_win: Optional[float] = None
-    prob_draw: Optional[float] = None
-    prob_away_win: Optional[float] = None
-    confidence_score: Optional[int] = None
-    confidence_level: Optional[str] = None
-    has_value_signal: Optional[bool] = None
-    top_signal_level: Optional[int] = None
-    score_matrix: Optional[list[list[float]]] = None
-    over_under_probs: Optional[dict[str, dict[str, float]]] = None
-    btts_prob: Optional[float] = None
-    odds_analysis: Optional[list[dict[str, Any]]] = None
+    prob_home_win: float | None = None
+    prob_draw: float | None = None
+    prob_away_win: float | None = None
+    confidence_score: int | None = None
+    confidence_level: str | None = None
+    has_value_signal: bool | None = None
+    top_signal_level: int | None = None
+    score_matrix: list[list[float]] | None = None
+    over_under_probs: dict[str, dict[str, float]] | None = None
+    btts_prob: float | None = None
+    odds_analysis: list[dict[str, Any]] | None = None
 
     team_stats: list[TeamFormRow] = Field(default_factory=list)
     h2h: H2HSummary
@@ -159,13 +159,13 @@ def match_detail(
 # --- Internal helpers ------------------------------------------------------
 
 
-def _team_label(team: Optional[Team]) -> str:
+def _team_label(team: Team | None) -> str:
     if team is None:
         return "?"
     return team.name_zh or team.name
 
 
-def _latest_prediction(session: Session, match_id: int) -> Optional[Prediction]:
+def _latest_prediction(session: Session, match_id: int) -> Prediction | None:
     stmt = (
         select(Prediction)
         .where(
@@ -332,18 +332,18 @@ class MatchSummary(BaseModel):
     match_date: datetime
     home_team: str
     away_team: str
-    home_team_logo: Optional[str] = None
-    away_team_logo: Optional[str] = None
-    competition: Optional[str] = None
+    home_team_logo: str | None = None
+    away_team_logo: str | None = None
+    competition: str | None = None
     status: str
-    round: Optional[str] = None
-    venue: Optional[str] = None
-    home_score: Optional[int] = None
-    away_score: Optional[int] = None
-    prob_home_win: Optional[float] = None
-    prob_draw: Optional[float] = None
-    prob_away_win: Optional[float] = None
-    confidence_score: Optional[int] = None
+    round: str | None = None
+    venue: str | None = None
+    home_score: int | None = None
+    away_score: int | None = None
+    prob_home_win: float | None = None
+    prob_draw: float | None = None
+    prob_away_win: float | None = None
+    confidence_score: int | None = None
 
 
 @router.get("", response_model=list[MatchSummary])
@@ -410,8 +410,8 @@ def _parse_id_list(raw: str) -> list[int]:
 
 def _summaries_for(session: Session, match_ids: list[int]) -> list[MatchSummary]:
     """Build lightweight MatchSummary rows preserving caller-supplied id order."""
-    HomeTeam = Team.__table__.alias("home_team")  # noqa: N806
-    AwayTeam = Team.__table__.alias("away_team")  # noqa: N806
+    HomeTeam = Team.__table__.alias("home_team")
+    AwayTeam = Team.__table__.alias("away_team")
 
     stmt = (
         select(

@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import json
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional, Protocol
+from typing import Any, Protocol
 
 import structlog
 
@@ -20,7 +21,7 @@ logger = structlog.get_logger(__name__)
 class CacheBackend(Protocol):
     """Subset of ``redis.Redis`` we depend on (works with both sync clients)."""
 
-    def get(self, key: str) -> Optional[bytes]: ...
+    def get(self, key: str) -> bytes | None: ...
     def setex(self, key: str, ttl_seconds: int, value: bytes) -> Any: ...
     def delete(self, *keys: str) -> int: ...
 
@@ -32,7 +33,7 @@ class InMemoryCacheBackend:
     _store: dict[str, tuple[float, bytes]] = field(default_factory=dict)
     clock: Callable[[], float] = time.monotonic
 
-    def get(self, key: str) -> Optional[bytes]:
+    def get(self, key: str) -> bytes | None:
         item = self._store.get(key)
         if item is None:
             return None
@@ -59,7 +60,7 @@ class RedisCache:
         self._backend = backend
         self._ns = namespace
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         raw = self._backend.get(self._ns + key)
         if raw is None:
             return None

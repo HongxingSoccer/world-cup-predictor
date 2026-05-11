@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -29,7 +29,7 @@ class TeamBrief(BaseModel):
 
     id: int
     name: str
-    name_zh: Optional[str] = None
+    name_zh: str | None = None
 
 
 class PredictionBody(BaseModel):
@@ -45,7 +45,7 @@ class PredictionBody(BaseModel):
     btts_prob: float
     over_under_probs: dict[str, dict[str, float]]
     top_scores: list[dict[str, Any]]
-    score_matrix: Optional[list[list[float]]] = None
+    score_matrix: list[list[float]] | None = None
 
 
 class PredictResponse(BaseModel):
@@ -63,7 +63,7 @@ class PredictResponse(BaseModel):
     confidence_score: int = Field(ge=0, le=100)
     confidence_level: str
     features_used: dict[str, Any]
-    prediction_id: Optional[int] = Field(
+    prediction_id: int | None = Field(
         default=None, description="Set when publish=True (FK to `predictions`)."
     )
-    content_hash: Optional[str] = None
+    content_hash: str | None = None

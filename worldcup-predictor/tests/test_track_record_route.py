@@ -7,7 +7,7 @@ possible if the API returns 200 + zero defaults instead of 404.
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 import pytest
@@ -102,7 +102,7 @@ def test_timeseries_accumulates_pnl_per_day(api_client, db_session, make_match, 
     m2 = make_match(utc(2026, 6, 13), home_score=1, away_score=1)
     db_session.flush()
 
-    base = datetime.now(timezone.utc) - timedelta(days=2)
+    base = datetime.now(UTC) - timedelta(days=2)
     db_session.add_all([
         PredictionResult(
             prediction_id=1,
@@ -200,7 +200,7 @@ def test_history_returns_settled_predictions_with_team_names(
             result_1x2_hit=True,
             result_score_hit=False,
             pnl_unit=Decimal("0.9000"),
-            settled_at=datetime.now(timezone.utc) - timedelta(hours=1),
+            settled_at=datetime.now(UTC) - timedelta(hours=1),
         )
     )
     db_session.flush()

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -16,7 +16,7 @@ class PredictionTodayItem(BaseModel):
     match_date: datetime
     home_team: str
     away_team: str
-    competition: Optional[str] = None
+    competition: str | None = None
     prob_home_win: float
     prob_draw: float
     prob_away_win: float
@@ -63,7 +63,7 @@ class PredictionDetailResponse(BaseModel):
     prob_away_win: float
     lambda_home: float
     lambda_away: float
-    btts_prob: Optional[float]
+    btts_prob: float | None
     score_matrix: list[list[float]]
     top_scores: list[dict[str, Any]]
     over_under_probs: dict[str, dict[str, float]]

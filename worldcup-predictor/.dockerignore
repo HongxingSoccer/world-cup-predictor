@@ -1,0 +1,66 @@
+# Common build context exclusions for the three Python Dockerfiles that
+# share the project root (Dockerfile + Dockerfile.card-worker). The
+# frontend and java-api have their own contexts + their own ignore files.
+#
+# Anything listed here never enters `docker build`, so the resulting
+# image stays small and dev-only artefacts (mlruns/, tests, .git) can't
+# leak into a production layer.
+
+# --- Local IDE / OS noise ---
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+*.iml
+
+# --- VCS + virtualenvs + caches ---
+.git/
+.gitignore
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+__pycache__/
+*.pyc
+*.pyo
+celerybeat-schedule
+
+# --- Other services' build contexts ---
+frontend/
+java-api/
+
+# --- ML / data artefacts ---
+mlruns/
+data/
+reports/
+
+# --- Test code (the image runs the prod entrypoint; tests run in CI) ---
+tests/
+
+# --- Documentation + recon output ---
+docs/
+deploy-recon/
+
+# --- Docs in the root (keep README.md) ---
+*.md
+!README.md
+
+# --- Deploy infra (k8s reads secrets/keys at runtime, not from the image) ---
+# Keep deploy/jwt-keys/ available for local dev convenience — once helm
+# takes over, this whole directory should be excluded.
+deploy/charts/
+deploy/terraform/
+deploy/monitoring/
+deploy/nginx/
+deploy/postgres-init/
+deploy/scripts/
+
+# --- This recon output ---
+deploy-recon/
+
+# --- Env files (compose injects them at runtime via env_file:) ---
+.env
+.env.*
+!.env.example

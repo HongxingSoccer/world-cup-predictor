@@ -7,7 +7,6 @@ so brand-new entries return a neutral value rather than NaN.
 from __future__ import annotations
 
 from datetime import datetime
-from decimal import Decimal
 
 from sqlalchemy import desc, select
 
@@ -47,4 +46,6 @@ class EloFeatures(BaseFeatureCalculator):
         result = self._session.execute(stmt).scalar()
         if result is None:
             return INITIAL_RATING
-        return float(result) if isinstance(result, Decimal) else float(result)
+        # Both branches went through `float(...)` previously — the
+        # `isinstance(Decimal)` check was vestigial.
+        return float(result)

@@ -14,7 +14,7 @@ Adding a new topic:
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -28,12 +28,12 @@ class MatchCreatedPayload(BaseModel):
     model_config = _payload_config
 
     match_id: int = Field(description="Internal `matches.id` after insert.")
-    external_id: Optional[str] = Field(default=None, description="Source-native fixture id.")
+    external_id: str | None = Field(default=None, description="Source-native fixture id.")
     season_id: int
     home_team_id: int
     away_team_id: int
     match_date: datetime
-    competition_name: Optional[str] = None
+    competition_name: str | None = None
 
 
 class MatchUpdatedPayload(BaseModel):
@@ -42,10 +42,10 @@ class MatchUpdatedPayload(BaseModel):
     model_config = _payload_config
 
     match_id: int
-    external_id: Optional[str] = None
+    external_id: str | None = None
     status: str
-    home_score: Optional[int] = None
-    away_score: Optional[int] = None
+    home_score: int | None = None
+    away_score: int | None = None
 
 
 class MatchFinishedPayload(BaseModel):
@@ -54,11 +54,11 @@ class MatchFinishedPayload(BaseModel):
     model_config = _payload_config
 
     match_id: int
-    external_id: Optional[str] = None
+    external_id: str | None = None
     home_team_id: int
     away_team_id: int
-    home_score: Optional[int] = None
-    away_score: Optional[int] = None
+    home_score: int | None = None
+    away_score: int | None = None
     finished_at: datetime
 
 
@@ -70,7 +70,7 @@ class OddsUpdatedPayload(BaseModel):
     match_id: int
     bookmaker: str
     market_type: str
-    market_value: Optional[str] = None
+    market_value: str | None = None
     snapshot_at: datetime
 
 

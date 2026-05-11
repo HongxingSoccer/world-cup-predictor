@@ -17,7 +17,7 @@ from __future__ import annotations
 import json
 import time
 from dataclasses import dataclass, field
-from typing import Any, Optional, Protocol
+from typing import Any, Protocol
 
 import structlog
 
@@ -42,7 +42,7 @@ DEFAULT_FLAGS: dict[str, bool] = {
 class FlagBackend(Protocol):
     """Minimal subset of redis-py we need; lets us inject a fake in tests."""
 
-    def get(self, key: str) -> Optional[bytes]: ...
+    def get(self, key: str) -> bytes | None: ...
     def set(self, key: str, value: bytes) -> Any: ...
     def incr(self, key: str) -> int: ...
 
@@ -53,7 +53,7 @@ class InMemoryFlagBackend:
     def __init__(self) -> None:
         self._store: dict[str, bytes] = {}
 
-    def get(self, key: str) -> Optional[bytes]:
+    def get(self, key: str) -> bytes | None:
         return self._store.get(key)
 
     def set(self, key: str, value: bytes) -> None:
@@ -90,9 +90,9 @@ class FeatureFlagsService:
         self,
         backend: FlagBackend,
         *,
-        defaults: Optional[dict[str, bool]] = None,
+        defaults: dict[str, bool] | None = None,
         refresh_seconds: float = 30.0,
-        clock: Optional[Any] = None,
+        clock: Any | None = None,
     ) -> None:
         self._backend = backend
         self._defaults = dict(defaults or DEFAULT_FLAGS)

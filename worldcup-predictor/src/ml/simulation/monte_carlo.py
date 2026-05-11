@@ -18,7 +18,6 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Optional
 
 import numpy as np
 
@@ -86,7 +85,7 @@ def simulate_group_stage(
     *,
     trials: int = DEFAULT_TRIALS,
     qualifiers_per_group: int = 2,
-    seed: Optional[int] = None,
+    seed: int | None = None,
 ) -> list[TeamStanding]:
     """Run ``trials`` Monte Carlo plays of one group; return team standings."""
     if not fixtures:
@@ -121,7 +120,7 @@ def simulate_knockout_bracket(
     bracket: list[KnockoutMatch],
     *,
     trials: int = DEFAULT_TRIALS,
-    seed: Optional[int] = None,
+    seed: int | None = None,
 ) -> dict[str, float]:
     """Resolve a single-round knockout list ``trials`` times.
 

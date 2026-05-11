@@ -11,7 +11,6 @@ payment handler bumps `subscribe_count` on first paid order.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import (
     BigInteger,
@@ -36,18 +35,18 @@ class ShareLink(Base):
 
     short_code: Mapped[str] = mapped_column(String(10), nullable=False)
 
-    user_id: Mapped[Optional[int]] = mapped_column(
+    user_id: Mapped[int | None] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     # 'prediction' | 'match' | 'track_record'
     target_type: Mapped[str] = mapped_column(String(20), nullable=False)
-    target_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    target_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     target_url: Mapped[str] = mapped_column(Text, nullable=False)
 
     # Standard UTM fields piped through to analytics.
-    utm_source: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    utm_medium: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    utm_campaign: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    utm_source: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    utm_medium: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    utm_campaign: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     click_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default="0"

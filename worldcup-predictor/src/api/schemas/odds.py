@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -15,7 +14,7 @@ class OddsAnalysisRequest(BaseModel):
         default_factory=lambda: ["1x2", "over_under_2.5"],
         description="Markets to analyze. Phase-2 supports '1x2', 'over_under_2.5', 'btts'.",
     )
-    bookmakers: Optional[list[str]] = Field(
+    bookmakers: list[str] | None = Field(
         default=None,
         description="Optional bookmaker allow-list (case-sensitive keys).",
     )
@@ -27,7 +26,7 @@ class ValueSignal(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     market_type: str
-    market_value: Optional[str] = None
+    market_value: str | None = None
     outcome: str
     model_prob: float
     best_odds: float
@@ -44,7 +43,7 @@ class OddsMarketSummary(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     market_type: str
-    market_value: Optional[str] = None
+    market_value: str | None = None
     outcomes: list[ValueSignal]
 
 

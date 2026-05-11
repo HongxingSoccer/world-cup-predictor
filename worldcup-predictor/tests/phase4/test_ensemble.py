@@ -25,7 +25,7 @@ class _FixedModel(BasePredictionModel):
         return self._version
 
     def train(self, features_df: pd.DataFrame) -> None:
-        self.params = {"trained_on_n_matches": int(len(features_df))}
+        self.params = {"trained_on_n_matches": len(features_df)}
 
     def predict(self, features: dict[str, Any]) -> PredictionResult:
         n = 10

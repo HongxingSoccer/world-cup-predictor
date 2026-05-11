@@ -17,8 +17,8 @@ env var pattern (see `tests/test_predictions_immutability_pg.py`).
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Iterator
+from collections.abc import Iterator
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import BigInteger, create_engine
@@ -34,7 +34,6 @@ from src.models.match import Match
 from src.models.season import Season
 from src.models.team import Team
 from src.utils import rate_limiter as rl
-
 
 # --- SQLite type compatibility shims (test-only) ---
 
@@ -181,6 +180,6 @@ def utc():  # type: ignore[no-untyped-def]
     """Tiny shim so tests don't repeat `tzinfo=timezone.utc`."""
 
     def _utc(year: int, month: int, day: int, hour: int = 12) -> datetime:
-        return datetime(year, month, day, hour, tzinfo=timezone.utc)
+        return datetime(year, month, day, hour, tzinfo=UTC)
 
     return _utc

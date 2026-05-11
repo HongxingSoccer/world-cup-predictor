@@ -8,7 +8,6 @@ from src.push.base import (
     NotificationKind,
     NotificationPayload,
     PushDispatcher,
-    RateLimitPolicy,
 )
 
 

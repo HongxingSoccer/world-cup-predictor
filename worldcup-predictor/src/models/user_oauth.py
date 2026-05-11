@@ -11,7 +11,6 @@ needed for refresh-token exchange.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import (
     BigInteger,
@@ -41,9 +40,9 @@ class UserOAuth(Base):
     provider_user_id: Mapped[str] = mapped_column(String(200), nullable=False)
 
     # Encrypted at the application layer (Phase 3.5: integrate KMS).
-    access_token: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    refresh_token: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    token_expires_at: Mapped[Optional[datetime]] = mapped_column(
+    access_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    token_expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
 

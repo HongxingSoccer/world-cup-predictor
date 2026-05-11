@@ -47,6 +47,7 @@ class StripePaymentTest {
     @Mock private UserRepository userRepository;
     @Mock private SubscriptionService subscriptionService;
     @Mock private StripeClient stripeClient;
+    @Mock private com.wcp.config.WcpProperties wcpProperties;
 
     @InjectMocks private PaymentService paymentService;
 

@@ -18,10 +18,17 @@ first message.
 """
 from __future__ import annotations
 
-from src.config.celery_config import app
-
 # Side-effect import — registers every @app.task in src/tasks/*.
 # Marked noqa because flake8 / ruff would otherwise flag the unused import.
-import src.tasks  # noqa: F401, E402
+import src.tasks  # noqa: F401
+from src.config.celery_config import app
+
+# Optional: when the worker is running under K8s the deployment sets
+# WORKER_HEALTH_SERVER=true so /healthz + /readyz become reachable on
+# port 8001 for liveness / readiness probes. The function is a no-op
+# when the env var is unset (local docker-compose default).
+from src.utils.worker_health import maybe_start_health_server
+
+maybe_start_health_server()
 
 __all__ = ["app"]

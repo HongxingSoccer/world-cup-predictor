@@ -7,7 +7,6 @@ duplicates with reversed pairs cannot exist.
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Optional
 
 from sqlalchemy import (
     BigInteger,
@@ -43,7 +42,7 @@ class H2HRecord(Base):
     team_a_goals: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0, server_default="0")
     team_b_goals: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0, server_default="0")
 
-    last_match_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    last_match_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

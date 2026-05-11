@@ -13,9 +13,10 @@ conservative interpretation that matches how the front-end displays the
 """
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, Iterable
+from typing import Any
 
 # Threshold for binary OU / BTTS predictions. Probabilities exactly at 0.5
 # resolve to "no" by convention (asserts symmetry between Over/Under and

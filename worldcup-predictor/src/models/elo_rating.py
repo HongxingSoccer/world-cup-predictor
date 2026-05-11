@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
 
 from sqlalchemy import (
     BigInteger,
@@ -32,14 +31,14 @@ class EloRating(Base):
     team_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False
     )
-    match_id: Mapped[Optional[int]] = mapped_column(
+    match_id: Mapped[int | None] = mapped_column(
         BigInteger, ForeignKey("matches.id", ondelete="SET NULL"), nullable=True
     )
 
     rating: Mapped[Decimal] = mapped_column(
         Numeric(7, 2), nullable=False, default=Decimal("1500.00"), server_default="1500.00"
     )
-    rating_change: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2), nullable=True)
+    rating_change: Mapped[Decimal | None] = mapped_column(Numeric(6, 2), nullable=True)
     rated_at: Mapped[date] = mapped_column(Date, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(

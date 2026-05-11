@@ -13,7 +13,7 @@ finished matches.
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -266,7 +266,7 @@ def worldcup_bracket(session: Session = Depends(get_db_session)) -> dict[str, An
         "competition": WORLDCUP_COMPETITION_NAME,
         "year": WORLDCUP_DEFAULT_YEAR,
         "rounds": [],
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
     }
     if season is None:
         response["rounds"] = _empty_bracket_scaffold()

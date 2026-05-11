@@ -25,8 +25,8 @@ and Inefficiencies in the Football Betting Market*, Applied Statistics 46.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -54,7 +54,7 @@ class DixonColesModel(PoissonBaselineModel):
     """Poisson + Dixon-Coles τ correction (single ρ parameter)."""
 
     def __init__(
-        self, *, rho: Optional[float] = None, xi: Optional[float] = None
+        self, *, rho: float | None = None, xi: float | None = None
     ) -> None:
         super().__init__()
         if rho is not None and not (RHO_BOUNDS[0] <= rho <= RHO_BOUNDS[1]):
@@ -209,7 +209,7 @@ def dixon_coles_score_matrix(
 
 
 def compute_time_decay_weights(
-    dates: Any, reference: datetime, *, xi: float, n_rows: Optional[int] = None
+    dates: Any, reference: datetime, *, xi: float, n_rows: int | None = None
 ) -> np.ndarray:
     """Return ``exp(-xi · Δdays)`` weights, one per row, never below 1e-6.
 
@@ -262,7 +262,7 @@ def optimize_dc_params(
     rho_init: float = DEFAULT_RHO,
     home_init: float = 1.3,
     xi: float = DEFAULT_XI,
-    reference: Optional[datetime] = None,
+    reference: datetime | None = None,
     max_iter: int = 200,
 ) -> DixonColesParams:
     """Fit Dixon-Coles parameters via weighted MLE (scipy L-BFGS-B).
@@ -287,7 +287,7 @@ def optimize_dc_params(
     home_goals = df["label_home_score"].to_numpy(dtype=int)
     away_goals = df["label_away_score"].to_numpy(dtype=int)
     weights = compute_time_decay_weights(
-        df.get("match_date"), reference or datetime.now(timezone.utc), xi=xi
+        df.get("match_date"), reference or datetime.now(UTC), xi=xi
     )
     if len(weights) != len(df):
         weights = np.ones(len(df), dtype=float)
@@ -337,7 +337,7 @@ def optimize_dc_params(
         home_advantage=float(np.exp(gamma)),
         rho=rho,
         log_likelihood=float(-result.fun),
-        n_matches=int(len(df)),
+        n_matches=len(df),
     )
 
 

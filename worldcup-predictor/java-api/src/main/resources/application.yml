@@ -61,6 +61,18 @@ wcp:
     success-url: ${STRIPE_SUCCESS_URL:http://localhost/profile?subscribed=1}
     cancel-url: ${STRIPE_CANCEL_URL:http://localhost/subscribe?cancelled=1}
 
+  payments:
+    # Alipay / WeChat Pay SDKs are not yet integrated; the callback
+    # signature check currently accepts any non-empty payload (PaymentService.verifySignature
+    # was a Phase-3 stub). Until those SDKs land, ANY environment that's
+    # reachable from the public internet must keep this `false` — leaving
+    # it `true` exposes /api/v1/payments/callback/{alipay,wechat_pay} to
+    # forged callbacks that can mark an order paid without payment.
+    #
+    # Local dev / test profiles override this to `true` so the existing
+    # test suite keeps exercising the (stub) flow.
+    enable-cn-channels: ${WCP_ENABLE_CN_PAYMENTS:false}
+
 # --- Springdoc / Swagger UI ---
 springdoc:
   api-docs:
@@ -72,10 +84,18 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        # `prometheus` exposes /actuator/prometheus for the metrics scraper.
+        # `metrics` is the lower-level JSON view; useful for ad-hoc curling.
+        include: health,info,prometheus,metrics
   endpoint:
     health:
       show-details: when_authorized
+  metrics:
+    tags:
+      # Bake the Spring profile into every metric so Prometheus scrapes
+      # cleanly separate dev / staging / prod time-series.
+      application: wcp-java-api
+      profile: ${SPRING_PROFILES_ACTIVE:default}
 
 logging:
   level:

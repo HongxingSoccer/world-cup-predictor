@@ -7,7 +7,6 @@ The `api_football_id` uniqueness is enforced as a partial index (NULLs allowed).
 from __future__ import annotations
 
 from datetime import date
-from typing import Optional
 
 from sqlalchemy import BigInteger, Date, Index, Integer, SmallInteger, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -21,22 +20,22 @@ class Team(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
 
     # External system ids (any may be NULL until resolution links them).
-    api_football_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    transfermarkt_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    fbref_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    api_football_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    transfermarkt_id: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    fbref_id: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     name: Mapped[str] = mapped_column(String(200), nullable=False)
-    name_zh: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    short_name: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    country: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    name_zh: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    short_name: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    country: Mapped[str | None] = mapped_column(String(100), nullable=True)
     # 'national' | 'club'
     team_type: Mapped[str] = mapped_column(String(20), nullable=False)
-    logo_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    logo_url: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    fifa_ranking: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
-    fifa_ranking_updated: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    fifa_ranking: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    fifa_ranking_updated: Mapped[date | None] = mapped_column(Date, nullable=True)
     # 'UEFA' | 'CONMEBOL' | 'CONCACAF' | 'CAF' | 'AFC' | 'OFC'
-    confederation: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    confederation: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     __table_args__ = (
         # Partial unique index — only enforce uniqueness when the external id is present.

@@ -16,7 +16,6 @@ from typing import Any
 import structlog
 
 from src.adapters.base import (
-    AdapterMethodNotSupported,
     BaseDataSourceAdapter,
     DataFetchError,
 )

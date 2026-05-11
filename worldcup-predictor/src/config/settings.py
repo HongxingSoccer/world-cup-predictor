@@ -6,11 +6,10 @@ do not re-instantiate `Settings()` in application code.
 """
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Annotated
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
-from typing_extensions import Annotated
 
 
 class Settings(BaseSettings):
@@ -32,17 +31,17 @@ class Settings(BaseSettings):
     )
 
     # --- Streaming ---
-    KAFKA_BROKERS: Annotated[List[str], NoDecode] = Field(
+    KAFKA_BROKERS: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["localhost:9092"],
         description="Comma-separated Kafka bootstrap servers.",
     )
 
     # --- External APIs ---
-    API_FOOTBALL_KEY: Optional[str] = None
-    ODDS_API_KEY: Optional[str] = None
+    API_FOOTBALL_KEY: str | None = None
+    ODDS_API_KEY: str | None = None
 
     # --- Scraping ---
-    PROXY_POOL_URL: Optional[str] = None
+    PROXY_POOL_URL: str | None = None
     SCRAPER_CONCURRENT: int = Field(default=8, ge=1, le=128)
 
     # --- Logging ---
@@ -52,7 +51,7 @@ class Settings(BaseSettings):
     # List of "{league_id}:{year}" tokens consumed by ApiFootballAdapter / Celery
     # match-sync tasks. Override via env (comma-separated) when adding qualifiers
     # or club leagues in addition to the default World Cup 2026 entry.
-    ACTIVE_COMPETITIONS: Annotated[List[str], NoDecode] = Field(
+    ACTIVE_COMPETITIONS: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["1:2026"],
     )
 
@@ -60,7 +59,7 @@ class Settings(BaseSettings):
     # Odds API naming (e.g. ``soccer_fifa_world_cup``, ``soccer_epl``); they are
     # *separate* from ACTIVE_COMPETITIONS because the two providers don't share
     # an id space. Override via env (comma-separated) when adding leagues.
-    ODDS_API_SPORT_KEYS: Annotated[List[str], NoDecode] = Field(
+    ODDS_API_SPORT_KEYS: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["soccer_fifa_world_cup"],
     )
     # Hard cap on Odds API calls per ingest run to protect the 500/month free
@@ -77,8 +76,11 @@ class Settings(BaseSettings):
     API_KEY: str = Field(default="")
     # Per-IP request budget enforced by the middleware. 100 req/min ≈ 1.67 req/s.
     API_RATE_LIMIT_PER_MIN: int = Field(default=100, ge=1)
+    # Sliding-window size for the rate limiter, in seconds. Keep tied to the
+    # per-minute budget unless rolling out a finer-grained quota.
+    REDIS_RATE_LIMIT_WINDOW_SECONDS: int = Field(default=60, ge=1)
     # Comma-separated CORS origins. '*' = allow all (development only).
-    API_CORS_ORIGINS: Annotated[List[str], NoDecode] = Field(default_factory=lambda: ["*"])
+    API_CORS_ORIGINS: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["*"])
     # Cache TTL for /predictions/today (seconds).
     PREDICTIONS_TODAY_CACHE_TTL: int = Field(default=300, ge=0)
 

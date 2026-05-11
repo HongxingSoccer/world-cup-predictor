@@ -9,9 +9,9 @@ from .recent_form import RecentFormFeatures
 from .team_strength import TeamStrengthFeatures
 
 __all__ = [
+    "DEFAULT_FEATURE_VERSION",
     "AttackDefenseFeatures",
     "BaseFeatureCalculator",
-    "DEFAULT_FEATURE_VERSION",
     "EloFeatures",
     "FeatureDict",
     "FeaturePipeline",

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import math
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Generic, TypeVar
 
 import structlog
@@ -90,7 +90,7 @@ class BasePipeline(ABC, Generic[DTOT]):
             6. publish per-row Kafka events
             7. write a DataSourceLog row (success or failure)
         """
-        started_at = datetime.now(timezone.utc)
+        started_at = datetime.now(UTC)
         result = PipelineResult(fetched=0, validated=0, inserted=0, updated=0, skipped=0)
         meta = {**kwargs}
 
@@ -200,7 +200,7 @@ class BasePipeline(ABC, Generic[DTOT]):
         *,
         error: str | None = None,
     ) -> None:
-        finished_at = datetime.now(timezone.utc)
+        finished_at = datetime.now(UTC)
         try:
             with self._session_factory() as session:
                 session.add(

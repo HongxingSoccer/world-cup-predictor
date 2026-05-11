@@ -8,6 +8,7 @@ list, no DB / network access.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from itertools import pairwise
 from typing import Any
 
 import structlog
@@ -210,7 +211,7 @@ def _calibration_curve(samples: list[BacktestSample]) -> list[dict[str, Any]]:
     """Bin home-win probabilities and report observed home-win rate per bin."""
     edges = CALIBRATION_BIN_EDGES
     buckets: list[dict[str, Any]] = []
-    for low, high in zip(edges, edges[1:]):
+    for low, high in pairwise(edges):
         bucket_samples = [s for s in samples if low <= s.prob_home_win < high]
         if not bucket_samples:
             continue

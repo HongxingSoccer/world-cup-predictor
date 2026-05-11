@@ -16,8 +16,8 @@ so unit tests can drive them without Celery.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 import structlog
 from sqlalchemy.orm import Session
@@ -50,13 +50,13 @@ logger = structlog.get_logger(__name__)
     default_retry_delay=60,
 )
 def generate_match_report(
-    self,  # noqa: ARG001 — Celery binding
+    self,
     *,
     match_id: int,
-    prediction_id: Optional[int],
+    prediction_id: int | None,
     context: dict[str, Any],
     model_used: str,
-    llm_client: Optional[LLMClient] = None,
+    llm_client: LLMClient | None = None,
 ) -> int:
     """Generate (and publish) one Chinese AI report. Returns the new row id."""
     if llm_client is None:
@@ -91,14 +91,14 @@ def _make_summary(body: str, *, limit: int = 240) -> str:
 def _persist_ai_report(
     *,
     match_id: int,
-    prediction_id: Optional[int],
+    prediction_id: int | None,
     title: str,
     content_md: str,
     summary: str,
     model_used: str,
 ) -> int:
     """Upsert the *published* row for ``match_id``; supersedes any prior row."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     with SessionLocal() as session:
         existing = (
             session.query(AnalysisReport)
@@ -140,7 +140,7 @@ def run_tournament_simulation(
     model_version: str,
     fixtures: list[dict[str, Any]],
     num_simulations: int = DEFAULT_TRIALS,
-    seed: Optional[int] = None,
+    seed: int | None = None,
 ) -> int:
     """Run a Monte Carlo group simulation; persist + return the row id."""
     parsed = [
@@ -188,7 +188,7 @@ def fan_out_notification(
     *,
     user_id: int,
     payload: dict[str, Any],
-    dispatcher: Optional[PushDispatcher] = None,
+    dispatcher: PushDispatcher | None = None,
 ) -> list[dict[str, Any]]:
     """Look up settings for ``user_id`` and dispatch ``payload`` to each channel.
 
@@ -272,7 +272,7 @@ def _log_delivery(
     payload: NotificationPayload,
     result,
 ) -> None:
-    now = datetime.now(timezone.utc) if result.success else None
+    now = datetime.now(UTC) if result.success else None
     session.add(
         PushNotification(
             user_id=user_id,

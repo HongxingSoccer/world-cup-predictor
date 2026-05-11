@@ -12,9 +12,17 @@ disputes; `meta` carries application-level metadata (user agent, etc.).
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint, func
+from sqlalchemy import (
+    BigInteger,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -41,12 +49,12 @@ class Payment(Base, TimestampMixin):
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="pending", server_default="pending"
     )
-    channel_trade_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    paid_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    refunded_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    channel_trade_no: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    refunded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    callback_raw: Mapped[Optional[dict[str, Any]]] = mapped_column(JSONB, nullable=True)
-    meta: Mapped[Optional[dict[str, Any]]] = mapped_column(JSONB, nullable=True)
+    callback_raw: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    meta: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
 
     __table_args__ = (
         UniqueConstraint("order_no", name="uq_payments_order_no"),

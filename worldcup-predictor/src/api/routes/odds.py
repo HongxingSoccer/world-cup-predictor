@@ -1,9 +1,8 @@
 """POST /api/v1/odds-analysis — compute value signals for a match."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from itertools import groupby
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -43,7 +42,7 @@ def analyze_odds(
     full = service.generate_prediction(request.match_id, publish=False)
 
     # Reuse the odds analyzer attached to the service (transient mode).
-    raw = service._odds.analyze_match(request.match_id, full.prediction)  # noqa: SLF001
+    raw = service._odds.analyze_match(request.match_id, full.prediction)
     raw = _filter_request(raw, request)
 
     signals = [
@@ -76,7 +75,7 @@ def analyze_odds(
 
     return OddsAnalysisResponse(
         match_id=match.id,
-        analysis_time=datetime.now(timezone.utc),
+        analysis_time=datetime.now(UTC),
         markets=markets,
         value_signals=value_signals,
     )
@@ -111,7 +110,7 @@ def _normalise_markets(markets: list[str]) -> set[str]:
     return out
 
 
-def _market_bucket(market_type: str, market_value: Optional[str]) -> str:
+def _market_bucket(market_type: str, market_value: str | None) -> str:
     if market_type == "over_under":
         return f"over_under_{market_value}"
     return market_type

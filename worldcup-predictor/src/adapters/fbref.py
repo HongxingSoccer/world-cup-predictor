@@ -12,7 +12,7 @@ team summary and per-player grids are parsed here; the rest is left as
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -159,9 +159,9 @@ class FBrefAdapter(BaseDataSourceAdapter):
 
         date_meta = soup.find("meta", attrs={"itemprop": "startDate"})
         match_dt = (
-            datetime.fromisoformat(date_meta["content"]).astimezone(timezone.utc)
+            datetime.fromisoformat(date_meta["content"]).astimezone(UTC)
             if isinstance(date_meta, Tag) and date_meta.get("content")
-            else datetime.now(timezone.utc)
+            else datetime.now(UTC)
         )
 
         return MatchDTO(
@@ -236,7 +236,7 @@ class FBrefAdapter(BaseDataSourceAdapter):
                 continue
             team_token = (table.get("id") or "").removeprefix("stats_").removesuffix("_summary")
             for row in table.find("tbody").find_all("tr"):
-                if not isinstance(row, Tag) or row.get("class") and "thead" in row["class"]:
+                if not isinstance(row, Tag) or (row.get("class") and "thead" in row["class"]):
                     continue
                 player_cell = row.find("th", attrs={"data-stat": "player"})
                 if not isinstance(player_cell, Tag):

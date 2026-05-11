@@ -18,9 +18,10 @@ Data-leak protection is enforced at three points:
 """
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone
-from typing import Any, Callable
+from datetime import UTC, date, datetime
+from typing import Any
 
 import pandas as pd
 import structlog
@@ -114,7 +115,7 @@ class BacktestRunner:
             List of `BacktestSample` rows in chronological test-date order.
         """
         df = self._prepare_frame(features_df)
-        end = end_date or datetime.now(timezone.utc).date()
+        end = end_date or datetime.now(UTC).date()
         samples: list[BacktestSample] = []
         window_count = 0
 
@@ -221,7 +222,7 @@ def _days_in_month(year: int, month: int) -> int:
 
 
 def _to_dt(d: date) -> Any:
-    return pd.Timestamp(datetime.combine(d, datetime.min.time(), tzinfo=timezone.utc))
+    return pd.Timestamp(datetime.combine(d, datetime.min.time(), tzinfo=UTC))
 
 
 def _score_to_result(home_score: int, away_score: int) -> str:

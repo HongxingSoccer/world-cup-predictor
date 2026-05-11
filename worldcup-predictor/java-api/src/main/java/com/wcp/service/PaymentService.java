@@ -5,9 +5,11 @@ import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
 import com.stripe.model.checkout.Session;
+import com.wcp.config.WcpProperties;
 import com.wcp.dto.response.PaymentInitResponse;
 import com.wcp.dto.response.SubscriptionPlanResponse;
 import com.wcp.exception.ApiException;
+import com.wcp.exception.PaymentChannelDisabledException;
 import com.wcp.model.Payment;
 import com.wcp.model.User;
 import com.wcp.payment.StripeClient;
@@ -24,11 +26,13 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Payment-channel adapter + callback handler.
  *
- * <p>Phase-3 ships with a stub Alipay/WeChat integration: callback signature
- * verification + amount equality + idempotency are enforced, but the actual
- * "talk to the channel" (initPayment) returns a placeholder map until the
- * real SDKs land in Phase 3.5. The control flow is fully wired so swapping
- * stubs for real SDK calls is a small change.
+ * <p>Stripe is fully integrated (signed Checkout sessions + webhook
+ * verification). The Alipay / WeChat code paths are still stub
+ * implementations — the signature check would accept any non-empty
+ * payload — so they're gated behind {@code wcp.payments.enable-cn-channels}
+ * and default to OFF in any environment exposed to the public internet.
+ * The dev profile sets the flag to {@code true} so the existing test
+ * suite still exercises the control flow.
  *
  * <p>Idempotency contract: a callback for an order that's already
  * {@code paid} short-circuits with success — provider retries are common.
@@ -37,10 +41,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class PaymentService {
 
+    private static final java.util.Set<String> CN_CHANNELS =
+            java.util.Set.of("alipay", "wechat_pay");
+
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
     private final SubscriptionService subscriptionService;
     private final StripeClient stripeClient;
+    private final WcpProperties wcpProperties;
 
     /**
      * Explicit constructor (rather than Lombok's {@code @RequiredArgsConstructor})
@@ -52,17 +60,36 @@ public class PaymentService {
             PaymentRepository paymentRepository,
             UserRepository userRepository,
             @Lazy SubscriptionService subscriptionService,
-            StripeClient stripeClient
+            StripeClient stripeClient,
+            WcpProperties wcpProperties
     ) {
         this.paymentRepository = paymentRepository;
         this.userRepository = userRepository;
         this.subscriptionService = subscriptionService;
         this.stripeClient = stripeClient;
+        this.wcpProperties = wcpProperties;
+    }
+
+    /** Public probe so the controller can short-circuit disabled CN callbacks to 404. */
+    public boolean isCnChannelsEnabled() {
+        WcpProperties.Payments cfg = wcpProperties.payments();
+        return cfg != null && cfg.enableCnChannels();
     }
 
     /** Build the SDK-bound payment params returned to the front-end. */
     public PaymentInitResponse initPayment(
             Payment payment, SubscriptionPlanResponse plan, User user) {
+        String channel = payment.getPaymentChannel();
+
+        // Refuse CN-channel orders before persisting any side-effects when
+        // the SDK is not integrated yet — otherwise a forged callback
+        // against a real `pending` Payment row can flip status to `paid`
+        // (the verifySignature stub accepts any non-empty body).
+        if (CN_CHANNELS.contains(channel) && !isCnChannelsEnabled()) {
+            log.warn("payment_init_blocked_cn_channel_disabled channel={}", channel);
+            throw new PaymentChannelDisabledException(channel);
+        }
+
         Map<String, Object> params = new HashMap<>();
         params.put("orderNo", payment.getOrderNo());
         params.put("amount", payment.getAmountCny());
@@ -70,27 +97,30 @@ public class PaymentService {
         params.put("subject", plan.displayName());
         params.put("userUuid", user.getUuid().toString());
 
-        // Stripe is the only channel with a real SDK behind it today.
-        // Alipay / WeChat still hand back the stub payload until their
-        // real SDKs land in Phase 3.5.
-        if ("stripe".equals(payment.getPaymentChannel())) {
+        // Stripe is the only channel with a real SDK behind it today. The
+        // CN channels reach this code path only when explicitly enabled
+        // (dev / test profile); they hand back a typed stub marker so
+        // callers can detect dev-stub mode instead of the previous
+        // free-form "TODO-Phase-3.5" string.
+        if ("stripe".equals(channel)) {
             params.put("sdkPayload", buildStripePayload(payment, plan, user));
         } else {
-            // TODO(Phase 3.5): replace with real Alipay-trade-app-pay /
-            // wechat-unifiedorder responses (signed strings, prepay_id, etc.).
-            params.put("sdkPayload", "TODO-Phase-3.5-real-channel-call");
+            params.put("sdkPayload", Map.of(
+                    "mode", "stub",
+                    "reason", "cn_channel_sdk_not_integrated"
+            ));
         }
 
         log.info(
                 "payment_init order={} channel={} amount_cny={} amount_usd={}",
                 payment.getOrderNo(),
-                payment.getPaymentChannel(),
+                channel,
                 payment.getAmountCny(),
                 plan.priceUsd()
         );
         return new PaymentInitResponse(
                 payment.getOrderNo(),
-                payment.getPaymentChannel(),
+                channel,
                 plan.priceUsd(),
                 payment.getAmountCny(),
                 params

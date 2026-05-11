@@ -15,4 +15,11 @@ RUN groupadd -r wcp && useradd -r -g wcp wcp
 USER wcp
 
 EXPOSE 8080
+
+# Liveness probe — Spring Boot Actuator's /actuator/health is enabled
+# in application.yml. eclipse-temurin:17-jre-jammy ships curl out of
+# the box.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -fsS http://localhost:8080/actuator/health || exit 1
+
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

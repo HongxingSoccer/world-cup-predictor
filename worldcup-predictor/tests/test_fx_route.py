@@ -6,7 +6,7 @@ out via monkeypatching the module-level fetcher.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from fastapi.testclient import TestClient
@@ -38,7 +38,7 @@ def test_fx_returns_fallback_when_upstream_unreachable(monkeypatch, client):
 
 
 def test_fx_returns_live_rate_and_caches(monkeypatch, client):
-    fixed_dt = datetime(2026, 5, 7, tzinfo=timezone.utc)
+    fixed_dt = datetime(2026, 5, 7, tzinfo=UTC)
     calls = {"n": 0}
 
     def fake_fetch():

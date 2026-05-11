@@ -17,7 +17,7 @@ them off a Poisson grid, per design §3.4).
 """
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -74,11 +74,11 @@ class XGBoostMatchModel(BasePredictionModel):
         self._max_depth = max_depth
         self._learning_rate = learning_rate
 
-        self._clf_1x2: Optional[Any] = None
-        self._reg_goals_home: Optional[Any] = None
-        self._reg_goals_away: Optional[Any] = None
-        self._clf_ou25: Optional[Any] = None
-        self._clf_btts: Optional[Any] = None
+        self._clf_1x2: Any | None = None
+        self._reg_goals_home: Any | None = None
+        self._reg_goals_away: Any | None = None
+        self._clf_ou25: Any | None = None
+        self._clf_btts: Any | None = None
 
     def get_model_version(self) -> str:
         return MODEL_VERSION
@@ -114,7 +114,7 @@ class XGBoostMatchModel(BasePredictionModel):
         self.params = {
             "league_avg_goals": league_avg_goals,
             "feature_columns": list(self._feature_columns),
-            "trained_on_n_matches": int(len(labels)),
+            "trained_on_n_matches": len(labels),
             "n_estimators": self._n_estimators,
             "sub_models": [
                 "1x2",
@@ -189,7 +189,7 @@ def _encode_outcome(home_scores: pd.Series, away_scores: pd.Series) -> np.ndarra
 
 
 def _xgb():
-    import xgboost as xgb  # noqa: WPS433 — lazy import keeps cold path cheap
+    import xgboost as xgb
 
     return xgb
 

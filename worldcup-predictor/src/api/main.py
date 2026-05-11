@@ -13,6 +13,7 @@ Run locally:
 """
 from __future__ import annotations
 
+import contextlib
 from contextlib import asynccontextmanager
 
 import structlog
@@ -64,10 +65,9 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         if app.state.redis is not None:
-            try:
+            # Best-effort shutdown — Redis may already be gone in CI / tests.
+            with contextlib.suppress(Exception):  # pragma: no cover
                 app.state.redis.close()
-            except Exception:  # pragma: no cover — defensive on shutdown
-                pass
 
 
 def _create_app() -> FastAPI:

@@ -1,16 +1,15 @@
 """Unit tests for the track-record aggregator (`src.utils.track_record`)."""
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 import pytest
 
 from src.models.prediction_result import PredictionResult
 from src.utils.track_record import (
-    StatBreakdown,
-    WORLDCUP_2026_END,
     WORLDCUP_2026_START,
+    StatBreakdown,
     aggregate,
     recompute_all,
 )
@@ -49,7 +48,7 @@ def _row(
 
 
 def test_aggregate_overall_handles_basic_hit_rate():
-    now = datetime(2026, 5, 1, tzinfo=timezone.utc)
+    now = datetime(2026, 5, 1, tzinfo=UTC)
     # `aggregate` sorts by settled_at ASC. Chronologically:
     #   day-4 (hit), day-3 (miss), day-2 (hit), day-1 (hit).
     # Streak walk: 1, -1, 1, 2 → current=2, best=2.
@@ -68,7 +67,7 @@ def test_aggregate_overall_handles_basic_hit_rate():
 
 
 def test_aggregate_skips_rows_with_none_hit_for_typed_markets():
-    now = datetime(2026, 5, 1, tzinfo=timezone.utc)
+    now = datetime(2026, 5, 1, tzinfo=UTC)
     rows = [
         _row(settled_at=now, one_x_two=True, ou25_hit=True),
         _row(settled_at=now + timedelta(hours=1), one_x_two=False, ou25_hit=None),
@@ -82,7 +81,7 @@ def test_aggregate_skips_rows_with_none_hit_for_typed_markets():
 
 
 def test_aggregate_positive_ev_uses_best_ev_outcome_filter():
-    now = datetime(2026, 5, 1, tzinfo=timezone.utc)
+    now = datetime(2026, 5, 1, tzinfo=UTC)
     rows = [
         _row(
             settled_at=now,
@@ -126,7 +125,7 @@ def test_aggregate_returns_zero_breakdown_for_empty_input():
 
 def test_recompute_all_writes_full_matrix(db_session):
     # Seed three settled predictions split across periods.
-    now = datetime(2026, 5, 1, tzinfo=timezone.utc)
+    now = datetime(2026, 5, 1, tzinfo=UTC)
     db_session.add_all([
         _row(prediction_id=10, settled_at=now - timedelta(days=2), one_x_two=True),
         _row(prediction_id=11, settled_at=now - timedelta(days=4), one_x_two=False),
@@ -169,7 +168,7 @@ def test_recompute_all_period_filter_isolates_worldcup_window(db_session):
 @pytest.mark.parametrize("period", ["all_time", "last_30d", "last_7d", "worldcup"])
 def test_recompute_all_emits_one_row_per_period(db_session, period):
     db_session.commit()  # Ensure clean state on the (transactional) test session.
-    recompute_all(db_session, now=datetime(2026, 5, 1, tzinfo=timezone.utc))
+    recompute_all(db_session, now=datetime(2026, 5, 1, tzinfo=UTC))
 
     from src.models.track_record_stat import TrackRecordStat
 

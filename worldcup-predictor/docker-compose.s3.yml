@@ -1,0 +1,50 @@
+# Optional override that flips the MLflow artifact root from the shared
+# docker volume to the local MinIO bucket. Used by:
+#
+#   docker compose -f docker-compose.yml \
+#                  -f docker-compose.override.yml \
+#                  -f docker-compose.s3.yml up
+#
+# This is a stepping stone toward EKS: artifact root is S3-compatible, which
+# matches what the production helm values supply
+# (MLFLOW_ARTIFACT_ROOT=s3://wcp-mlflow-artifacts/). The Python ml-api +
+# worker pick up artifacts through MLflow's tracking API so no application
+# code change is needed — only this URI swap.
+services:
+  mlflow-server:
+    environment:
+      # Point at the MinIO bucket. Production helm values override this to
+      # an actual AWS S3 URL.
+      MLFLOW_ARTIFACT_ROOT: s3://wcp-mlflow-artifacts/
+      # MLflow / boto3 need the S3 endpoint + credentials to talk to MinIO.
+      # In EKS we'd switch to IRSA and drop the access-key/secret entirely.
+      MLFLOW_S3_ENDPOINT_URL: ${S3_ENDPOINT:-http://minio:9000}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-wcp-minio}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-wcp-minio-secret}
+      AWS_DEFAULT_REGION: ${S3_REGION:-us-east-1}
+    # Add boto3 to the runtime pip install so MLflow can reach S3 / MinIO.
+    command:
+      - /bin/sh
+      - -c
+      - >
+        pip install --quiet psycopg2-binary boto3 &&
+        mlflow server
+        --host 0.0.0.0 --port 5000
+        --backend-store-uri $$MLFLOW_BACKEND_STORE_URI
+        --default-artifact-root $$MLFLOW_ARTIFACT_ROOT
+
+  ml-api:
+    environment:
+      # ml-api uploads / fetches artifacts directly when training via
+      # `mlflow.log_artifact()`. It needs the same S3 credentials + endpoint.
+      MLFLOW_S3_ENDPOINT_URL: ${S3_ENDPOINT:-http://minio:9000}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-wcp-minio}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-wcp-minio-secret}
+      AWS_DEFAULT_REGION: ${S3_REGION:-us-east-1}
+
+  ingestion-worker:
+    environment:
+      MLFLOW_S3_ENDPOINT_URL: ${S3_ENDPOINT:-http://minio:9000}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-wcp-minio}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-wcp-minio-secret}
+      AWS_DEFAULT_REGION: ${S3_REGION:-us-east-1}

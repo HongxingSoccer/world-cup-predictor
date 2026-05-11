@@ -21,8 +21,8 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Optional, Protocol
+from datetime import UTC, datetime
+from typing import Any, Protocol
 
 import structlog
 from kafka import KafkaProducer
@@ -40,7 +40,7 @@ class EventEnvelope(BaseModel):
 
     event_type: str = Field(description="Kafka topic + business event name (e.g. 'match.finished').")
     event_id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     source: str = Field(description="Service that emitted the event (e.g. 'ingestion-service').")
     payload: dict[str, Any]
 
@@ -78,7 +78,7 @@ class _DefaultProducer:
         event_type: str,
         key: str,
         payload: BaseModel | dict[str, Any],
-        source: Optional[str] = None,
+        source: str | None = None,
     ) -> None:
         envelope = EventEnvelope(
             event_type=event_type,
