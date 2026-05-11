@@ -1,0 +1,20 @@
+{{- $w := .Values.workers.beat -}}
+{{- if and $w.enabled $w.podDisruptionBudget.enabled -}}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $w.name }}
+  labels:
+    app.kubernetes.io/name: {{ $w.name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "wcp-workers.commonLabels" . | nindent 4 }}
+spec:
+  # beat is hard-pinned to 1 replica. minAvailable would block any voluntary
+  # disruption; maxUnavailable: 1 lets node drains proceed (and the Recreate
+  # strategy on the Deployment guarantees no overlap during the gap).
+  maxUnavailable: {{ $w.podDisruptionBudget.maxUnavailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $w.name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

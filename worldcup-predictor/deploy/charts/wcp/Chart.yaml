@@ -1,0 +1,26 @@
+apiVersion: v2
+name: wcp
+description: Umbrella chart for the World Cup 2026 Predictor (frontend + java-api + ml-api + workers).
+type: application
+version: 0.1.0
+appVersion: "0.3.0"
+
+# Sub-charts are pulled from sibling directories. `helm dependency update`
+# materialises them into `charts/` before `helm template`/install.
+dependencies:
+  - name: wcp-frontend
+    version: 0.1.0
+    repository: "file://../wcp-frontend"
+    condition: wcp-frontend.enabled
+  - name: wcp-java-api
+    version: 0.1.0
+    repository: "file://../wcp-java-api"
+    condition: wcp-java-api.enabled
+  - name: wcp-ml-api
+    version: 0.1.0
+    repository: "file://../wcp-ml-api"
+    condition: wcp-ml-api.enabled
+  - name: wcp-workers
+    version: 0.1.0
+    repository: "file://../wcp-workers"
+    condition: wcp-workers.enabled

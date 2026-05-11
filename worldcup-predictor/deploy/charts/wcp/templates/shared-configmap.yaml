@@ -1,0 +1,15 @@
+{{- if .Values.sharedConfig.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wcp-config
+  labels:
+    {{- include "wcp.labels" . | nindent 4 }}
+data:
+  ENVIRONMENT: {{ .Values.global.environment | quote }}
+  AWS_REGION: {{ .Values.global.aws.region | quote }}
+  PUBLIC_DOMAIN: {{ .Values.global.domain | quote }}
+  {{- range $k, $v := .Values.sharedConfig.data }}
+  {{ $k }}: {{ $v | quote }}
+  {{- end }}
+{{- end }}

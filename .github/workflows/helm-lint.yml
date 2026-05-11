@@ -1,0 +1,75 @@
+name: helm-lint
+
+# Static validation for all Helm charts: lint, template-render with both
+# env values files, and kubeconform against the rendered output.
+# Triggered only when chart files change to keep PR latency low.
+
+on:
+  pull_request:
+    paths:
+      - 'worldcup-predictor/deploy/charts/**'
+      - '.github/workflows/helm-lint.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'worldcup-predictor/deploy/charts/**'
+
+permissions:
+  contents: read
+
+jobs:
+  helm:
+    name: helm lint + template + kubeconform
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: worldcup-predictor/deploy/charts
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.2
+
+      - name: Install kubeconform
+        run: |
+          curl -fsSL -o /tmp/kubeconform.tar.gz \
+            https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          tar -xzf /tmp/kubeconform.tar.gz -C /tmp
+          sudo install -m 0755 /tmp/kubeconform /usr/local/bin/kubeconform
+          kubeconform -v
+
+      - name: Resolve umbrella dependencies
+        run: helm dependency update wcp
+
+      - name: Lint each chart
+        run: |
+          for c in wcp wcp-frontend wcp-java-api wcp-ml-api wcp-workers; do
+            echo "::group::helm lint $c"
+            helm lint "$c"
+            echo "::endgroup::"
+          done
+
+      - name: Template (dev) + (demo)
+        run: |
+          helm template wcp wcp -f wcp/values-dev.yaml  > /tmp/rendered-dev.yaml
+          helm template wcp wcp -f wcp/values-demo.yaml > /tmp/rendered-demo.yaml
+          echo "dev:  $(wc -l < /tmp/rendered-dev.yaml) lines"
+          echo "demo: $(wc -l < /tmp/rendered-demo.yaml) lines"
+
+      - name: kubeconform (dev)
+        run: |
+          kubeconform \
+            -strict -summary -ignore-missing-schemas \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            /tmp/rendered-dev.yaml
+
+      - name: kubeconform (demo)
+        run: |
+          kubeconform \
+            -strict -summary -ignore-missing-schemas \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            /tmp/rendered-demo.yaml

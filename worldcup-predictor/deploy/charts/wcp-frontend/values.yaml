@@ -1,8 +1,14 @@
-# Per-service overrides go in deploy/charts/<svc>/values-{staging,production}.yaml.
-# Resource budgets follow design §2.3.
+# Default values for wcp-frontend. Environment-specific overrides
+# (image registry / tag / replica counts) live in the umbrella chart's
+# values-{env}.yaml.
+
 image:
-  repository: ghcr.io/CHANGE_ME/wcp-frontend
-  tag: latest
+  # ECR registry domain — injected by umbrella from global.image.registry.
+  # e.g. "123456789012.dkr.ecr.us-east-1.amazonaws.com"
+  registry: ""
+  repository: wcp-frontend
+  # Git SHA injected by the CD pipeline; falls back to Chart.appVersion locally.
+  tag: ""
   pullPolicy: IfNotPresent
 
 replicaCount: 2
@@ -22,21 +28,66 @@ resources:
 autoscaling:
   enabled: true
   minReplicas: 2
-  maxReplicas: 5
+  maxReplicas: 4
   targetCPUUtilizationPercentage: 70
 
-ingress:
+podDisruptionBudget:
   enabled: true
-  className: nginx
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-  hosts:
-    - host: wcp.example
-      paths: ["/"]
-  tls:
-    - secretName: wcp-frontend-tls
-      hosts: ["wcp.example"]
+  minAvailable: 1
 
+serviceAccount:
+  create: true
+  name: ""
+  # Frontend doesn't talk to AWS resources directly, so IRSA stays empty.
+  annotations: {}
+
+# Names of the umbrella-managed ConfigMap + Secret mounted via envFrom.
+envFrom:
+  configMapName: wcp-config
+  secretName: wcp-secrets
+
+# Non-secret runtime env (Next.js needs PORT/HOSTNAME explicit in standalone mode).
 env:
-  NEXT_PUBLIC_API_BASE_URL: "https://api.wcp.example"
   NODE_ENV: production
+  HOSTNAME: "0.0.0.0"
+  PORT: "3000"
+  SERVER_API_URL: http://wcp-java-api:8080
+
+probes:
+  liveness:
+    path: /api/health
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  readiness:
+    path: /api/health
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+containerSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
+
+topologySpread:
+  enabled: true
+  maxSkew: 1
+  topologyKey: topology.kubernetes.io/zone
+  whenUnsatisfiable: ScheduleAnyway
+
+imagePullSecrets: []
+nodeSelector: {}
+tolerations: []
+affinity: {}

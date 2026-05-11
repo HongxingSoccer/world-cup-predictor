@@ -1,0 +1,32 @@
+{{- $w := .Values.workers.ingestion -}}
+{{- if $w.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $w.name }}
+  labels:
+    app.kubernetes.io/name: {{ $w.name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "wcp-workers.commonLabels" . | nindent 4 }}
+spec:
+  {{- if not $w.keda.enabled }}
+  replicas: {{ $w.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $w.name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ $w.name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- include "wcp-workers.commonLabels" . | nindent 8 }}
+    spec:
+      {{- include "wcp-workers.podSpec" (dict "ctx" . "w" $w) | nindent 6 }}
+{{- end }}

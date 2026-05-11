@@ -1,0 +1,158 @@
+# Umbrella defaults. Treat every field here as a placeholder — actual values
+# come from values-{env}.yaml + CD-pipeline --set flags.
+
+global:
+  # Environment slug used in namespace, ExternalSecret paths, tags.
+  environment: dev
+  domain: dev.wcp.example.com
+
+  aws:
+    region: us-east-1
+    accountId: "000000000000"
+    # ClusterSecretStore name (assumes ESO is already installed cluster-wide
+    # and pointed at the AWS Secrets Manager backend).
+    clusterSecretStore: aws-secretsmanager
+    # ACM certificate ARN for the ALB. Empty disables HTTPS listener.
+    certificateArn: ""
+
+  image:
+    # ECR registry domain. Format: <acct>.dkr.ecr.<region>.amazonaws.com
+    registry: ""
+    # Git SHA injected by CD. `helm template` falls back to Chart.appVersion.
+    tag: ""
+
+# -----------------------------------------------------------------------------
+# Sub-charts: every flag here flows down via Helm's parent → child mechanism.
+# Override per environment in values-{env}.yaml; never edit here for prod.
+# -----------------------------------------------------------------------------
+wcp-frontend:
+  enabled: true
+  image:
+    registry: ""                       # rewritten by templates/_helpers.tpl
+    tag: ""
+
+wcp-java-api:
+  enabled: true
+  image:
+    registry: ""
+    tag: ""
+  serviceAccount:
+    annotations: {}                    # IRSA arn injected per-env
+
+wcp-ml-api:
+  enabled: true
+  image:
+    registry: ""
+    tag: ""
+  serviceAccount:
+    annotations: {}
+
+wcp-workers:
+  enabled: true
+  image:
+    registry: ""
+    tag: ""
+  serviceAccount:
+    annotations: {}
+  mlflow:
+    serviceAccount:
+      annotations: {}
+
+# -----------------------------------------------------------------------------
+# Ingress (single ALB, multi-path).
+# -----------------------------------------------------------------------------
+ingress:
+  enabled: false
+  # ALB listener config + ACM cert ARN come from global. Hostname + extra
+  # annotations are local.
+  className: alb
+  extraAnnotations: {}
+  # Path → service map. Order matters: ALB evaluates first match.
+  paths:
+    - path: /api/v1/admin
+      pathType: Prefix
+      service: { name: wcp-ml-api, port: 8000 }
+    - path: /api/v1/markets
+      pathType: Prefix
+      service: { name: wcp-ml-api, port: 8000 }
+    - path: /api/v1
+      pathType: Prefix
+      service: { name: wcp-java-api, port: 8080 }
+    - path: /s
+      pathType: Prefix
+      service: { name: wcp-java-api, port: 8080 }
+    - path: /api/health
+      pathType: Exact
+      service: { name: wcp-frontend, port: 3000 }
+    - path: /
+      pathType: Prefix
+      service: { name: wcp-frontend, port: 3000 }
+
+# -----------------------------------------------------------------------------
+# Namespace.
+# -----------------------------------------------------------------------------
+namespace:
+  # Whether to create the namespace (set false if you let CI create it).
+  create: true
+  # Defaults to wcp-{global.environment}.
+  nameOverride: ""
+
+# -----------------------------------------------------------------------------
+# Shared ConfigMap — non-secret cluster-wide env. Each sub-chart pulls this
+# in via envFrom, so adding a key here makes it visible everywhere.
+# -----------------------------------------------------------------------------
+sharedConfig:
+  enabled: true
+  data:
+    # Internal DNS names of in-cluster Services.
+    JAVA_API_BASE_URL: http://wcp-java-api:8080
+    ML_API_BASE_URL: http://wcp-ml-api:8000
+    MLFLOW_TRACKING_URI: http://wcp-mlflow:5000
+    # Wire payments stay disabled by default (see Phase 2 Task 3).
+    WCP_PAYMENTS_ENABLE_CN_CHANNELS: "false"
+
+# -----------------------------------------------------------------------------
+# External Secrets Operator integration. The chart only emits CRs; ESO must
+# already be running in the cluster + a ClusterSecretStore must exist that
+# points to AWS Secrets Manager.
+# -----------------------------------------------------------------------------
+externalSecrets:
+  enabled: true
+  refreshInterval: 1h
+  # Items in each Secret. `keyTemplate` defaults to `/wcp/{env}/<remoteKey>`.
+  # Override `remoteKey` if a path doesn't follow the convention.
+  secrets:
+    - name: wcp-secrets
+      items:
+        - secretKey: DATABASE_URL
+          remoteKey: db/url
+        - secretKey: SPRING_DATASOURCE_PASSWORD
+          remoteKey: db/password
+        - secretKey: REDIS_URL
+          remoteKey: redis/url
+        - secretKey: KAFKA_BROKERS
+          remoteKey: kafka/brokers
+        - secretKey: API_KEY
+          remoteKey: api-key-internal
+        - secretKey: ML_API_KEY
+          remoteKey: api-key-internal
+        - secretKey: ADMIN_API_TOKEN
+          remoteKey: admin-api-token
+        - secretKey: STRIPE_SECRET_KEY
+          remoteKey: stripe/secret-key
+        - secretKey: STRIPE_WEBHOOK_SECRET
+          remoteKey: stripe/webhook-secret
+        - secretKey: API_FOOTBALL_KEY
+          remoteKey: api-football-key
+        - secretKey: ODDS_API_KEY
+          remoteKey: odds-api-key
+        - secretKey: ANTHROPIC_API_KEY
+          remoteKey: anthropic-api-key
+        - secretKey: MLFLOW_BACKEND_STORE_URI
+          remoteKey: mlflow/backend-store-uri
+    - name: wcp-jwt-keys
+      items:
+        - secretKey: jwt-private.pem
+          remoteKey: jwt/private-key
+        - secretKey: jwt-public.pem
+          remoteKey: jwt/public-key

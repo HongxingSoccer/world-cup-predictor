@@ -1,0 +1,11 @@
+{{ include "wcp-ml-api.fullname" . }} installed.
+
+Internal cluster URL:
+  http://{{ include "wcp-ml-api.fullname" . }}:{{ .Values.service.port }}
+
+The umbrella ALB Ingress routes the following prefixes here:
+  /api/v1/admin/*
+  /api/v1/markets/*
+
+Health endpoint: /health
+MLflow tracking URI (env): {{ index .Values.env "MLFLOW_TRACKING_URI" }}
