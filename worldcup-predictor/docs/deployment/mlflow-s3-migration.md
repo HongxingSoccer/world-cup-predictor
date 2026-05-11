@@ -43,8 +43,8 @@ nothing breaks for existing developers.
 ```sh
 docker compose up -d
 # MLflow stores artifacts under /data/mlflow-artifacts (docker volume).
-# UI: http://localhost:5001/ (port 5001 because port 5000 is reserved
-# by macOS AirPlay; see docker-compose.override.yml).
+# UI: http://localhost:5001/ (host port 5001 → container 5000; port 5000
+# on the host is reserved by macOS AirPlay).
 ```
 
 Existing runs in `mlruns/` keep working without any action.
@@ -53,7 +53,6 @@ Existing runs in `mlruns/` keep working without any action.
 
 ```sh
 docker compose -f docker-compose.yml \
-               -f docker-compose.override.yml \
                -f docker-compose.s3.yml \
                up -d
 ```

@@ -2,7 +2,6 @@
 # docker volume to the local MinIO bucket. Used by:
 #
 #   docker compose -f docker-compose.yml \
-#                  -f docker-compose.override.yml \
 #                  -f docker-compose.s3.yml up
 #
 # This is a stepping stone toward EKS: artifact root is S3-compatible, which
