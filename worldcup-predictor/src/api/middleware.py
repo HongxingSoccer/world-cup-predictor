@@ -4,9 +4,11 @@
 `settings.API_KEY`. When the setting is empty, auth is bypassed (useful for
 local dev / tests). Health-check paths are always allowed.
 
-`RateLimitMiddleware` is a sliding-window counter keyed on the client IP. It
-uses a small in-process LRU; production deployments running multiple replicas
-should swap in a Redis-backed limiter (Phase 3 deliverable).
+`RateLimitMiddleware` is a per-IP sliding-window limiter backed by Redis
+(see ``rate_limit_redis.py``) so the budget stays consistent across
+multiple FastAPI replicas. Falls back to an in-process deque counter when
+``REDIS_URL`` is unset or unreachable at startup — only sensible for
+single-replica local dev.
 
 `AccessLogMiddleware` logs one structured line per request, complete with
 request id, latency, and outcome.
@@ -17,13 +19,14 @@ import time
 import uuid
 from collections import defaultdict, deque
 from collections.abc import Awaitable, Callable
-from typing import Final
+from typing import Final, Optional
 
 import structlog
 from fastapi import Request, Response, status
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from src.api.rate_limit_redis import RedisSlidingWindowLimiter, build_limiter_from_settings
 from src.config.settings import settings
 
 logger = structlog.get_logger(__name__)
@@ -78,15 +81,39 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    """Sliding-window per-IP rate limiter. Window is fixed at 60 s."""
+    """Per-IP sliding-window rate limiter.
+
+    Prefers a Redis-backed implementation so the budget is enforced
+    consistently across replicas. Falls back to an in-process deque
+    counter when ``REDIS_URL`` is missing or Redis is unreachable at
+    startup — that path only stays correct under a single replica and
+    is intentional dev-only behaviour.
+    """
 
     WINDOW_SECONDS: Final[float] = 60.0
 
-    def __init__(self, app, requests_per_minute: int) -> None:  # type: ignore[no-untyped-def]
+    def __init__(
+        self,
+        app,  # type: ignore[no-untyped-def]
+        requests_per_minute: int,
+        redis_limiter: Optional[RedisSlidingWindowLimiter] = None,
+    ) -> None:
         super().__init__(app)
         self._budget = max(requests_per_minute, 1)
-        # client_ip -> deque of timestamps within the window
+        # client_ip -> deque of timestamps within the window (fallback only)
         self._hits: dict[str, deque[float]] = defaultdict(deque)
+
+        # Tests pass in a fakeredis-backed limiter. Production passes None and
+        # the constructor tries to build one from settings on its own.
+        if redis_limiter is not None:
+            self._redis_limiter: Optional[RedisSlidingWindowLimiter] = redis_limiter
+        else:
+            self._redis_limiter = build_limiter_from_settings()
+        if self._redis_limiter is None:
+            logger.warning(
+                "rate_limit_using_in_process_fallback",
+                hint="set REDIS_URL for cross-replica enforcement",
+            )
 
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
@@ -95,14 +122,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         client_ip = _client_ip(request)
-        now = time.monotonic()
-        window_start = now - self.WINDOW_SECONDS
-
-        hits = self._hits[client_ip]
-        # Trim entries older than the window.
-        while hits and hits[0] < window_start:
-            hits.popleft()
-        if len(hits) >= self._budget:
+        if not self._allow(client_ip):
             return JSONResponse(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 content={
@@ -111,9 +131,25 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     "message": f"Too many requests; budget is {self._budget}/min.",
                 },
             )
-        hits.append(now)
-
         return await call_next(request)
+
+    # --- Internals ---
+
+    def _allow(self, client_ip: str) -> bool:
+        if self._redis_limiter is not None:
+            return self._redis_limiter.allow(client_ip)
+        return self._allow_in_process(client_ip)
+
+    def _allow_in_process(self, client_ip: str) -> bool:
+        now = time.monotonic()
+        window_start = now - self.WINDOW_SECONDS
+        hits = self._hits[client_ip]
+        while hits and hits[0] < window_start:
+            hits.popleft()
+        if len(hits) >= self._budget:
+            return False
+        hits.append(now)
+        return True
 
 
 class AccessLogMiddleware(BaseHTTPMiddleware):

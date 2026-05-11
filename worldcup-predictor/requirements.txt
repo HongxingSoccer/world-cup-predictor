@@ -59,3 +59,4 @@ cryptography>=42.0
 pytest>=7.4
 pytest-asyncio>=0.23
 pytest-timeout>=2.2
+fakeredis>=2.20

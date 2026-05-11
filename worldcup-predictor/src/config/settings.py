@@ -77,6 +77,9 @@ class Settings(BaseSettings):
     API_KEY: str = Field(default="")
     # Per-IP request budget enforced by the middleware. 100 req/min ≈ 1.67 req/s.
     API_RATE_LIMIT_PER_MIN: int = Field(default=100, ge=1)
+    # Sliding-window size for the rate limiter, in seconds. Keep tied to the
+    # per-minute budget unless rolling out a finer-grained quota.
+    REDIS_RATE_LIMIT_WINDOW_SECONDS: int = Field(default=60, ge=1)
     # Comma-separated CORS origins. '*' = allow all (development only).
     API_CORS_ORIGINS: Annotated[List[str], NoDecode] = Field(default_factory=lambda: ["*"])
     # Cache TTL for /predictions/today (seconds).
