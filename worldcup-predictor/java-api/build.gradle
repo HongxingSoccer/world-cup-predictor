@@ -1,6 +1,6 @@
 plugins {
-    id 'org.springframework.boot' version '3.2.5'
-    id 'io.spring.dependency-management' version '1.1.4'
+    id 'org.springframework.boot' version '2.7.18'
+    id 'io.spring.dependency-management' version '1.0.15.RELEASE'
     id 'java'
 }
 
@@ -9,7 +9,7 @@ version = '0.3.0'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(11)
     }
 }
 
@@ -35,11 +35,15 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
     // --- OpenAPI / Swagger ---
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
+    implementation 'org.springdoc:springdoc-openapi-ui:1.7.0'
 
     // --- Observability: Prometheus metrics + JSON logback encoder ---
-    implementation 'io.micrometer:micrometer-registry-prometheus'
-    implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
+    // runtimeOnly: neither lib is referenced from app code. Spring Boot
+    // auto-configures PrometheusMeterRegistry, and logstash-logback-encoder
+    // is wired via logback-spring.xml. Leaving them on `implementation`
+    // would needlessly pollute the compile classpath.
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+    runtimeOnly 'net.logstash.logback:logstash-logback-encoder:7.4'
 
     // --- Stripe Java SDK (Checkout Session + webhook verification) ---
     implementation 'com.stripe:stripe-java:32.1.0'
