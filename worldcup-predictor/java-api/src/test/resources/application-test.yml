@@ -24,3 +24,14 @@ spring:
     init:
       mode: always
       schema-locations: classpath:schema.sql
+
+  # Disable Redis auto-config in tests — JwtTokenProvider's RedisTemplate
+  # is provided as a @MockBean by the integration tests that need it, and
+  # the Actuator health check otherwise demands a live ConnectionFactory.
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.data.redis.RedisHealthContributorAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.data.redis.RedisReactiveHealthContributorAutoConfiguration
