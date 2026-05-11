@@ -146,7 +146,11 @@ services:
     environment:
       # MLflow needs psycopg2 to talk to Postgres; pip-install on entry.
       MLFLOW_BACKEND_STORE_URI: postgresql://mlflow:mlflow@postgres:5432/mlflow
-      MLFLOW_DEFAULT_ARTIFACT_ROOT: /data/mlflow-artifacts
+      # Default: shared docker volume (kept for parity with the dev compose
+      # stack). For EKS / S3 mode, set MLFLOW_ARTIFACT_ROOT=s3://bucket/... in
+      # the host environment; the var name matches `docker-compose.s3.yml`
+      # so the same override file works for both compose runs and helm values.
+      MLFLOW_DEFAULT_ARTIFACT_ROOT: ${MLFLOW_ARTIFACT_ROOT:-/data/mlflow-artifacts}
     volumes:
       - mlflow_artifacts:/data/mlflow-artifacts
     command: >
