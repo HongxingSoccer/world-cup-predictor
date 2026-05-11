@@ -1,48 +1,277 @@
-# Worker resource budgets follow design §2.3.
+# Default values for wcp-workers. Sizing baseline:
+# deploy-recon/13_runtime_resources.md §13.5.
+#
+# All Celery workers reuse the wcp-ml-api image (same code base, just different
+# entrypoint) EXCEPT card-worker which carries Chromium and ships in its own
+# image (wcp-card-worker).
+
 image:
-  repository: ghcr.io/CHANGE_ME/wcp-ml-api
-  tag: latest
+  registry: ""
+  repository: wcp-ml-api
+  tag: ""
   pullPolicy: IfNotPresent
 
-env:
-  DATABASE_URL: "postgresql+psycopg2://wcp:CHANGE_ME@postgres:5432/wcp"
-  REDIS_URL: "redis://redis:6379/0"
-  KAFKA_BROKERS: "kafka:9092"
+# Names of the ConfigMap + Secret managed by the umbrella; sub-chart only refs.
+envFrom:
+  configMapName: wcp-config
+  secretName: wcp-secrets
 
-# Each worker runs a different Celery queue + module.
+# Non-secret runtime env shared by every worker pod.
+env:
+  PYTHONPATH: /app
+  MLFLOW_TRACKING_URI: http://wcp-mlflow:5000
+  WORKER_HEALTH_SERVER: "1"            # Phase 2 aiohttp /healthz on :8001
+  LOG_LEVEL: INFO
+
+# Probes for the aiohttp side-car (added in Phase 2 src/utils/worker_health.py).
+workerProbes:
+  liveness:
+    path: /healthz
+    initialDelaySeconds: 30
+    periodSeconds: 20
+    timeoutSeconds: 3
+    failureThreshold: 3
+  readiness:
+    path: /readyz
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  port: 8001
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+containerSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
+
+serviceAccount:
+  create: true
+  name: ""
+  # IRSA role ARN — workers read AWS Secrets Manager + write MLflow artifacts to S3.
+  annotations: {}
+
+imagePullSecrets: []
+
+# KEDA defaults — shared by ScaledObjects unless a worker overrides.
+keda:
+  # Address is rendered from the secret via secretTargetRef; the literal string
+  # below is only used if a chart user disables ESO and inlines it instead.
+  address: ""
+  # Reference an ExternalSecret-managed Secret that contains REDIS_URL / address.
+  # Each ScaledObject points its triggerAuthentication at this Secret.
+  secretRef:
+    name: wcp-secrets
+    addressKey: REDIS_URL
+
+# -----------------------------------------------------------------------------
+# Celery workers
+# -----------------------------------------------------------------------------
 workers:
-  ingestion-worker:
-    command: ["celery", "-A", "src.celery_app", "worker", "-Q", "ingestion", "-n", "ingestion@%h"]
+  ingestion:
+    enabled: true
+    name: wcp-ingestion-worker
+    replicaCount: 1
+    image: {}                          # inherits image.* unless overridden
     resources:
-      requests: { cpu: 100m, memory: 256Mi }
-      limits:   { cpu: 500m, memory: 512Mi }
-  ingestion-beat:
-    command: ["celery", "-A", "src.celery_app", "beat"]
+      requests: { cpu: 500m,  memory: 800Mi }
+      limits:   { cpu: 2000m, memory: 2Gi }
+    command: ["celery"]
+    args: ["-A", "src.celery_app:app", "worker", "--loglevel=INFO", "--concurrency=4", "-Q", "celery", "-n", "ingestion@%h"]
+    keda:
+      enabled: true
+      minReplicaCount: 1
+      maxReplicaCount: 4
+      pollingInterval: 15
+      cooldownPeriod: 120
+      queue: celery
+      listLength: "50"
+
+  beat:
+    enabled: true
+    name: wcp-ingestion-beat
+    # Hard-pinned to 1 — Celery beat *must not* run multi-replica or
+    # scheduled tasks get double-fired.
+    replicaCount: 1
+    image: {}
     resources:
-      requests: { cpu: 50m,  memory: 128Mi }
-      limits:   { cpu: 200m, memory: 256Mi }
-  card-worker:
-    command: ["celery", "-A", "src.celery_app", "worker", "-Q", "card", "-n", "card@%h"]
+      requests: { cpu: 100m, memory: 200Mi }
+      limits:   { cpu: 500m, memory: 400Mi }
+    command: ["celery"]
+    args: ["-A", "src.celery_app:app", "beat", "--loglevel=INFO"]
+    # Rolling-update would briefly run two beats. Recreate is the safe pattern.
+    strategy:
+      type: Recreate
+    keda: { enabled: false }
+    podDisruptionBudget:
+      enabled: true
+      maxUnavailable: 1
+
+  settlement:
+    enabled: true
+    name: wcp-settlement-worker
+    replicaCount: 1
+    image: {}
     resources:
-      requests: { cpu: 100m, memory: 256Mi }
-      limits:   { cpu: 500m, memory: 512Mi }
-  report-worker:
-    command: ["celery", "-A", "src.celery_app", "worker", "-Q", "reports", "-n", "report@%h"]
+      requests: { cpu: 200m,  memory: 256Mi }
+      limits:   { cpu: 1000m, memory: 512Mi }
+    command: ["celery"]
+    args: ["-A", "src.celery_app:app", "worker", "--loglevel=INFO", "--concurrency=2", "-Q", "settlement", "-n", "settle@%h"]
+    keda:
+      enabled: true
+      minReplicaCount: 1
+      maxReplicaCount: 3
+      pollingInterval: 15
+      cooldownPeriod: 180
+      queue: settlement
+      listLength: "20"
+
+  card:
+    enabled: true
+    name: wcp-card-worker
+    replicaCount: 1
+    # Card worker carries Chromium → separate image.
+    image:
+      repository: wcp-card-worker
     resources:
-      requests: { cpu: 100m, memory: 256Mi }
-      limits:   { cpu: 500m, memory: 512Mi }
-  push-worker:
-    command: ["celery", "-A", "src.celery_app", "worker", "-Q", "push", "-n", "push@%h"]
+      requests: { cpu: 500m,  memory: 400Mi }
+      limits:   { cpu: 2000m, memory: 1536Mi }
+    command: ["celery"]
+    args: ["-A", "src.celery_app:app", "worker", "--loglevel=INFO", "--concurrency=2", "-Q", "card", "-n", "card@%h"]
+    keda:
+      enabled: true
+      minReplicaCount: 1
+      maxReplicaCount: 4
+      pollingInterval: 15
+      cooldownPeriod: 300
+      queue: card
+      # Lower threshold — render is slow, so even a small backlog warrants scale-out.
+      listLength: "5"
+
+  reports:
+    enabled: true
+    name: wcp-reports-worker
+    replicaCount: 1
+    image: {}
     resources:
-      requests: { cpu: 100m, memory: 256Mi }
-      limits:   { cpu: 500m, memory: 512Mi }
-  settlement-worker:
-    command: ["celery", "-A", "src.celery_app", "worker", "-Q", "settlement", "-n", "settle@%h"]
-    resources:
-      requests: { cpu: 100m, memory: 256Mi }
-      limits:   { cpu: 500m, memory: 512Mi }
-  simulation-worker:
-    command: ["celery", "-A", "src.celery_app", "worker", "-Q", "simulation", "-n", "sim@%h"]
-    resources:
-      requests: { cpu: 200m, memory: 512Mi }
+      requests: { cpu: 300m,  memory: 400Mi }
       limits:   { cpu: 1000m, memory: 1Gi }
+    command: ["celery"]
+    args: ["-A", "src.celery_app:app", "worker", "--loglevel=INFO", "--concurrency=2", "-Q", "reports", "-n", "reports@%h"]
+    keda:
+      enabled: true
+      minReplicaCount: 1
+      maxReplicaCount: 3
+      pollingInterval: 30
+      cooldownPeriod: 300
+      queue: reports
+      listLength: "10"
+
+# -----------------------------------------------------------------------------
+# Flower — Celery monitoring UI (internal only, never exposed publicly)
+# -----------------------------------------------------------------------------
+flower:
+  enabled: true
+  name: wcp-flower
+  replicaCount: 1
+  image:
+    registry: ""
+    repository: mher/flower
+    tag: "2.0.1"
+    pullPolicy: IfNotPresent
+  resources:
+    requests: { cpu: 100m, memory: 200Mi }
+    limits:   { cpu: 500m, memory: 600Mi }
+  service:
+    type: ClusterIP
+    port: 5555
+  command: []
+  args:
+    - celery
+    - --broker=$(CELERY_BROKER_URL)
+    - flower
+    - --port=5555
+    - --address=0.0.0.0
+  env:
+    # Flower reads broker URL from CELERY_BROKER_URL; the umbrella's Secret
+    # exposes REDIS_URL, so we point CELERY_BROKER_URL at the same value.
+    FLOWER_PURGE_OFFLINE_WORKERS: "60"
+  probes:
+    liveness:
+      path: /healthcheck
+      initialDelaySeconds: 30
+      periodSeconds: 20
+      failureThreshold: 3
+    readiness:
+      path: /healthcheck
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      failureThreshold: 3
+
+# -----------------------------------------------------------------------------
+# MLflow tracking server (S3 backend; Postgres metadata store)
+# -----------------------------------------------------------------------------
+mlflow:
+  enabled: true
+  name: wcp-mlflow
+  replicaCount: 1
+  image:
+    registry: ghcr.io
+    repository: mlflow/mlflow
+    tag: v2.18.0
+    pullPolicy: IfNotPresent
+  resources:
+    requests: { cpu: 200m,  memory: 300Mi }
+    limits:   { cpu: 1000m, memory: 1Gi }
+  service:
+    type: ClusterIP
+    port: 5000
+  serviceAccount:
+    create: true
+    name: ""
+    # IRSA for S3 access to the MLflow artifact bucket.
+    annotations: {}
+  env:
+    MLFLOW_DEFAULT_ARTIFACT_ROOT: "s3://wcp-mlflow-artifacts/"
+    # MLFLOW_BACKEND_STORE_URI is injected from the umbrella secret (key
+    # MLFLOW_BACKEND_STORE_URI — Postgres connection string).
+  # MLflow wheel doesn't bundle psycopg2 / boto3 — install at container start.
+  # Acceptable for now; bake into a custom image once we standardise the runtime.
+  command: ["/bin/sh", "-c"]
+  args:
+    - >-
+      pip install --quiet psycopg2-binary boto3 &&
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri "$MLFLOW_BACKEND_STORE_URI"
+      --default-artifact-root "$MLFLOW_DEFAULT_ARTIFACT_ROOT"
+  probes:
+    liveness:
+      path: /health
+      initialDelaySeconds: 60
+      periodSeconds: 30
+      failureThreshold: 3
+    readiness:
+      path: /health
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      failureThreshold: 3
+
+topologySpread:
+  enabled: true
+  maxSkew: 1
+  topologyKey: topology.kubernetes.io/zone
+  whenUnsatisfiable: ScheduleAnyway
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
