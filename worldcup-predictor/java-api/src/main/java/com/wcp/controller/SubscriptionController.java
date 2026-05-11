@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -93,5 +94,25 @@ public class SubscriptionController {
         paymentService.handleCallback(channel, payload);
         // Both providers expect `success` as the canonical ack body.
         return ResponseEntity.ok("success");
+    }
+
+    /**
+     * Stripe webhook lives on its own endpoint because the signature check
+     * is over the exact raw bytes Stripe sent — pre-parsing to {@code JsonNode}
+     * (as the Alipay/WeChat handler does) would break the HMAC. We bind the
+     * body as {@code String} to keep the bytes intact.
+     */
+    @PostMapping(value = "/api/v1/payments/callback/stripe", consumes = "*/*")
+    @Operation(summary = "Stripe checkout.session.completed webhook.")
+    public ResponseEntity<String> stripeCallback(
+            @RequestHeader(value = "Stripe-Signature", required = false) String signatureHeader,
+            @RequestBody String rawBody
+    ) {
+        if (signatureHeader == null || signatureHeader.isBlank()) {
+            throw ApiException.badRequest("missing Stripe-Signature header");
+        }
+        paymentService.handleStripeWebhook(rawBody, signatureHeader);
+        // Stripe doesn't care about the body — any 2xx silences retries.
+        return ResponseEntity.ok("ok");
     }
 }

@@ -51,6 +51,16 @@ wcp:
   share:
     base-url: ${SHARE_BASE_URL:http://localhost:8080/s/}
 
+  # Stripe Checkout integration. Leave secret-key blank in dev to keep
+  # using the existing stub flow. With `sk_test_...` set, /subscriptions/create
+  # for channel=stripe hits the real Stripe API and returns the Checkout
+  # Session URL for the frontend to open.
+  stripe:
+    secret-key: ${STRIPE_SECRET_KEY:}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+    success-url: ${STRIPE_SUCCESS_URL:http://localhost/profile?subscribed=1}
+    cancel-url: ${STRIPE_CANCEL_URL:http://localhost/subscribe?cancelled=1}
+
 # --- Springdoc / Swagger UI ---
 springdoc:
   api-docs:

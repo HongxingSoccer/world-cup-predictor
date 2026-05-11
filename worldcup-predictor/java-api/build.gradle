@@ -37,6 +37,9 @@ dependencies {
     // --- OpenAPI / Swagger ---
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
 
+    // --- Stripe Java SDK (Checkout Session + webhook verification) ---
+    implementation 'com.stripe:stripe-java:32.1.0'
+
     // --- BCrypt (bundled in spring-security-crypto, exposed by starter-security) ---
 
     // --- Lombok ---
