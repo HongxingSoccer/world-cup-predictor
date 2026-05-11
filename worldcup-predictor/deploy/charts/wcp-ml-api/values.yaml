@@ -1,6 +1,10 @@
+# Default values for wcp-ml-api. Environment overrides go through the
+# umbrella chart's values-{env}.yaml.
+
 image:
-  repository: ghcr.io/CHANGE_ME/wcp-ml-api
-  tag: latest
+  registry: ""
+  repository: wcp-ml-api
+  tag: ""
   pullPolicy: IfNotPresent
 
 replicaCount: 2
@@ -11,22 +15,92 @@ service:
 
 resources:
   requests:
-    cpu: 200m
-    memory: 512Mi
+    cpu: 500m
+    memory: 600Mi
   limits:
-    cpu: 1000m
-    memory: 1Gi
+    cpu: 2000m
+    memory: 1536Mi
 
 autoscaling:
   enabled: true
   minReplicas: 2
-  maxReplicas: 4
+  maxReplicas: 6
   targetCPUUtilizationPercentage: 70
 
-ingress:
-  enabled: false  # ml-api typically lives behind java-api or ingress prefix /ml
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+serviceAccount:
+  create: true
+  name: ""
+  # IRSA role ARN — needs read on AWS Secrets Manager + read/write on the
+  # MLflow artifacts S3 bucket. Terraform output slots in here.
+  annotations: {}
+
+envFrom:
+  configMapName: wcp-config
+  secretName: wcp-secrets
 
 env:
-  DATABASE_URL: "postgresql+psycopg2://wcp:CHANGE_ME@postgres:5432/wcp"
-  REDIS_URL: "redis://redis:6379/0"
-  ADMIN_API_TOKEN: "CHANGE_ME"
+  PYTHONPATH: /app
+  MLFLOW_TRACKING_URI: http://wcp-mlflow:5000
+  LOG_LEVEL: INFO
+
+# uvicorn entrypoint — overrides the Dockerfile CMD so we can tune workers
+# per environment without rebuilding the image.
+command:
+  - uvicorn
+args:
+  - src.api:app
+  - --host
+  - 0.0.0.0
+  - --port
+  - "8000"
+  - --workers
+  - "2"
+
+probes:
+  # Model load + MLflow warm-up needs up to ~2 min from cold.
+  startup:
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 12
+  liveness:
+    path: /health
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    path: /health
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+containerSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+  # MLflow + matplotlib write to /tmp; keep the root FS writable for now.
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
+
+topologySpread:
+  enabled: true
+  maxSkew: 1
+  topologyKey: topology.kubernetes.io/zone
+  whenUnsatisfiable: ScheduleAnyway
+
+imagePullSecrets: []
+nodeSelector: {}
+tolerations: []
+affinity: {}
