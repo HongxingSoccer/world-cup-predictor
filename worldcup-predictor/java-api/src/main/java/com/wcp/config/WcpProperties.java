@@ -10,13 +10,17 @@ import org.springframework.validation.annotation.Validated;
  *
  * @param jwt     JWT signing / verification config (RS256 key paths + TTLs).
  * @param share   Outbound share-link prefix (e.g. https://wcp.app/s/).
+ * @param stripe  Stripe payment integration credentials (optional — when
+ *                {@code secretKey} is blank the channel is treated as
+ *                un-configured and orders default back to the dev stub).
  */
 @Validated
 @ConfigurationProperties(prefix = "wcp")
 public record WcpProperties(
         Jwt jwt,
         Share share,
-        Cors cors
+        Cors cors,
+        Stripe stripe
 ) {
 
     public record Jwt(
@@ -30,4 +34,19 @@ public record WcpProperties(
     public record Share(@NotBlank String baseUrl) {}
 
     public record Cors(@NotBlank String allowedOrigins) {}
+
+    /**
+     * Optional fields — empty defaults so the app still boots without
+     * Stripe credentials configured (Phase-3.5 dev environments).
+     */
+    public record Stripe(
+            String secretKey,
+            String webhookSecret,
+            String successUrl,
+            String cancelUrl
+    ) {
+        public boolean isConfigured() {
+            return secretKey != null && !secretKey.isBlank();
+        }
+    }
 }
