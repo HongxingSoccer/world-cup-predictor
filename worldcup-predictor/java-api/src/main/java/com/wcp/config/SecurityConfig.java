@@ -58,7 +58,16 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/subscriptions/plans").permitAll()
                         .requestMatchers("/s/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/payments/callback/**").permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        // `/actuator/prometheus` is open so the in-cluster
+                        // Prometheus scraper can hit it without a JWT. In
+                        // EKS we'll restrict access at the NetworkPolicy /
+                        // SG layer rather than via Spring Security.
+                        .requestMatchers(
+                                "/actuator/health",
+                                "/actuator/info",
+                                "/actuator/prometheus",
+                                "/actuator/metrics"
+                        ).permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/api-docs/**").permitAll()
 
                         // --- Admin ---

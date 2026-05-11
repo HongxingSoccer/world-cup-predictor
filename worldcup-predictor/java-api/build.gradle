@@ -37,6 +37,10 @@ dependencies {
     // --- OpenAPI / Swagger ---
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
 
+    // --- Observability: Prometheus metrics + JSON logback encoder ---
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
+
     // --- Stripe Java SDK (Checkout Session + webhook verification) ---
     implementation 'com.stripe:stripe-java:32.1.0'
 

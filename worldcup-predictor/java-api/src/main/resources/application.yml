@@ -84,10 +84,18 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        # `prometheus` exposes /actuator/prometheus for the metrics scraper.
+        # `metrics` is the lower-level JSON view; useful for ad-hoc curling.
+        include: health,info,prometheus,metrics
   endpoint:
     health:
       show-details: when_authorized
+  metrics:
+    tags:
+      # Bake the Spring profile into every metric so Prometheus scrapes
+      # cleanly separate dev / staging / prod time-series.
+      application: wcp-java-api
+      profile: ${SPRING_PROFILES_ACTIVE:default}
 
 logging:
   level:
