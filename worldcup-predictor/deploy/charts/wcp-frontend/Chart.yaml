@@ -1,4 +1,3 @@
-# wcp-frontend Helm chart (Phase 5, design §2.5).
 apiVersion: v2
 name: wcp-frontend
 description: Next.js frontend for the World Cup 2026 Predictor.
