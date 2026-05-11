@@ -20,4 +20,11 @@ COPY . .
 
 ENV PYTHONPATH=/app
 
+# Liveness probe for the ml-api entrypoint. Worker variants (celery)
+# don't run on port 8000 so the HEALTHCHECK simply no-ops their probe
+# — K8s deployments override this with WORKER_HEALTH_SERVER + an
+# httpGet probe on port 8001 (see src/utils/worker_health.py).
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl -fsS http://localhost:8000/health || exit 1
+
 CMD ["python", "-c", "print('worldcup-predictor base image — override CMD in compose')"]

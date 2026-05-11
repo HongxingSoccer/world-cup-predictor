@@ -1,4 +1,4 @@
-"""GET /api/v1/model/health — model + service liveness check."""
+"""GET /health (cheap liveness) + GET /api/v1/model/health (model state)."""
 from __future__ import annotations
 
 import time
@@ -9,10 +9,21 @@ from fastapi import APIRouter, Depends
 from src.api.dependencies import get_model
 from src.ml.models.poisson import PoissonBaselineModel
 
-router = APIRouter(prefix="/api/v1", tags=["health"])
+router = APIRouter(tags=["health"])
 
 
-@router.get("/model/health")
+@router.get("/health")
+def liveness() -> dict[str, str]:
+    """Cheap liveness probe used by Dockerfile HEALTHCHECK and K8s livenessProbe.
+
+    Deliberately does NOT touch the DB / Redis / model state — anything
+    that talks to a dependency belongs in /readyz (TODO) so a transient
+    upstream blip can't trigger pod restarts.
+    """
+    return {"status": "ok", "service": "wcp-ml-api"}
+
+
+@router.get("/api/v1/model/health")
 def model_health(model: PoissonBaselineModel = Depends(get_model)) -> dict[str, object]:
     """Return basic service info: model version, training status, uptime."""
     started_at = getattr(router, "_started_at", time.monotonic())

@@ -24,4 +24,12 @@ from src.config.celery_config import app
 # Marked noqa because flake8 / ruff would otherwise flag the unused import.
 import src.tasks  # noqa: F401, E402
 
+# Optional: when the worker is running under K8s the deployment sets
+# WORKER_HEALTH_SERVER=true so /healthz + /readyz become reachable on
+# port 8001 for liveness / readiness probes. The function is a no-op
+# when the env var is unset (local docker-compose default).
+from src.utils.worker_health import maybe_start_health_server  # noqa: E402
+
+maybe_start_health_server()
+
 __all__ = ["app"]

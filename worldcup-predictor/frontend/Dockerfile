@@ -35,4 +35,10 @@ RUN addgroup -S nextjs && adduser -S nextjs -G nextjs && chown -R nextjs:nextjs 
 USER nextjs
 
 EXPOSE 3000
+
+# Liveness probe — alpine ships busybox `wget` but not `curl`.
+# `/api/health` is the force-static route registered at app/api/health/route.ts.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD wget -q --spider http://localhost:3000/api/health || exit 1
+
 CMD ["node", "server.js"]
