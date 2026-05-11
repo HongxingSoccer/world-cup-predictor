@@ -91,6 +91,13 @@ public class SubscriptionController {
         if (!"alipay".equals(channel) && !"wechat_pay".equals(channel)) {
             throw ApiException.badRequest("unknown channel: " + channel);
         }
+        // CN channels stay reachable only when the feature flag is on. With
+        // the flag off we return a plain 404 (NOT a 503) so probes can't
+        // tell the endpoint exists — minimises the public attack surface
+        // while the signature-verification stub remains in place.
+        if (!paymentService.isCnChannelsEnabled()) {
+            return ResponseEntity.notFound().build();
+        }
         paymentService.handleCallback(channel, payload);
         // Both providers expect `success` as the canonical ack body.
         return ResponseEntity.ok("success");

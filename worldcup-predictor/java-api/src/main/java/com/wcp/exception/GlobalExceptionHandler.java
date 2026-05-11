@@ -22,6 +22,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(PaymentChannelDisabledException.class)
+    public ResponseEntity<Map<String, Object>> onChannelDisabled(PaymentChannelDisabledException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", "payment_channel_unavailable");
+        body.put("channel", ex.getChannel());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(body);
+    }
+
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<Map<String, Object>> onApi(ApiException ex) {
         return ResponseEntity.status(ex.getStatus()).body(envelope(

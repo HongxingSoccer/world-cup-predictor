@@ -20,7 +20,8 @@ public record WcpProperties(
         Jwt jwt,
         Share share,
         Cors cors,
-        Stripe stripe
+        Stripe stripe,
+        Payments payments
 ) {
 
     public record Jwt(
@@ -49,4 +50,14 @@ public record WcpProperties(
             return secretKey != null && !secretKey.isBlank();
         }
     }
+
+    /**
+     * Toggles for payment channels whose real SDK is not yet integrated.
+     * {@code enableCnChannels} unlocks the Alipay / WeChat code paths
+     * (currently stub) — leave it FALSE in any environment that's exposed
+     * to the public internet, otherwise an attacker can replay forged
+     * callbacks and flip a Payment row to {@code paid} without spending
+     * a yuan. Stripe is unaffected — it has a real signature check.
+     */
+    public record Payments(boolean enableCnChannels) {}
 }

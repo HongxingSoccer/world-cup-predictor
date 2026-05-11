@@ -35,3 +35,10 @@ spring:
       - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
       - org.springframework.boot.actuate.autoconfigure.data.redis.RedisHealthContributorAutoConfiguration
       - org.springframework.boot.actuate.autoconfigure.data.redis.RedisReactiveHealthContributorAutoConfiguration
+
+# Test profile mirrors the dev profile for payment-channel gating so the
+# existing SubscriptionControllerIntegrationTest can still exercise the
+# alipay happy path. Production keeps the application.yml default (false).
+wcp:
+  payments:
+    enable-cn-channels: true
