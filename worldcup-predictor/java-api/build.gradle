@@ -49,6 +49,14 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // H2 powers @DataJpaTest's auto-configured datasource. Production runs
+    // on Postgres with Alembic-managed schema; the test profile turns on
+    // `ddl-auto=create-drop` so Hibernate generates the schema from the
+    // @Entity annotations on the fly. The two stay in sync via the
+    // entities themselves — schema-drift between Alembic and the JPA
+    // mapping would surface as a `validate`-mode startup failure in
+    // production.
+    testRuntimeOnly 'com.h2database:h2'
 }
 
 tasks.named('test') {

@@ -1,0 +1,26 @@
+# Test profile — H2 in-memory under Postgres-compatibility mode.
+#
+# We do NOT let Hibernate auto-generate the schema (`ddl-auto=create-drop`)
+# because several entities (Payment, ShareLink) use `columnDefinition = "jsonb"`
+# which only Postgres understands. Instead, `schema.sql` ships an H2-friendly
+# DDL that mirrors the Alembic-managed production schema closely enough for
+# the repository slice tests.
+spring:
+  datasource:
+    url: jdbc:h2:mem:wcp_test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: none
+    database-platform: org.hibernate.dialect.H2Dialect
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
