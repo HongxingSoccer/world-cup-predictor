@@ -135,14 +135,19 @@ services:
     command: ["celery", "flower"]
 
   mlflow-server:
-    image: ghcr.io/mlflow/mlflow:latest
+    # Pin to MLflow 2.x — v3 introduced a "security middleware" that forces
+    # 127.0.0.1 binding regardless of --host, which breaks container-to-container
+    # access from ml-api / workers.
+    image: ghcr.io/mlflow/mlflow:v2.18.0
     container_name: wcp-mlflow
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
+    # Host port 5001 because macOS reserves 5000 for AirPlay Receiver.
+    # Container still listens on 5000 — only the host mapping is shifted.
     ports:
-      - "5000:5000"
+      - "5001:5000"
     environment:
       # MLflow needs psycopg2 to talk to Postgres; pip-install on entry.
       MLFLOW_BACKEND_STORE_URI: postgresql://mlflow:mlflow@postgres:5432/mlflow
@@ -153,12 +158,13 @@ services:
       MLFLOW_DEFAULT_ARTIFACT_ROOT: ${MLFLOW_ARTIFACT_ROOT:-/data/mlflow-artifacts}
     volumes:
       - mlflow_artifacts:/data/mlflow-artifacts
-    command: >
-      sh -c "pip install --quiet psycopg2-binary &&
-             mlflow server
-               --host 0.0.0.0 --port 5000
-               --backend-store-uri $$MLFLOW_BACKEND_STORE_URI
-               --default-artifact-root $$MLFLOW_DEFAULT_ARTIFACT_ROOT"
+    # Single-line form: the alpine /bin/sh in the MLflow 2.x image mis-parses
+    # the YAML folded-block form and treats backslash-newline as a literal
+    # break, so spell the command out explicitly on one line.
+    command:
+      - /bin/sh
+      - -c
+      - "pip install --quiet psycopg2-binary && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri $$MLFLOW_BACKEND_STORE_URI --default-artifact-root $$MLFLOW_DEFAULT_ARTIFACT_ROOT"
 
   ml-api:
     build: .
