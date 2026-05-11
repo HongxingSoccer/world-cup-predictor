@@ -1,106 +1,107 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Chart.Name }}
-  labels: {{- include "wcp.labels" . | nindent 4 }}
+  name: {{ include "wcp-java-api.fullname" . }}
+  labels:
+    {{- include "wcp-java-api.labels" . | nindent 4 }}
 spec:
+  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
-  selector:
-    matchLabels: {{- include "wcp.selectorLabels" . | nindent 6 }}
+  {{- end }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 0
       maxSurge: 1
+  selector:
+    matchLabels:
+      {{- include "wcp-java-api.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      labels: {{- include "wcp.selectorLabels" . | nindent 8 }}
+      labels:
+        {{- include "wcp-java-api.selectorLabels" . | nindent 8 }}
     spec:
+      serviceAccountName: {{ include "wcp-java-api.serviceAccountName" . }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.topologySpread.enabled }}
+      topologySpreadConstraints:
+        - maxSkew: {{ .Values.topologySpread.maxSkew }}
+          topologyKey: {{ .Values.topologySpread.topologyKey }}
+          whenUnsatisfiable: {{ .Values.topologySpread.whenUnsatisfiable }}
+          labelSelector:
+            matchLabels:
+              {{- include "wcp-java-api.selectorLabels" . | nindent 14 }}
+      {{- end }}
+      volumes:
+        - name: jwt-keys
+          secret:
+            secretName: {{ .Values.jwtKeys.secretName }}
+            optional: true
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: {{ include "wcp-java-api.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.envFrom.configMapName }}
+                optional: true
+            - secretRef:
+                name: {{ .Values.envFrom.secretName }}
+                optional: true
           env:
             {{- range $k, $v := .Values.env }}
             - name: {{ $k }}
               value: {{ $v | quote }}
             {{- end }}
-          readinessProbe:
+          volumeMounts:
+            - name: jwt-keys
+              mountPath: {{ .Values.jwtKeys.mountPath }}
+              readOnly: true
+          startupProbe:
             httpGet:
-              path: /actuator/health/readiness
+              path: {{ .Values.probes.startup.path }}
               port: http
-            initialDelaySeconds: 20
-            periodSeconds: 10
+            initialDelaySeconds: {{ .Values.probes.startup.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.startup.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.startup.failureThreshold }}
           livenessProbe:
             httpGet:
-              path: /actuator/health/liveness
+              path: {{ .Values.probes.liveness.path }}
               port: http
-            initialDelaySeconds: 40
-            periodSeconds: 30
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.readiness.path }}
+              port: http
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Chart.Name }}
-  labels: {{- include "wcp.labels" . | nindent 4 }}
-spec:
-  type: {{ .Values.service.type }}
-  selector: {{- include "wcp.selectorLabels" . | nindent 4 }}
-  ports:
-    - name: http
-      port: {{ .Values.service.port }}
-      targetPort: http
-{{- if .Values.autoscaling.enabled }}
----
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: {{ .Chart.Name }}
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: {{ .Chart.Name }}
-  minReplicas: {{ .Values.autoscaling.minReplicas }}
-  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
-{{- end }}
-{{- if .Values.ingress.enabled }}
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: {{ .Chart.Name }}
-  annotations:
-    {{- toYaml .Values.ingress.annotations | nindent 4 }}
-spec:
-  ingressClassName: {{ .Values.ingress.className }}
-  tls:
-    {{- toYaml .Values.ingress.tls | nindent 4 }}
-  rules:
-    {{- range .Values.ingress.hosts }}
-    - host: {{ .host }}
-      http:
-        paths:
-          {{- range .paths }}
-          - path: {{ . }}
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ $.Chart.Name }}
-                port:
-                  number: {{ $.Values.service.port }}
-          {{- end }}
-    {{- end }}
-{{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,14 @@
+{{ include "wcp-java-api.fullname" . }} installed.
+
+Internal cluster URL:
+  http://{{ include "wcp-java-api.fullname" . }}:{{ .Values.service.port }}
+
+Health endpoints:
+  Liveness:  /actuator/health
+  Readiness: /actuator/health
+  Prometheus scrape target: /actuator/prometheus
+
+Routed via the umbrella ALB Ingress at /api/v1/* and /s/*.
+
+Tail logs:
+  kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ include "wcp-java-api.name" . }} --tail=100 -f
