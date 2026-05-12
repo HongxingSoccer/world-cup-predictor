@@ -74,20 +74,25 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,scope=${{ matrix.service }},mode=max
 
-  trigger-staging:
-    name: trigger · cd-staging
+  trigger-helm-cd:
+    name: trigger · worldcup-helm cd-dev
     runs-on: ubuntu-22.04
     needs: build
     if: github.ref == 'refs/heads/main'
     permissions:
-      actions: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - name: Dispatch staging deploy
+      - name: Dispatch deploy-dev to worldcup-helm
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Fine-grained PAT, scoped to HongxingSoccer/worldcup-helm only,
+          # with permissions: actions:write + metadata:read.
+          GH_TOKEN: ${{ secrets.HELM_REPO_DISPATCH_TOKEN }}
         run: |
-          gh workflow run cd-staging.yml \
-            --ref ${{ github.ref_name }} \
-            -f sha=${{ github.sha }} || echo "cd-staging workflow not yet configured; skipping"
+          # Pass the short SHA — matches docker/metadata-action's `type=sha,format=short`
+          # output, which is the tag the build job actually pushed to ECR.
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          gh api repos/HongxingSoccer/worldcup-helm/dispatches \
+            -f event_type=deploy-dev \
+            -f client_payload[image_tag]="$SHORT_SHA" \
+            && echo "Dispatched deploy-dev to worldcup-helm with tag=$SHORT_SHA" \
+            || echo "::warning::dispatch failed — verify HELM_REPO_DISPATCH_TOKEN secret is set"

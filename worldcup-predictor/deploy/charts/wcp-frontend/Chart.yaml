@@ -1,6 +1,0 @@
-apiVersion: v2
-name: wcp-frontend
-description: Next.js frontend for the World Cup 2026 Predictor.
-type: application
-version: 0.1.0
-appVersion: "0.3.0"
