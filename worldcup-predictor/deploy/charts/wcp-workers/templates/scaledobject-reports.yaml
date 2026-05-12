@@ -1,4 +1,0 @@
-{{- $w := .Values.workers.reports -}}
-{{- if and $w.enabled $w.keda.enabled -}}
-{{ include "wcp-workers.scaledObject" (dict "ctx" . "w" $w) }}
-{{- end }}
