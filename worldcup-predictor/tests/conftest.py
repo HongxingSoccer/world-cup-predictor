@@ -71,6 +71,8 @@ _PORTABLE_TABLE_NAMES: frozenset[str] = frozenset(
         # Phase 4 (ML reports + push)
         "analysis_reports", "simulation_results",
         "push_notifications", "user_push_settings",
+        # M9 (hedging advisory)
+        "hedge_scenarios", "hedge_calculations", "hedge_results", "parlay_legs",
     }
 )
 

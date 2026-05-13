@@ -9,6 +9,7 @@ from .competition import Competition
 from .data_source_log import DataSourceLog
 from .elo_rating import EloRating
 from .h2h_record import H2HRecord
+from .hedge_scenario import HedgeCalculation, HedgeResult, HedgeScenario, ParlayLeg
 from .injury import Injury
 from .match import Match
 from .match_feature import MatchFeature
@@ -42,6 +43,9 @@ __all__ = [
     "DataSourceLog",
     "EloRating",
     "H2HRecord",
+    "HedgeCalculation",
+    "HedgeResult",
+    "HedgeScenario",
     "Injury",
     "Match",
     "MatchFeature",
@@ -49,6 +53,7 @@ __all__ = [
     "MatchStats",
     "OddsAnalysis",
     "OddsSnapshot",
+    "ParlayLeg",
     "Payment",
     "Player",
     "PlayerStats",
