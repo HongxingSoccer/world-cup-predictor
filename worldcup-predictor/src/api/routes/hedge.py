@@ -488,4 +488,61 @@ def _find_best_odds(
     return Decimal(str(odds)), bookmaker
 
 
+# -----------------------------------------------------------------------------
+# M9.5 — calculate from an existing user_position
+# -----------------------------------------------------------------------------
+
+
+@router.post(
+    "/from-position/{position_id}",
+    response_model=HedgeCalculationResponse,
+)
+def calculate_from_position(
+    position_id: int,
+    hedge_mode: str = "full",
+    hedge_ratio: Decimal | None = None,
+    session: Session = Depends(get_db_session),
+    prediction_service: Any = Depends(get_prediction_service),
+) -> HedgeCalculationResponse:
+    """Re-use the position's data to populate a single-bet hedge calc.
+
+    Behaviour matches :func:`calculate_hedge` but pulls inputs from the
+    position row, and writes back ``hedge_scenarios.position_id`` so
+    downstream history reads can correlate calculator runs with their
+    triggering position.
+    """
+    from src.models.hedge_scenario import HedgeScenario
+    from src.models.user_position import UserPosition
+
+    position = session.get(UserPosition, position_id)
+    if position is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"position {position_id} not found",
+        )
+
+    if hedge_mode not in {"full", "partial", "risk"}:
+        hedge_mode = "full"
+    body = HedgeCalculationRequest(
+        match_id=position.match_id,
+        original_stake=position.stake,
+        original_odds=position.odds,
+        original_outcome=position.outcome,  # type: ignore[arg-type]
+        original_market=position.market,  # type: ignore[arg-type]
+        hedge_mode=hedge_mode,  # type: ignore[arg-type]
+        hedge_ratio=hedge_ratio,
+    )
+
+    response = calculate_hedge(
+        body=body, session=session, prediction_service=prediction_service
+    )
+
+    scenario = session.get(HedgeScenario, response.scenario_id)
+    if scenario is not None:
+        scenario.position_id = position.id
+        session.commit()
+
+    return response
+
+
 __all__ = ["HEDGE_DISCLAIMER", "router"]

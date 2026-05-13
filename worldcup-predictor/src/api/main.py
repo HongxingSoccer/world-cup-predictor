@@ -35,7 +35,9 @@ from src.api.routes import (
     hedge,
     markets,
     matches,
+    notifications,
     odds,
+    positions,
     predict,
     predictions,
     push_settings,
@@ -134,6 +136,8 @@ def _create_app() -> FastAPI:
     app.include_router(push_settings.router)
     app.include_router(admin.router)
     app.include_router(hedge.router)
+    app.include_router(positions.router)
+    app.include_router(notifications.router)
 
     @app.get("/", include_in_schema=False)
     def _root() -> dict[str, str]:
