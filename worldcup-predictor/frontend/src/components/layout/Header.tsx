@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Trophy, User as UserIcon } from 'lucide-react';
 
 import { CompactLocaleToggle } from '@/components/i18n/CompactLocaleToggle';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useT } from '@/i18n/I18nProvider';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -13,6 +14,7 @@ export function Header() {
   const t = useT();
   const { user, isAuthenticated } = useAuth();
   const { tier } = useSubscription();
+  const showBasicLinks = isAuthenticated && tier !== 'free';
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-800/70 bg-ink-900/70 backdrop-blur-xl supports-[backdrop-filter]:bg-ink-900/60">
@@ -43,12 +45,21 @@ export function Header() {
               {t('nav.hedge')}
             </Link>
           )}
+          {showBasicLinks ? (
+            <Link
+              href="/positions"
+              className="text-slate-300 transition-colors hover:text-brand-400"
+            >
+              {t('nav.positions')}
+            </Link>
+          ) : null}
           <Link href="/subscribe" className="text-slate-300 transition-colors hover:text-brand-400">
             {t('nav.subscribe')}
           </Link>
         </nav>
 
         <div className="flex items-center gap-2">
+          <NotificationBell />
           <CompactLocaleToggle />
           {isAuthenticated && tier !== 'free' ? (
             <span

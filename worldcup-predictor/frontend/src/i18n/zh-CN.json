@@ -21,6 +21,7 @@
     "knockout": "淘汰赛",
     "winProb": "夺冠概率",
     "hedge": "对冲",
+    "positions": "我的仓位",
     "subscribe": "订阅",
     "profile": "个人中心",
     "login": "登录",
@@ -625,6 +626,78 @@
         "hedgeValueAdded": "对冲增加价值",
         "settledAt": "结算时间"
       }
+    }
+  },
+  "positions": {
+    "title": "我的仓位",
+    "subtitle": "记录在投注单,赔率变动或出现对冲机会时实时推送。",
+    "create": "新建仓位",
+    "empty": "暂无仓位,登记第一笔投注即可开始监控。",
+    "tierLocked": "仓位追踪是 basic 会员功能,升级后可享受实时对冲提示。",
+    "filterAll": "全部",
+    "alertBadge": "{count} 条对冲机会",
+    "hedgeWindowOpen": "可对冲",
+    "matchRef": "比赛 #{id}",
+    "pnl": "盈亏",
+    "loadFailed": "仓位加载失败。",
+    "updateFailed": "状态更新失败。",
+    "deleteFailed": "取消失败。",
+    "confirmDelete": "确认取消该仓位?",
+    "formTitle": "登记一笔仓位",
+    "formSubmit": "保存仓位",
+    "fieldMatchId": "比赛 ID",
+    "fieldPlatform": "平台",
+    "fieldMarket": "盘口",
+    "fieldOutcome": "选项",
+    "fieldStake": "本金",
+    "fieldOdds": "赔率",
+    "fieldPlacedAt": "下注时间",
+    "fieldNotes": "备注",
+    "errorMatchId": "比赛 ID 必须为正整数。",
+    "errorStake": "本金必须大于 0。",
+    "errorOdds": "赔率必须大于 1.0。",
+    "errorGeneric": "仓位保存失败。",
+    "actionMarkHedged": "标记已对冲",
+    "actionHedge": "打开对冲计算 →",
+    "actionCancel": "取消仓位",
+    "status": {
+      "active": "进行中",
+      "hedged": "已对冲",
+      "settled": "已结算",
+      "cancelled": "已取消"
+    },
+    "market": {
+      "1x2": "胜平负",
+      "over_under": "大小球",
+      "asian_handicap": "亚盘",
+      "btts": "双方进球"
+    },
+    "outcome": {
+      "home": "主胜",
+      "draw": "平局",
+      "away": "客胜",
+      "over": "大",
+      "under": "小",
+      "yes": "是",
+      "no": "否"
+    }
+  },
+  "notificationCentre": {
+    "title": "通知中心",
+    "bellLabel": "通知中心",
+    "unreadLabel": "未读通知",
+    "empty": "暂无新通知,出现对冲机会会即时推送。",
+    "loadFailed": "通知加载失败。",
+    "markAllRead": "全部标为已读",
+    "markAllFailed": "全部标记失败,请重试。",
+    "kind": {
+      "hedge_window": "对冲",
+      "position_settled": "已结算",
+      "arbitrage": "套利",
+      "high_ev": "高价值",
+      "match_start": "开赛",
+      "red_hit": "命中",
+      "ai_report": "战报"
     }
   }
 }
