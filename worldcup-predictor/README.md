@@ -21,6 +21,12 @@ Phase-3+ work adds a Java business service (`java-api/`) and a Next.js frontend
   `match.finished`, `odds.updated`, `data.quality.alert`).
 - Elo backfill, data-quality checks, three operational scripts.
 - Test coverage for every adapter (36 tests passing as of this commit).
+- **M9 Hedging Advisory** (premium): single + parlay hedge calculator at
+  `/hedge` with a tri-coloured ratio slider, ML-aware recommendation
+  badge, and a P/L bar chart per outcome; history + ROI / win-rate
+  summary at `/hedge/history`. Backend: `src/ml/hedge/` (Python) +
+  `com.wcp.hedge.*` (Java Spring Boot). Design doc:
+  [`docs/M9_hedging_module_design.md`](docs/M9_hedging_module_design.md).
 
 ## Quick start
 
