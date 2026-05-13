@@ -1,5 +1,6 @@
 package com.wcp.client;
 
+import com.wcp.exception.MlApiUnavailableException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -360,6 +362,72 @@ public class MlApiClient {
             // empty state, so swallow + log.
             log.info("ml_api_worldcup_team_path_unavailable team={} error={}", teamId, ex.getMessage());
             return Map.of();
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // M9 hedge endpoints — failure mode is different from the rest.
+    //
+    // Unlike predictions / odds (where a 5xx falls through to an empty
+    // payload and the UI renders "no data"), the hedge endpoints have
+    // no useful default: if ml-api can't compute the math, the user
+    // should see "service unavailable, try again" rather than a silent
+    // zero-recommendation response. Throws MlApiUnavailableException.
+    // -----------------------------------------------------------------
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> hedgeCalculate(Map<String, Object> requestBody) {
+        try {
+            Map<String, Object> body = restTemplate.postForObject(
+                    "/api/v1/hedge/calculate", requestBody, Map.class);
+            if (body == null) {
+                throw new MlApiUnavailableException("/hedge/calculate returned null body");
+            }
+            return body;
+        } catch (HttpClientErrorException ex) {
+            // 4xx is a contract violation (bad request, missing API key, etc.).
+            // Surface to the caller verbatim so the controller can map it.
+            log.warn(
+                    "ml_api_hedge_calculate_4xx status={} body={}",
+                    ex.getStatusCode(), ex.getResponseBodyAsString());
+            throw ex;
+        } catch (HttpServerErrorException ex) {
+            log.warn(
+                    "ml_api_hedge_calculate_5xx status={} body={}",
+                    ex.getStatusCode(), ex.getResponseBodyAsString());
+            throw new MlApiUnavailableException(
+                    "/hedge/calculate returned " + ex.getStatusCode());
+        } catch (RestClientException ex) {
+            log.warn("ml_api_hedge_calculate_failed error={}", ex.getMessage());
+            throw new MlApiUnavailableException(
+                    "/hedge/calculate: " + ex.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> hedgeParlay(Map<String, Object> requestBody) {
+        try {
+            Map<String, Object> body = restTemplate.postForObject(
+                    "/api/v1/hedge/parlay", requestBody, Map.class);
+            if (body == null) {
+                throw new MlApiUnavailableException("/hedge/parlay returned null body");
+            }
+            return body;
+        } catch (HttpClientErrorException ex) {
+            log.warn(
+                    "ml_api_hedge_parlay_4xx status={} body={}",
+                    ex.getStatusCode(), ex.getResponseBodyAsString());
+            throw ex;
+        } catch (HttpServerErrorException ex) {
+            log.warn(
+                    "ml_api_hedge_parlay_5xx status={} body={}",
+                    ex.getStatusCode(), ex.getResponseBodyAsString());
+            throw new MlApiUnavailableException(
+                    "/hedge/parlay returned " + ex.getStatusCode());
+        } catch (RestClientException ex) {
+            log.warn("ml_api_hedge_parlay_failed error={}", ex.getMessage());
+            throw new MlApiUnavailableException(
+                    "/hedge/parlay: " + ex.getMessage());
         }
     }
 
