@@ -25,10 +25,23 @@ Important math note (GAP 6 — see PR description):
 from __future__ import annotations
 
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Any
+from typing import ClassVar, TypedDict
 
 from .schemas import HedgeMode, RiskTolerance
 
+
+class SingleHedgeResult(TypedDict):
+    """Calculator output for a single-bet hedge.
+
+    All Decimals are already quantised (money → 0.01). ``guaranteed_profit``
+    is only populated when ``hedge_ratio == 1.0`` (full hedge / arbitrage).
+    """
+
+    hedge_stake: Decimal
+    profit_if_original_wins: Decimal
+    profit_if_hedge_wins: Decimal
+    max_loss: Decimal
+    guaranteed_profit: Decimal | None
 
 # Quantisation targets — pre-built for performance + readability.
 _Q_MONEY = Decimal("0.01")
@@ -48,7 +61,7 @@ class HedgeCalculator:
     """Static-method calculator. State-free; safe to call concurrently."""
 
     # Ratio recommendations per §2.2 / Task 3.3 spec.
-    _MODE_TO_RATIO: dict[HedgeMode, Decimal] = {
+    _MODE_TO_RATIO: ClassVar[dict[HedgeMode, Decimal]] = {
         "full": Decimal("1.0"),
         "partial": Decimal("0.6"),
         "risk": Decimal("0.3"),
@@ -64,7 +77,7 @@ class HedgeCalculator:
         original_odds: Decimal,
         hedge_odds: Decimal,
         hedge_ratio: Decimal = Decimal("1.0"),
-    ) -> dict[str, Decimal | None]:
+    ) -> SingleHedgeResult:
         """Return the full set of P/L numbers for a single-bet hedge.
 
         Keys returned:

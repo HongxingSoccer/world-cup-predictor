@@ -15,9 +15,9 @@ Notes:
 """
 from __future__ import annotations
 
+from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import Iterator
 
 import pytest
 from fastapi.testclient import TestClient

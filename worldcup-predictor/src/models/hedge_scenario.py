@@ -38,8 +38,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base
 
 if TYPE_CHECKING:  # pragma: no cover — type-only imports
-    from .match import Match
-    from .user import User
+    pass
 
 
 class HedgeScenario(Base):
@@ -76,17 +75,17 @@ class HedgeScenario(Base):
     )
 
     # Relationships — back_populates mirrors are defined below.
-    calculations: Mapped[list["HedgeCalculation"]] = relationship(
+    calculations: Mapped[list[HedgeCalculation]] = relationship(
         back_populates="scenario",
         cascade="all, delete-orphan",
         order_by="HedgeCalculation.id",
     )
-    result: Mapped["HedgeResult | None"] = relationship(
+    result: Mapped[HedgeResult | None] = relationship(
         back_populates="scenario",
         cascade="all, delete-orphan",
         uselist=False,
     )
-    legs: Mapped[list["ParlayLeg"]] = relationship(
+    legs: Mapped[list[ParlayLeg]] = relationship(
         back_populates="scenario",
         cascade="all, delete-orphan",
         order_by="ParlayLeg.leg_order",

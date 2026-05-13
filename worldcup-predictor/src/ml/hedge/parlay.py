@@ -14,7 +14,19 @@ from __future__ import annotations
 from decimal import ROUND_HALF_UP, Decimal
 from functools import reduce
 from operator import mul
-from typing import Any
+from typing import Any, TypedDict
+
+
+class ParlayHedgeResult(TypedDict):
+    """Calculator output for a last-leg parlay hedge."""
+
+    parlay_potential: Decimal
+    hedge_stake: Decimal
+    profit_all_legs_win: Decimal
+    profit_last_leg_loses: Decimal
+    max_loss: Decimal
+    guaranteed_profit: Decimal | None
+
 
 _Q_MONEY = Decimal("0.01")
 
@@ -32,7 +44,7 @@ class ParlayHedgeCalculator:
         legs: list[dict[str, Any]],
         hedge_odds: Decimal,
         hedge_ratio: Decimal = Decimal("1.0"),
-    ) -> dict[str, Decimal | None]:
+    ) -> ParlayHedgeResult:
         """Compute hedge for an N-leg parlay with exactly one unsettled leg.
 
         ``legs`` is a list of dicts with at least:

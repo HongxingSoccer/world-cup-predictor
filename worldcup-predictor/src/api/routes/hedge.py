@@ -15,7 +15,7 @@ access is blocked at the middleware layer.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -39,7 +39,6 @@ from src.ml.hedge.schemas import (
     LiveOddsEntry,
     LiveOddsMarket,
     LiveOddsResponse,
-    MarketType,
 )
 from src.models.hedge_scenario import (
     HedgeCalculation,
@@ -90,14 +89,10 @@ def _hedge_outcomes_for(market: str, original_outcome: str) -> list[OutcomeType]
     deferred.)
     """
     if market == "1x2":
-        return [
-            o
-            for o in ("home", "draw", "away")
-            if o != original_outcome
-        ]  # type: ignore[return-value]
+        all_1x2: list[OutcomeType] = ["home", "draw", "away"]
+        return [o for o in all_1x2 if o != original_outcome]
     if market == "over_under":
-        return ["under"] if original_outcome == "over" else ["home"]  # noqa
-        # ^ defensive — should never hit since over_under is over/under only
+        return ["under"] if original_outcome == "over" else ["over"]
     return []
 
 
@@ -154,7 +149,7 @@ def calculate_hedge(
 
     advisor = HedgeAdvisor(prediction_service=prediction_service)
     recs: list[HedgeRecommendation] = []
-    threshold = datetime.now(timezone.utc) - timedelta(minutes=_LIVE_RECENT_MINUTES)
+    threshold = datetime.now(UTC) - timedelta(minutes=_LIVE_RECENT_MINUTES)
 
     for outcome in candidates:
         best = _find_best_odds(session, body.match_id, body.original_market, outcome, threshold)
@@ -258,7 +253,7 @@ def calculate_parlay_hedge(
     # Find best hedge odds for last_leg (use 1x2 market; "outcome" interpretation
     # is the opposite side. For free-form leg.outcome strings we currently only
     # auto-resolve when the outcome is one of home/draw/away).
-    threshold = datetime.now(timezone.utc) - timedelta(minutes=_LIVE_RECENT_MINUTES)
+    threshold = datetime.now(UTC) - timedelta(minutes=_LIVE_RECENT_MINUTES)
     best = None
     if last_leg.outcome in ("home", "draw", "away"):
         # Best of the two opposite outcomes; pick whichever has highest odds.
@@ -386,7 +381,7 @@ def get_live_odds(
     session: Session = Depends(get_db_session),
 ) -> LiveOddsResponse:
     """Return bookmaker odds for ``match_id`` in the last 10 minutes."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     threshold = now - timedelta(minutes=_LIVE_RECENT_MINUTES)
     absent_threshold = now - timedelta(hours=_LIVE_ABSENT_HOURS)
 
@@ -493,4 +488,4 @@ def _find_best_odds(
     return Decimal(str(odds)), bookmaker
 
 
-__all__ = ["router", "HEDGE_DISCLAIMER"]
+__all__ = ["HEDGE_DISCLAIMER", "router"]

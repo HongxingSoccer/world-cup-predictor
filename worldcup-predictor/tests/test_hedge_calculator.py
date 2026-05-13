@@ -25,7 +25,6 @@ from src.ml.hedge import (
     ParlayHedgeCalculator,
 )
 
-
 # -----------------------------------------------------------------------------
 # Single-bet calculator
 # -----------------------------------------------------------------------------
@@ -333,7 +332,8 @@ class TestHedgeAdvisor:
         model_prob_* args are None and original_market is supplied."""
 
         class StubService:
-            calls: list[tuple[int, str, str]] = []
+            def __init__(self) -> None:
+                self.calls: list[tuple[int, str, str]] = []
 
             def predict_probabilities(
                 self, *, match_id: int, market: str, outcome: str

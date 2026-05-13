@@ -79,7 +79,7 @@ class HedgeAdvisor:
                     model_prob_hedge = self._fetch_prob(
                         match_id, original_market, hedge_outcome
                     )
-            except Exception as exc:  # noqa: BLE001 — defensive boundary
+            except Exception as exc:
                 logger.warning(
                     "advisor_prob_fetch_failed",
                     extra={"match_id": match_id, "error": str(exc)},
