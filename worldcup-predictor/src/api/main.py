@@ -32,6 +32,7 @@ from src.api.routes import (
     client_errors,
     fx,
     health,
+    hedge,
     markets,
     matches,
     odds,
@@ -132,6 +133,7 @@ def _create_app() -> FastAPI:
     app.include_router(worldcup.competitions_router)
     app.include_router(push_settings.router)
     app.include_router(admin.router)
+    app.include_router(hedge.router)
 
     @app.get("/", include_in_schema=False)
     def _root() -> dict[str, str]:
