@@ -127,6 +127,10 @@ worldcup-predictor/
 
 ## Operational notes
 
+- **M9.5 live hedging**: a `live-monitor-worker` Celery container sweeps
+  every active `user_positions` row every 60 s and fires hedge-window
+  push notifications via `NotificationDispatcher`. See
+  [docs/M9_5_live_hedging_flow.md](docs/M9_5_live_hedging_flow.md).
 - Celery `dispatch_dynamic_jobs` (every 5 min) scans the calendar and fans
   out per-match jobs (live scores, post-match stats, pre-kickoff odds). This
   intentionally replaces true dynamic cron — fewer moving parts, same outcome.
