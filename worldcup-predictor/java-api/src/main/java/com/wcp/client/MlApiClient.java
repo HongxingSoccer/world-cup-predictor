@@ -431,6 +431,57 @@ public class MlApiClient {
         }
     }
 
+    // -----------------------------------------------------------------
+    // M10 — arbitrage opportunities (read-only proxy)
+    //
+    // ml-api owns the `arb_opportunities` table; the scanner persists
+    // each detected arb. We proxy reads here so the frontend only has
+    // to talk to one origin.
+    // -----------------------------------------------------------------
+
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> arbitrageOpportunities(
+            String marketType, java.math.BigDecimal minProfitMargin, int limit) {
+        UriComponentsBuilder builder = UriComponentsBuilder
+                .fromPath("/api/v1/arbitrage/opportunities")
+                .queryParam("limit", limit);
+        if (marketType != null && !marketType.isBlank()) {
+            builder.queryParam("market_type", marketType);
+        }
+        if (minProfitMargin != null) {
+            builder.queryParam("min_profit_margin", minProfitMargin.toPlainString());
+        }
+        try {
+            List<Map<String, Object>> body = restTemplate.getForObject(
+                    builder.toUriString(), List.class);
+            return body == null ? List.of() : body;
+        } catch (RestClientException ex) {
+            log.warn("ml_api_arbitrage_opportunities_failed error={}", ex.getMessage());
+            return List.of();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> arbitrageOpportunity(Long id) {
+        try {
+            Map<String, Object> body = restTemplate.getForObject(
+                    "/api/v1/arbitrage/opportunities/" + id, Map.class);
+            if (body == null) {
+                throw new MlApiUnavailableException(
+                        "/arbitrage/opportunities/" + id + " returned null");
+            }
+            return body;
+        } catch (HttpClientErrorException ex) {
+            log.warn("ml_api_arbitrage_opportunity_4xx status={} body={}",
+                    ex.getStatusCode(), ex.getResponseBodyAsString());
+            throw ex;
+        } catch (RestClientException ex) {
+            log.warn("ml_api_arbitrage_opportunity_failed error={}", ex.getMessage());
+            throw new MlApiUnavailableException(
+                    "/arbitrage/opportunities/" + id + ": " + ex.getMessage());
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public Map<String, Object> worldcupSimulation() {
         try {
