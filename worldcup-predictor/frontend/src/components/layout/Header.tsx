@@ -46,12 +46,20 @@ export function Header() {
             </Link>
           )}
           {showBasicLinks ? (
-            <Link
-              href="/positions"
-              className="text-slate-300 transition-colors hover:text-brand-400"
-            >
-              {t('nav.positions')}
-            </Link>
+            <>
+              <Link
+                href="/positions"
+                className="text-slate-300 transition-colors hover:text-brand-400"
+              >
+                {t('nav.positions')}
+              </Link>
+              <Link
+                href="/arbitrage"
+                className="text-slate-300 transition-colors hover:text-brand-400"
+              >
+                {t('nav.arbitrage')}
+              </Link>
+            </>
           ) : null}
           <Link href="/subscribe" className="text-slate-300 transition-colors hover:text-brand-400">
             {t('nav.subscribe')}

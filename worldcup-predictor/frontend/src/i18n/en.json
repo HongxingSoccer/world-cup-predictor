@@ -22,6 +22,7 @@
     "winProb": "Win probability",
     "hedge": "Hedge",
     "positions": "Positions",
+    "arbitrage": "Arbitrage",
     "subscribe": "Subscribe",
     "profile": "Profile",
     "login": "Sign in",
@@ -698,6 +699,35 @@
       "match_start": "Kick-off",
       "red_hit": "Hit",
       "ai_report": "Report"
+    }
+  },
+  "arbitrage": {
+    "title": "Arbitrage scanner",
+    "subtitle": "Cross-bookmaker risk-free opportunities — auto-refreshes every 60s.",
+    "tierLocked": "Arbitrage scanning is a basic-tier feature.",
+    "empty": "No active arbitrage opportunities right now.",
+    "loadFailed": "Couldn't load opportunities.",
+    "bankroll": "Bankroll",
+    "stakeShare": "Stake share",
+    "guaranteedProfit": "Guaranteed profit",
+    "detectedAt": "Detected at",
+    "showWatchlist": "+ Watchlist",
+    "hideWatchlist": "Hide watchlist",
+    "watchlist": {
+      "title": "My watchlist",
+      "subtitle": "Get a push when a new arb matches one of your rules.",
+      "addTitle": "Add a rule",
+      "addSubtitle": "Choose a minimum profit margin and (optionally) one or more markets. Leaving markets unselected matches everything.",
+      "addSubmit": "Add rule",
+      "minMargin": "Min margin (fraction)",
+      "anyMarket": "any market",
+      "muted": "muted",
+      "empty": "No rules yet — add one to get pushes.",
+      "delete": "Delete rule",
+      "errorMargin": "Min margin must be a number ≥ 0.",
+      "loadFailed": "Couldn't load watchlist.",
+      "createFailed": "Couldn't add rule.",
+      "deleteFailed": "Couldn't delete rule."
     }
   }
 }
