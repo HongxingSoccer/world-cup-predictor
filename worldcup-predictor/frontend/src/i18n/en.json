@@ -20,6 +20,7 @@
     "groups": "Group stage",
     "knockout": "Knockout",
     "winProb": "Win probability",
+    "hedge": "Hedge",
     "subscribe": "Subscribe",
     "profile": "Profile",
     "login": "Sign in",
@@ -491,6 +492,139 @@
       "dixonColes": "Dixon-Coles",
       "xgboost": "XGBoost",
       "ensemble": "Ensemble"
+    }
+  },
+  "hedge": {
+    "pageTitle": "Hedging calculator",
+    "pageSubtitle": "Math tool + ML-aware insight",
+    "navLabel": "Hedge calculator",
+    "premiumOnlyBanner": "Hedge calculator is a premium feature",
+    "premiumOnlyUpgrade": "Upgrade to premium",
+    "premiumOnlyLearn": "Learn more",
+    "loginRequired": "Please sign in to use the hedge calculator",
+    "loading": "Calculating…",
+    "submit": "Calculate hedge plan",
+    "recalc": "Recalculate",
+    "tabs": {
+      "single": "Single bet",
+      "parlay": "Parlay"
+    },
+    "modes": {
+      "full": "Full hedge",
+      "partial": "Partial hedge",
+      "risk": "Risk hedge",
+      "fullDesc": "Lock in profit with zero risk",
+      "partialDesc": "Keep some downside open",
+      "riskDesc": "Keep most downside open"
+    },
+    "singleForm": {
+      "matchId": "Match ID",
+      "matchIdHint": "Find it in the URL of the match detail page",
+      "originalStake": "Original stake (¥)",
+      "originalOdds": "Original odds",
+      "originalOutcome": "Original outcome",
+      "originalMarket": "Market",
+      "hedgeMode": "Hedge mode"
+    },
+    "outcomes": {
+      "home": "Home",
+      "draw": "Draw",
+      "away": "Away",
+      "over": "Over",
+      "under": "Under"
+    },
+    "markets": {
+      "1x2": "1x2 (Home / Draw / Away)",
+      "over_under": "Over / Under",
+      "asian_handicap": "Asian handicap",
+      "btts_disabled": "BTTS (not yet supported)"
+    },
+    "slider": {
+      "label": "Hedge ratio",
+      "valueLabel": "{pct}% — {mode}",
+      "regions": {
+        "risk": "Risk 0-30%",
+        "partial": "Partial 30-70%",
+        "full": "Full 70-100%"
+      }
+    },
+    "result": {
+      "panelTitle": "Recommended hedge plans",
+      "noData": "No bookmaker odds in the past 10 minutes",
+      "noDataHint": "Try again closer to kickoff",
+      "scenarioId": "Scenario",
+      "hedgeOutcome": "Hedge outcome",
+      "hedgeOdds": "Hedge odds",
+      "hedgeStake": "Suggested hedge stake",
+      "bestBookmaker": "Best-odds bookmaker",
+      "profitOrigWins": "If original wins",
+      "profitHedgeWins": "If hedge wins",
+      "maxLoss": "Worst case",
+      "guaranteedProfit": "Guaranteed profit",
+      "modelEv": "Model EV",
+      "modelProbHedge": "Hedge-side probability",
+      "chartTitle": "P/L across outcomes",
+      "chartProfitOrig": "Original wins",
+      "chartProfitHedge": "Hedge wins",
+      "chartMaxLoss": "Worst case",
+      "assessmentBadge": {
+        "buildHedge": "Build hedge",
+        "valuable": "Valuable hedge",
+        "cautious": "Cautious hedge",
+        "notRecommended": "Don't hedge",
+        "unknown": "Model unavailable"
+      }
+    },
+    "parlayForm": {
+      "stake": "Parlay stake (¥)",
+      "legs": "Legs",
+      "legHeading": "Leg {n}",
+      "addLeg": "Add leg",
+      "removeLeg": "Remove",
+      "legMatchId": "Match ID",
+      "legOutcome": "Outcome",
+      "legOdds": "Odds",
+      "legIsSettled": "Settled",
+      "legWon": "Won",
+      "maxLegsHint": "Maximum 8 legs",
+      "minLegsHint": "At least 2 legs"
+    },
+    "parlayResult": {
+      "parlayPotential": "Parlay potential payout",
+      "lastLegMatch": "Last unsettled leg match",
+      "profitAllWin": "All-legs-win profit",
+      "profitLastLose": "Last-leg-loses profit"
+    },
+    "validation": {
+      "stakeGreaterThanZero": "Stake must be > 0",
+      "oddsGreaterThanOne": "Odds must be > 1.0",
+      "matchIdRequired": "Valid match ID required",
+      "legsAtLeastTwo": "Parlay needs at least 2 legs",
+      "legsExactlyOneUnsettled": "Exactly one leg must be unsettled",
+      "settledLegMustBeWon": "Settled legs must be wins"
+    },
+    "disclaimerTitle": "Disclaimer",
+    "history": {
+      "title": "My hedge history",
+      "subtitle": "Settled scenarios + aggregate stats",
+      "noData": "No hedge records yet",
+      "stats": {
+        "totalSettled": "Settled",
+        "winningScenarios": "Winning",
+        "totalPnl": "Total P/L",
+        "totalWouldHavePnl": "Without hedge",
+        "totalHedgeValueAdded": "Hedge value added",
+        "winRatePct": "Win rate",
+        "roiPct": "ROI"
+      },
+      "table": {
+        "scenarioId": "#",
+        "scenarioType": "Type",
+        "actualOutcome": "Outcome",
+        "totalPnl": "Total P/L",
+        "hedgeValueAdded": "Hedge value",
+        "settledAt": "Settled at"
+      }
     }
   }
 }

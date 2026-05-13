@@ -50,6 +50,30 @@
                 0 8px 32px -12px rgba(34, 211, 238, 0.3);
   }
 
+  /* Form input shared by every text/number/select field in the M9 hedge
+     module. Pulled out of inline classes so the visual stays consistent
+     between SingleHedgeForm + ParlayHedgeForm. */
+  .wcp-input {
+    width: 100%;
+    height: 2.5rem; /* 40px */
+    padding: 0 0.75rem;
+    border-radius: 0.5rem;
+    background-color: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(51, 65, 85, 0.6);
+    color: rgb(241, 245, 249);
+    font-size: 0.875rem;
+    transition: border-color 150ms ease;
+  }
+  .wcp-input:focus {
+    outline: none;
+    border-color: rgba(34, 211, 238, 0.6);
+    box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.2);
+  }
+  .wcp-input:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
   /* Hero-number text: tabular alignment + cyan→amber gradient fill so the
      stat reads as a screen-printed dial. Apply via class="hero-number". */
   .hero-number {
