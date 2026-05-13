@@ -20,6 +20,7 @@
     "groups": "小组赛",
     "knockout": "淘汰赛",
     "winProb": "夺冠概率",
+    "hedge": "对冲",
     "subscribe": "订阅",
     "profile": "个人中心",
     "login": "登录",
@@ -491,6 +492,139 @@
       "dixonColes": "Dixon-Coles",
       "xgboost": "XGBoost",
       "ensemble": "Ensemble"
+    }
+  },
+  "hedge": {
+    "pageTitle": "对冲建议计算器",
+    "pageSubtitle": "数学工具 + ML 智能建议",
+    "navLabel": "对冲计算器",
+    "premiumOnlyBanner": "对冲计算器为高阶订阅功能",
+    "premiumOnlyUpgrade": "升级到高阶订阅",
+    "premiumOnlyLearn": "了解更多",
+    "loginRequired": "请先登录后再使用对冲计算器",
+    "loading": "计算中…",
+    "submit": "计算对冲方案",
+    "recalc": "重新计算",
+    "tabs": {
+      "single": "单场对冲",
+      "parlay": "串关对冲"
+    },
+    "modes": {
+      "full": "完全对冲",
+      "partial": "部分对冲",
+      "risk": "冒险对冲",
+      "fullDesc": "零风险锁定利润",
+      "partialDesc": "保留部分风险敞口",
+      "riskDesc": "保留大部分风险敞口"
+    },
+    "singleForm": {
+      "matchId": "比赛 ID",
+      "matchIdHint": "可在比赛详情页 URL 中找到",
+      "originalStake": "原始下注金额 (¥)",
+      "originalOdds": "原始赔率",
+      "originalOutcome": "原始下注方向",
+      "originalMarket": "市场类型",
+      "hedgeMode": "对冲模式"
+    },
+    "outcomes": {
+      "home": "主胜",
+      "draw": "平局",
+      "away": "客胜",
+      "over": "大球",
+      "under": "小球"
+    },
+    "markets": {
+      "1x2": "1x2 主平负",
+      "over_under": "大小球",
+      "asian_handicap": "亚洲让球",
+      "btts_disabled": "BTTS (暂不支持)"
+    },
+    "slider": {
+      "label": "对冲比例",
+      "valueLabel": "{pct}% — {mode}",
+      "regions": {
+        "risk": "冒险 0-30%",
+        "partial": "部分 30-70%",
+        "full": "完全 70-100%"
+      }
+    },
+    "result": {
+      "panelTitle": "推荐对冲方案",
+      "noData": "暂无该比赛 10 分钟内的赔率快照",
+      "noDataHint": "请稍后再试,或在比赛临近开赛时刷新",
+      "scenarioId": "场景编号",
+      "hedgeOutcome": "对冲方向",
+      "hedgeOdds": "对冲赔率",
+      "hedgeStake": "建议对冲金额",
+      "bestBookmaker": "最佳赔率博彩公司",
+      "profitOrigWins": "原始注赢",
+      "profitHedgeWins": "对冲注赢",
+      "maxLoss": "最坏情况",
+      "guaranteedProfit": "保证利润",
+      "modelEv": "ML EV",
+      "modelProbHedge": "对冲方向概率",
+      "chartTitle": "三种结果下的盈亏",
+      "chartProfitOrig": "原始注赢",
+      "chartProfitHedge": "对冲注赢",
+      "chartMaxLoss": "最坏情况",
+      "assessmentBadge": {
+        "buildHedge": "建议对冲",
+        "valuable": "对冲有价值",
+        "cautious": "谨慎对冲",
+        "notRecommended": "不建议对冲",
+        "unknown": "模型评估不可用"
+      }
+    },
+    "parlayForm": {
+      "stake": "串关本金 (¥)",
+      "legs": "串关场次",
+      "legHeading": "第 {n} 场",
+      "addLeg": "添加场次",
+      "removeLeg": "移除",
+      "legMatchId": "比赛 ID",
+      "legOutcome": "下注方向",
+      "legOdds": "赔率",
+      "legIsSettled": "已结算",
+      "legWon": "已赢",
+      "maxLegsHint": "最多 8 场",
+      "minLegsHint": "至少 2 场"
+    },
+    "parlayResult": {
+      "parlayPotential": "串关潜在总回报",
+      "lastLegMatch": "最后未结算场次 ID",
+      "profitAllWin": "全串赢利润",
+      "profitLastLose": "最后一场输利润"
+    },
+    "validation": {
+      "stakeGreaterThanZero": "金额必须大于 0",
+      "oddsGreaterThanOne": "赔率必须大于 1.0",
+      "matchIdRequired": "请填入有效的比赛 ID",
+      "legsAtLeastTwo": "串关至少需要 2 场",
+      "legsExactlyOneUnsettled": "串关需要恰好 1 场未结算",
+      "settledLegMustBeWon": "已结算的场次必须为赢"
+    },
+    "disclaimerTitle": "免责声明",
+    "history": {
+      "title": "我的对冲历史",
+      "subtitle": "已结算场景 + 综合统计",
+      "noData": "暂无对冲记录",
+      "stats": {
+        "totalSettled": "已结算场景",
+        "winningScenarios": "盈利场景",
+        "totalPnl": "总盈亏",
+        "totalWouldHavePnl": "不对冲时的盈亏",
+        "totalHedgeValueAdded": "对冲增加价值",
+        "winRatePct": "盈利率",
+        "roiPct": "ROI"
+      },
+      "table": {
+        "scenarioId": "编号",
+        "scenarioType": "类型",
+        "actualOutcome": "实际结果",
+        "totalPnl": "总盈亏",
+        "hedgeValueAdded": "对冲增加价值",
+        "settledAt": "结算时间"
+      }
     }
   }
 }

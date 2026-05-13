@@ -38,6 +38,11 @@ export function Header() {
           <Link href="/worldcup/simulation" className="text-slate-300 transition-colors hover:text-brand-400">
             {t('nav.winProb')}
           </Link>
+          {tier === 'premium' && (
+            <Link href="/hedge" className="text-slate-300 transition-colors hover:text-brand-400">
+              {t('nav.hedge')}
+            </Link>
+          )}
           <Link href="/subscribe" className="text-slate-300 transition-colors hover:text-brand-400">
             {t('nav.subscribe')}
           </Link>
