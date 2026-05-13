@@ -28,6 +28,8 @@ app = Celery(
         "src.tasks.maintenance_tasks",
         "src.tasks.settlement_tasks",
         "src.tasks.card_tasks",
+        "src.tasks.live_monitor_tasks",
+        "src.tasks.arb_scanner_tasks",
     ],
 )
 
@@ -54,6 +56,9 @@ app.conf.task_routes = {
     # M9.5 live-hedge monitor — runs on its own queue so the 60s scan
     # cadence doesn't compete with the general ingestion pipeline.
     "live_monitor.*": {"queue": "live_monitor"},
+    # M10 arbitrage scanner — own queue, runs every 60s and pushes alerts
+    # to users matching the per-user watchlist filter.
+    "arb_scanner.*": {"queue": "arb_scanner"},
 }
 
 # --- Beat schedule (static periodic jobs) ---
@@ -106,6 +111,12 @@ app.conf.beat_schedule = {
     # fires hedge_window alerts when a position trips the detector.
     "live_monitor.scan_active_positions": {
         "task": "live_monitor.scan_active_positions",
+        "schedule": 60.0,
+    },
+    # M10 — cross-platform arbitrage scanner. 60s cadence; cheap when
+    # the bookmaker market is well-aligned (no arb persisted).
+    "arb_scanner.scan_for_arbitrage": {
+        "task": "arb_scanner.scan_for_arbitrage",
         "schedule": 60.0,
     },
 }
