@@ -206,6 +206,15 @@ def _settle_match(match_id: int) -> dict[str, Any]:
     finally:
         producer.close()
 
+    # M9.5 — settle any user positions for this match. Best-effort: if
+    # the position settlement fails for any reason, log + continue (the
+    # prediction settlement above is the load-bearing path; positions
+    # are user-tracked and can be reconciled later if needed).
+    try:
+        settle_positions_for_match(match_id)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("position_settlement_failed", match_id=match_id, error=str(exc))
+
     logger.info(
         "settle_match_completed",
         match_id=match_id,
@@ -213,6 +222,96 @@ def _settle_match(match_id: int) -> dict[str, Any]:
         red_hits=red_hits,
     )
     return {"match_id": match_id, "settled": settled, "red_hits": red_hits}
+
+
+def settle_positions_for_match(match_id: int) -> dict[str, int]:
+    """Compute P/L for every active/hedged position on ``match_id``.
+
+    Called by :func:`settle_match_prediction` once the match's prediction
+    settlement transaction commits. Independent transaction so a position
+    failure can't corrupt the prediction settlement row.
+
+    Returns a small counts dict for diagnostics.
+    """
+    # Local imports — settlement-tasks isn't the position-service's
+    # owner, so keep coupling at the boundary.
+    from src.models.user_position import UserPosition
+    from src.push.dispatcher import NotificationDispatcher
+
+    settled_count = 0
+    with session_scope() as session:
+        match = session.get(Match, match_id)
+        if match is None or match.home_score is None or match.away_score is None:
+            return {"match_id": match_id, "settled": 0}
+
+        home, away = match.home_score, match.away_score
+        # Outcome (1x2) derivation.
+        if home > away:
+            outcome_1x2 = "home"
+        elif home < away:
+            outcome_1x2 = "away"
+        else:
+            outcome_1x2 = "draw"
+        total = home + away
+        # Over/under bin commonly used for OU 2.5; positions store the
+        # outcome as 'over' or 'under' but the *line* isn't recorded on
+        # user_positions today. We assume the standard 2.5 line.
+        outcome_ou = "over" if total > 2.5 else "under"
+        outcome_btts = "yes" if home > 0 and away > 0 else "no"
+
+        positions = session.execute(
+            select(UserPosition).where(
+                UserPosition.match_id == match_id,
+                UserPosition.status.in_(["active", "hedged"]),
+            )
+        ).scalars().all()
+
+        for position in positions:
+            won = _position_outcome_match(
+                position.market,
+                position.outcome,
+                outcome_1x2,
+                outcome_ou,
+                outcome_btts,
+            )
+            if won:
+                pnl = position.stake * (position.odds - Decimal("1"))
+            else:
+                pnl = -position.stake
+            position.settlement_pnl = pnl.quantize(Decimal("0.01"))
+            position.status = "settled"
+            position.updated_at = datetime.now(UTC)
+            settled_count += 1
+
+            try:
+                NotificationDispatcher.send_position_settled(session, position)
+            except Exception as exc:  # noqa: BLE001 — best-effort notify
+                logger.warning(
+                    "position_settled_notify_failed",
+                    position_id=position.id,
+                    error=str(exc),
+                )
+
+        session.commit()
+
+    return {"match_id": match_id, "settled": settled_count}
+
+
+def _position_outcome_match(
+    market: str,
+    outcome: str,
+    outcome_1x2: str,
+    outcome_ou: str,
+    outcome_btts: str,
+) -> bool:
+    """Whether the user's position landed on the right side."""
+    if market in ("1x2", "asian_handicap"):
+        return outcome == outcome_1x2
+    if market == "over_under":
+        return outcome == outcome_ou
+    if market == "btts":
+        return outcome == outcome_btts
+    return False
 
 
 # --- Internal helpers ------------------------------------------------------

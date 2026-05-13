@@ -51,6 +51,9 @@ app.conf.task_routes = {
     "settlement.*": {"queue": "settlement"},
     "card.*": {"queue": "card"},
     "phase4.generate_match_report": {"queue": "reports"},
+    # M9.5 live-hedge monitor — runs on its own queue so the 60s scan
+    # cadence doesn't compete with the general ingestion pipeline.
+    "live_monitor.*": {"queue": "live_monitor"},
 }
 
 # --- Beat schedule (static periodic jobs) ---
@@ -98,6 +101,12 @@ app.conf.beat_schedule = {
     "tournament.simulate_daily": {
         "task": "tournament.simulate_daily",
         "schedule": crontab(hour=3, minute=30),
+    },
+    # M9.5 — live-hedge monitor scans active positions every 60s and
+    # fires hedge_window alerts when a position trips the detector.
+    "live_monitor.scan_active_positions": {
+        "task": "live_monitor.scan_active_positions",
+        "schedule": 60.0,
     },
 }
 
