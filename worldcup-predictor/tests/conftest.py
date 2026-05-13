@@ -75,6 +75,8 @@ _PORTABLE_TABLE_NAMES: frozenset[str] = frozenset(
         "hedge_scenarios", "hedge_calculations", "hedge_results", "parlay_legs",
         # M9.5 (live hedging flow)
         "user_positions",
+        # M10 (arbitrage scanner)
+        "arb_opportunities", "user_arb_watchlist",
     }
 )
 

@@ -4,6 +4,7 @@ Importing this package registers every table on `Base.metadata`, which is what
 Alembic's autogeneration target reads. Add new models here when introduced.
 """
 from .analysis_report import AnalysisReport
+from .arbitrage import ArbOpportunity, UserArbWatchlist
 from .base import Base, TimestampMixin
 from .competition import Competition
 from .data_source_log import DataSourceLog
@@ -39,6 +40,7 @@ from .user_position import UserPosition
 
 __all__ = [
     "AnalysisReport",
+    "ArbOpportunity",
     "Base",
     "Competition",
     "DataSourceLog",
@@ -73,6 +75,7 @@ __all__ = [
     "TrackRecordStat",
     "User",
     "UserFavorite",
+    "UserArbWatchlist",
     "UserOAuth",
     "UserPosition",
     "UserPushSettings",
