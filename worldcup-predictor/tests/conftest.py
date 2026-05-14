@@ -73,6 +73,8 @@ _PORTABLE_TABLE_NAMES: frozenset[str] = frozenset(
         "push_notifications", "user_push_settings",
         # M9 (hedging advisory)
         "hedge_scenarios", "hedge_calculations", "hedge_results", "parlay_legs",
+        # M9.5 (live hedging flow)
+        "user_positions",
     }
 )
 

@@ -38,7 +38,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base
 
 if TYPE_CHECKING:  # pragma: no cover — type-only imports
-    pass
+    from .user_position import UserPosition
 
 
 class HedgeScenario(Base):
@@ -74,7 +74,24 @@ class HedgeScenario(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
+    # M9.5 link — populated when the scenario was launched from an
+    # existing user position (push-notification "calculate hedge" flow).
+    # NULL for pure calculator scenarios.
+    position_id: Mapped[int | None] = mapped_column(
+        BigInteger,
+        ForeignKey(
+            "user_positions.id",
+            ondelete="SET NULL",
+            name="fk_hedge_scenarios_position",
+        ),
+        nullable=True,
+    )
+
     # Relationships — back_populates mirrors are defined below.
+    position: Mapped[UserPosition | None] = relationship(
+        back_populates="triggered_scenarios",
+        foreign_keys=[position_id],
+    )
     calculations: Mapped[list[HedgeCalculation]] = relationship(
         back_populates="scenario",
         cascade="all, delete-orphan",

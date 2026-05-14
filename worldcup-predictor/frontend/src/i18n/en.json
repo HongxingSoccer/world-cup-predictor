@@ -21,6 +21,7 @@
     "knockout": "Knockout",
     "winProb": "Win probability",
     "hedge": "Hedge",
+    "positions": "Positions",
     "subscribe": "Subscribe",
     "profile": "Profile",
     "login": "Sign in",
@@ -625,6 +626,78 @@
         "hedgeValueAdded": "Hedge value",
         "settledAt": "Settled at"
       }
+    }
+  },
+  "positions": {
+    "title": "Positions",
+    "subtitle": "Track open bets and get a push the moment a hedge window opens.",
+    "create": "New position",
+    "empty": "No positions yet — record your first bet to start monitoring.",
+    "tierLocked": "Position tracking is a basic-tier feature. Upgrade to get live hedge alerts.",
+    "filterAll": "All",
+    "alertBadge": "{count} hedge window open",
+    "hedgeWindowOpen": "Hedge window",
+    "matchRef": "Match #{id}",
+    "pnl": "P&L",
+    "loadFailed": "Couldn't load positions.",
+    "updateFailed": "Status update failed.",
+    "deleteFailed": "Cancel failed.",
+    "confirmDelete": "Cancel this position?",
+    "formTitle": "Track a new position",
+    "formSubmit": "Save position",
+    "fieldMatchId": "Match ID",
+    "fieldPlatform": "Platform",
+    "fieldMarket": "Market",
+    "fieldOutcome": "Outcome",
+    "fieldStake": "Stake",
+    "fieldOdds": "Odds",
+    "fieldPlacedAt": "Placed at",
+    "fieldNotes": "Notes",
+    "errorMatchId": "Match ID must be a positive integer.",
+    "errorStake": "Stake must be greater than 0.",
+    "errorOdds": "Odds must be greater than 1.0.",
+    "errorGeneric": "Couldn't save position.",
+    "actionMarkHedged": "Mark hedged",
+    "actionHedge": "Open hedge calc →",
+    "actionCancel": "Cancel",
+    "status": {
+      "active": "Active",
+      "hedged": "Hedged",
+      "settled": "Settled",
+      "cancelled": "Cancelled"
+    },
+    "market": {
+      "1x2": "1X2",
+      "over_under": "O/U",
+      "asian_handicap": "AH",
+      "btts": "BTTS"
+    },
+    "outcome": {
+      "home": "Home",
+      "draw": "Draw",
+      "away": "Away",
+      "over": "Over",
+      "under": "Under",
+      "yes": "Yes",
+      "no": "No"
+    }
+  },
+  "notificationCentre": {
+    "title": "Notifications",
+    "bellLabel": "Notification centre",
+    "unreadLabel": "Unread notifications",
+    "empty": "Nothing new — we'll ping you when a hedge window opens.",
+    "loadFailed": "Couldn't load notifications.",
+    "markAllRead": "Mark all read",
+    "markAllFailed": "Mark-all failed — try again.",
+    "kind": {
+      "hedge_window": "Hedge",
+      "position_settled": "Settled",
+      "arbitrage": "Arb",
+      "high_ev": "Value",
+      "match_start": "Kick-off",
+      "red_hit": "Hit",
+      "ai_report": "Report"
     }
   }
 }

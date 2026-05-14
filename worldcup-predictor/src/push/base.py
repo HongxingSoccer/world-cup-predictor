@@ -41,6 +41,9 @@ class NotificationKind(StrEnum):
     MATCH_START = "match_start"
     RED_HIT = "red_hit"
     MILESTONE = "milestone"
+    # M9.5 additions
+    HEDGE_WINDOW = "hedge_window"
+    POSITION_SETTLED = "position_settled"
 
 
 # Per-day caps from design §5.4.

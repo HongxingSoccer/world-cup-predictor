@@ -7,6 +7,7 @@ in `src.config.celery_config`. The Celery worker entrypoint
 """
 from . import (
     card_tasks,
+    live_monitor_tasks,
     maintenance_tasks,
     match_tasks,
     odds_tasks,
@@ -17,6 +18,7 @@ from . import (
 
 __all__ = [
     "card_tasks",
+    "live_monitor_tasks",
     "maintenance_tasks",
     "match_tasks",
     "odds_tasks",

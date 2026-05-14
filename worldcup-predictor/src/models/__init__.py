@@ -35,6 +35,7 @@ from .track_record_stat import TrackRecordStat
 from .user import User
 from .user_favorite import UserFavorite
 from .user_oauth import UserOAuth
+from .user_position import UserPosition
 
 __all__ = [
     "AnalysisReport",
@@ -73,5 +74,6 @@ __all__ = [
     "User",
     "UserFavorite",
     "UserOAuth",
+    "UserPosition",
     "UserPushSettings",
 ]

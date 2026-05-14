@@ -273,6 +273,28 @@ services:
     volumes:
       - ./:/app
 
+  live-monitor-worker:
+    build: .
+    container_name: wcp-live-monitor-worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      <<: *app-env
+    # M9.5 — dedicated queue so the 60-second scan cadence doesn't
+    # compete with ingestion / settlement / card work.
+    command: >
+      celery -A src.celery_app:app worker
+        --loglevel=INFO
+        --concurrency=2
+        -Q live_monitor
+        -n live_monitor@%h
+    volumes:
+      - ./:/app
+
   card-worker:
     build:
       context: .

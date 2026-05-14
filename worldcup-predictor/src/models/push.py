@@ -27,9 +27,13 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
+
+if False:  # TYPE_CHECKING-style guard (we need a literal-false symbol for SA forward refs)
+    from .match import Match  # noqa: F401
+    from .user_position import UserPosition
 
 
 class PushNotification(Base):
@@ -50,6 +54,41 @@ class PushNotification(Base):
     meta: Mapped[Any | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    # M9.5 additions ----------------------------------------------------
+    # When the notification was triggered by a user-tracked position
+    # (hedge_window kind) or by a settled position (position_settled).
+    position_id: Mapped[int | None] = mapped_column(
+        BigInteger,
+        ForeignKey(
+            "user_positions.id",
+            ondelete="CASCADE",
+            name="fk_push_notifications_position",
+        ),
+        nullable=True,
+    )
+    # Match the notification refers to (deep-linkable from the
+    # notification centre). Independent from position_id so a free
+    # "match starting" alert can carry just match_id.
+    match_id: Mapped[int | None] = mapped_column(
+        BigInteger,
+        ForeignKey(
+            "matches.id",
+            ondelete="SET NULL",
+            name="fk_push_notifications_match",
+        ),
+        nullable=True,
+    )
+    # NULL = unread. Set by the notification-centre "mark read" endpoints.
+    read_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    # Relationship back to the position for the notification-detail panel.
+    position: Mapped[UserPosition | None] = relationship(
+        back_populates="notifications",
+        foreign_keys=[position_id],
     )
 
     __table_args__ = (
