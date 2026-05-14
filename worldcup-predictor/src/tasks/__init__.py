@@ -6,6 +6,7 @@ in `src.config.celery_config`. The Celery worker entrypoint
 `include=[...]` list configured on the app.
 """
 from . import (
+    arb_scanner_tasks,
     card_tasks,
     live_monitor_tasks,
     maintenance_tasks,
@@ -17,6 +18,7 @@ from . import (
 )
 
 __all__ = [
+    "arb_scanner_tasks",
     "card_tasks",
     "live_monitor_tasks",
     "maintenance_tasks",

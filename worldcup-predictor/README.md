@@ -131,6 +131,10 @@ worldcup-predictor/
   every active `user_positions` row every 60 s and fires hedge-window
   push notifications via `NotificationDispatcher`. See
   [docs/M9_5_live_hedging_flow.md](docs/M9_5_live_hedging_flow.md).
+- **M10 arbitrage scanner**: a `arb-scanner-worker` container detects
+  cross-bookmaker arbitrage every 60 s, persists each opportunity, and
+  fans out pushes to users whose watchlist rules match. See
+  [docs/M10_arbitrage_scanner_design.md](docs/M10_arbitrage_scanner_design.md).
 - Celery `dispatch_dynamic_jobs` (every 5 min) scans the calendar and fans
   out per-match jobs (live scores, post-match stats, pre-kickoff odds). This
   intentionally replaces true dynamic cron — fewer moving parts, same outcome.

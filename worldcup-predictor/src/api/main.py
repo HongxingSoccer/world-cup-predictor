@@ -29,6 +29,7 @@ from src.api.middleware import (
 )
 from src.api.routes import (
     admin,
+    arbitrage,
     client_errors,
     fx,
     health,
@@ -138,6 +139,7 @@ def _create_app() -> FastAPI:
     app.include_router(hedge.router)
     app.include_router(positions.router)
     app.include_router(notifications.router)
+    app.include_router(arbitrage.router)
 
     @app.get("/", include_in_schema=False)
     def _root() -> dict[str, str]:

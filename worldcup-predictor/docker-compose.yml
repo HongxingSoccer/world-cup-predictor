@@ -295,6 +295,29 @@ services:
     volumes:
       - ./:/app
 
+  arb-scanner-worker:
+    build: .
+    container_name: wcp-arb-scanner-worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      <<: *app-env
+    # M10 — cross-platform arbitrage scanner. Same isolation rationale
+    # as live-monitor: own queue keeps the 60s scan off the general
+    # ingestion path.
+    command: >
+      celery -A src.celery_app:app worker
+        --loglevel=INFO
+        --concurrency=2
+        -Q arb_scanner
+        -n arb_scanner@%h
+    volumes:
+      - ./:/app
+
   card-worker:
     build:
       context: .

@@ -22,6 +22,7 @@
     "winProb": "夺冠概率",
     "hedge": "对冲",
     "positions": "我的仓位",
+    "arbitrage": "套利扫描",
     "subscribe": "订阅",
     "profile": "个人中心",
     "login": "登录",
@@ -698,6 +699,35 @@
       "match_start": "开赛",
       "red_hit": "命中",
       "ai_report": "战报"
+    }
+  },
+  "arbitrage": {
+    "title": "套利扫描",
+    "subtitle": "跨平台无风险套利窗口,每 60 秒自动刷新。",
+    "tierLocked": "套利扫描是 basic 会员功能,升级即可解锁。",
+    "empty": "暂无可执行的套利机会。",
+    "loadFailed": "套利机会加载失败。",
+    "bankroll": "本金",
+    "stakeShare": "下注占比",
+    "guaranteedProfit": "保底收益",
+    "detectedAt": "发现时间",
+    "showWatchlist": "+ 我的关注",
+    "hideWatchlist": "收起关注",
+    "watchlist": {
+      "title": "我的关注规则",
+      "subtitle": "符合规则的新机会会即时推送。",
+      "addTitle": "添加规则",
+      "addSubtitle": "选择最低利润空间和(可选)关注的盘口类型,不选则匹配全部盘口。",
+      "addSubmit": "添加",
+      "minMargin": "最低利润(小数)",
+      "anyMarket": "全盘口",
+      "muted": "已静音",
+      "empty": "暂无规则,添加一条即可开始接收推送。",
+      "delete": "删除规则",
+      "errorMargin": "最低利润必须 ≥ 0。",
+      "loadFailed": "关注规则加载失败。",
+      "createFailed": "规则添加失败。",
+      "deleteFailed": "规则删除失败。"
     }
   }
 }
