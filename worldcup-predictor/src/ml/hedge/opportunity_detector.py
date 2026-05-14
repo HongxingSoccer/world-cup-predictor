@@ -23,9 +23,9 @@ References:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import Any
+from typing import Any, ClassVar
 
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
@@ -61,7 +61,7 @@ class HedgeOpportunityDetector:
     # Static map of "reverse" outcomes for the 1x2 / over_under markets,
     # used to pick the hedge side. asian_handicap collapses to the 1x2
     # opposite (home <-> away); btts isn't supported yet (see M9 GAP 7).
-    _REVERSE_OUTCOMES: dict[tuple[str, str], list[str]] = {
+    _REVERSE_OUTCOMES: ClassVar[dict[tuple[str, str], list[str]]] = {
         ("1x2", "home"): ["draw", "away"],
         ("1x2", "draw"): ["home", "away"],
         ("1x2", "away"): ["home", "draw"],
@@ -103,7 +103,7 @@ class HedgeOpportunityDetector:
         if not candidates:
             return empty_result
 
-        threshold = datetime.now(timezone.utc) - _RECENT_WINDOW
+        threshold = datetime.now(UTC) - _RECENT_WINDOW
         best_hedge = cls._best_current_hedge(
             session, position.match_id, position.market, candidates, threshold
         )

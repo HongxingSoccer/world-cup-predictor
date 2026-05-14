@@ -102,7 +102,7 @@ class NotificationDispatcher:
             position_id=position.id,
             match_id=position.match_id,
             payload={"settlement_pnl": _as_float(pnl)},
-            target_url=f"/positions",
+            target_url="/positions",
         )
 
     # ------------------------------------------------------------------
@@ -262,7 +262,7 @@ def _send_web_push(
             ),
         )
         return bool(result.success)
-    except Exception as exc:  # noqa: BLE001 — defensive
+    except Exception as exc:
         logger.warning("web_push_failed", extra={"error": str(exc)})
         return False
 

@@ -6,7 +6,7 @@ in the X-User-Id header.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy import desc, select, update
@@ -107,7 +107,7 @@ def mark_read(
             detail=f"notification {notification_id} not found",
         )
     if row.read_at is None:
-        row.read_at = datetime.now(timezone.utc)
+        row.read_at = datetime.now(UTC)
         session.commit()
     return _row_to_dict(row)
 
@@ -117,7 +117,7 @@ def mark_all_read(
     session: Session = Depends(get_db_session),
     user_id: int = Depends(_user_id_from_header),
 ) -> dict:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     result = session.execute(
         update(PushNotification)
         .where(

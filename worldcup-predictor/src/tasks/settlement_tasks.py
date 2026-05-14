@@ -212,7 +212,7 @@ def _settle_match(match_id: int) -> dict[str, Any]:
     # are user-tracked and can be reconciled later if needed).
     try:
         settle_positions_for_match(match_id)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning("position_settlement_failed", match_id=match_id, error=str(exc))
 
     logger.info(
@@ -274,10 +274,11 @@ def settle_positions_for_match(match_id: int) -> dict[str, int]:
                 outcome_ou,
                 outcome_btts,
             )
-            if won:
-                pnl = position.stake * (position.odds - Decimal("1"))
-            else:
-                pnl = -position.stake
+            pnl = (
+                position.stake * (position.odds - Decimal("1"))
+                if won
+                else -position.stake
+            )
             position.settlement_pnl = pnl.quantize(Decimal("0.01"))
             position.status = "settled"
             position.updated_at = datetime.now(UTC)
@@ -285,7 +286,7 @@ def settle_positions_for_match(match_id: int) -> dict[str, int]:
 
             try:
                 NotificationDispatcher.send_position_settled(session, position)
-            except Exception as exc:  # noqa: BLE001 — best-effort notify
+            except Exception as exc:
                 logger.warning(
                     "position_settled_notify_failed",
                     position_id=position.id,

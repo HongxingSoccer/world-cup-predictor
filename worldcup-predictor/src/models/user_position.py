@@ -37,9 +37,7 @@ from .base import Base
 
 if TYPE_CHECKING:  # pragma: no cover
     from .hedge_scenario import HedgeScenario
-    from .match import Match
     from .push import PushNotification
-    from .user import User
 
 
 class UserPosition(Base):
@@ -89,11 +87,11 @@ class UserPosition(Base):
     settlement_pnl: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
 
     # Relationships (back_populates wired in matching models below).
-    triggered_scenarios: Mapped[list["HedgeScenario"]] = relationship(
+    triggered_scenarios: Mapped[list[HedgeScenario]] = relationship(
         back_populates="position",
         foreign_keys="HedgeScenario.position_id",
     )
-    notifications: Mapped[list["PushNotification"]] = relationship(
+    notifications: Mapped[list[PushNotification]] = relationship(
         back_populates="position",
         foreign_keys="PushNotification.position_id",
     )

@@ -33,7 +33,7 @@ from .base import Base
 
 if False:  # TYPE_CHECKING-style guard (we need a literal-false symbol for SA forward refs)
     from .match import Match  # noqa: F401
-    from .user_position import UserPosition  # noqa: F401
+    from .user_position import UserPosition
 
 
 class PushNotification(Base):
@@ -86,7 +86,7 @@ class PushNotification(Base):
     )
 
     # Relationship back to the position for the notification-detail panel.
-    position: Mapped["UserPosition | None"] = relationship(
+    position: Mapped[UserPosition | None] = relationship(
         back_populates="notifications",
         foreign_keys=[position_id],
     )

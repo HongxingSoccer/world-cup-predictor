@@ -57,7 +57,7 @@ def send_email_stub(user_id: int, title: str, body: str) -> bool:
 
 __all__ = [
     "send_apns_stub",
+    "send_email_stub",
     "send_fcm_stub",
     "send_wechat_stub",
-    "send_email_stub",
 ]

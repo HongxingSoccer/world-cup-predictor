@@ -88,7 +88,7 @@ class HedgeScenario(Base):
     )
 
     # Relationships — back_populates mirrors are defined below.
-    position: Mapped["UserPosition | None"] = relationship(
+    position: Mapped[UserPosition | None] = relationship(
         back_populates="triggered_scenarios",
         foreign_keys=[position_id],
     )

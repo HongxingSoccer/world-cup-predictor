@@ -16,8 +16,8 @@ external odds API directly. That keeps the scan path read-only against
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta, timezone
-from typing import Iterable
+from collections.abc import Iterable
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -61,10 +61,10 @@ def scan_active_positions(self) -> dict:
                 NotificationDispatcher.send_hedge_window_alert(
                     session, position, result
                 )
-                position.last_alert_at = datetime.now(timezone.utc)
+                position.last_alert_at = datetime.now(UTC)
                 session.commit()
                 fired += 1
-            except Exception as exc:  # noqa: BLE001 — log + continue
+            except Exception as exc:
                 logger.warning(
                     "live_monitor_alert_failed",
                     extra={"position_id": position.id, "error": str(exc)},
@@ -97,6 +97,6 @@ def _within_cooldown(position: UserPosition) -> bool:
     # the tz info. Treat naive as UTC so the math doesn't blow up in tests.
     last = position.last_alert_at
     if last.tzinfo is None:
-        last = last.replace(tzinfo=timezone.utc)
-    age = datetime.now(timezone.utc) - last
+        last = last.replace(tzinfo=UTC)
+    age = datetime.now(UTC) - last
     return age < ALERT_COOLDOWN
