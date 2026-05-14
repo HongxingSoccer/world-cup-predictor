@@ -27,7 +27,6 @@ from src.api.schemas.arbitrage import (
     CreateWatchlistRequest,
     WatchlistResponse,
 )
-from src.ml.arbitrage.calculator import ArbCalculator
 from src.ml.arbitrage.scanner import ArbScanner
 from src.models.arbitrage import ArbOpportunity, UserArbWatchlist
 

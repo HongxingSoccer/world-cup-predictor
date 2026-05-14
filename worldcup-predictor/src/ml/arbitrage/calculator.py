@@ -27,9 +27,9 @@ References:
 """
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from decimal import Decimal, getcontext
-from typing import Iterable, Mapping
 
 # 6 dp is sensible for odds arithmetic — bookmakers quote 3 dp,
 # implied probability needs another 3 dp of head-room.

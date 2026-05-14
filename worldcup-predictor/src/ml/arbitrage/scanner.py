@@ -12,9 +12,8 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import Iterable
 
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
@@ -58,7 +57,7 @@ class ArbScanner:
         window: timedelta = RECENT_WINDOW,
     ) -> dict[str, int]:
         """Run a full scan. Returns counts dict for logging."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         threshold = now - window
         match_ids = ArbScanner._matches_with_recent_odds(session, threshold)
 
@@ -196,4 +195,4 @@ class ArbScanner:
         return opp
 
 
-__all__ = ["ArbScanner", "MIN_PROFIT_MARGIN", "RECENT_WINDOW"]
+__all__ = ["MIN_PROFIT_MARGIN", "RECENT_WINDOW", "ArbScanner"]

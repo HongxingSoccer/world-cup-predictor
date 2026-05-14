@@ -17,8 +17,7 @@ to the arbitrage detail page.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -53,7 +52,7 @@ def scan_for_arbitrage(self) -> dict:
 
 def _fire_alerts_for_recent(session: Session) -> int:
     """Push alerts for every arb persisted in the last FRESH_WINDOW."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     cutoff = now - FRESH_WINDOW
     fresh = (
         session.execute(
@@ -106,7 +105,7 @@ def _fire_alerts_for_recent(session: Session) -> int:
                     },
                 )
                 fired += 1
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.warning(
                     "arb_alert_failed",
                     extra={
@@ -128,11 +127,8 @@ def _rule_matches(
         return False
     if rule.competition_id is not None and rule.competition_id != competition_id:
         return False
-    if rule.market_types:
-        # JSON column → either python list or None.
-        if opp.market_type not in rule.market_types:
-            return False
-    return True
+    # JSON column → either python list or None; treat empty as "match any".
+    return not (rule.market_types and opp.market_type not in rule.market_types)
 
 
 __all__ = ["scan_for_arbitrage"]
