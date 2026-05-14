@@ -127,7 +127,10 @@ def mark_all_read(
         .values(read_at=now)
     )
     session.commit()
-    return {"updated": result.rowcount or 0}
+    # `rowcount` lives on `CursorResult`, the runtime type of an UPDATE
+    # `result`. mypy infers the broader `Result[Any]` from `session.execute`,
+    # so cast through `Any` to keep the type-checker happy.
+    return {"updated": int(getattr(result, "rowcount", 0) or 0)}
 
 
 __all__ = ["router"]
