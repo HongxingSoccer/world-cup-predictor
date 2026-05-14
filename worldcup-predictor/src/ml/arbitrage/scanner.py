@@ -166,7 +166,9 @@ class ArbScanner:
             .values(status="expired", expired_at=now)
         )
         result = session.execute(stmt)
-        return int(result.rowcount or 0)
+        # `.rowcount` is on `CursorResult` at runtime but mypy infers
+        # `Result[Any]` — go through getattr to keep the type-checker happy.
+        return int(getattr(result, "rowcount", 0) or 0)
 
     @staticmethod
     def _persist(

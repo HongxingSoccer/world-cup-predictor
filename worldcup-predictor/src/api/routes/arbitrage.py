@@ -86,7 +86,7 @@ def _to_response(opp: ArbOpportunity) -> ArbOpportunityResponse:
 @router.get("/opportunities", response_model=list[ArbOpportunityResponse])
 def list_opportunities(
     market_type: str | None = Query(default=None),
-    min_profit_margin: Decimal | None = Query(default=None, ge=Decimal("0")),
+    min_profit_margin: Decimal | None = Query(default=None, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
     session: Session = Depends(get_db_session),
 ) -> list[ArbOpportunityResponse]:
